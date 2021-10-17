@@ -81,7 +81,7 @@ func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 // as it is not a terminal node and is instead part of the "index" symbol which has the children "obj" and "field".
 // This works well in all cases where the Jsonnet parser has put correct location information. Unfortunately,
 // the literal string node "field" of "obj.field" does not have correct location information.
-// TODO: Understand why the parser has not attached correct location range for indexes.
+// TODO(#8): Understand why the parser has not attached correct location range for indexes.
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
