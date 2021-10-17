@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,7 +14,10 @@ import (
 )
 
 var (
-	staticErr = regexp.MustCompile(`.*(?P<line>\d+):(?P<col>\d+)-(?P<endCol>\d+) (?P<Msg>.*)`)
+	// file:line msg
+	// file:line:col-endCol msg
+	// file:(line:endLine)-(col:endCol) msg
+	jsonnetErr = regexp.MustCompile(`.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\)) (.*)`)
 )
 
 // newServer returns a new language server.
@@ -33,11 +35,11 @@ type server struct {
 	vm     *jsonnet.VM
 }
 
-func (s *server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+func (s *server) CodeAction(context.Context, *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
 	return nil, notImplemented("CodeAction")
 }
 
-func (s *server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
+func (s *server) CodeLens(context.Context, *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
 	return nil, notImplemented("CodeLens")
 }
 
@@ -49,7 +51,7 @@ func (s *server) ColorPresentation(context.Context, *protocol.ColorPresentationP
 	return nil, notImplemented("ColorPresentation")
 }
 
-func (s *server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+func (s *server) Completion(context.Context, *protocol.CompletionParams) (*protocol.CompletionList, error) {
 	// TODO: This is not implemented but I was unable to disable the capability.
 	return nil, nil
 }
@@ -58,7 +60,7 @@ func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 	return nil, notImplemented("Declaration")
 }
 
-func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+func (s *server) Definition(context.Context, *protocol.DefinitionParams) (protocol.Definition, error) {
 	return nil, notImplemented("Definition")
 }
 
@@ -85,56 +87,63 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		_, err := s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), doc.Text)
 		if err != nil {
 			var (
-				line, col, endLine, endCol int
-				msg                        string
+				// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
+				line, col, endLine, endCol = 1, 1, 1, 1
+				msg                        = err.Error()
 			)
-			match := staticErr.FindStringSubmatch(err.Error())
-			if len(match) == 5 {
-				line, _ = strconv.Atoi(match[1])
-				col, _ = strconv.Atoi(match[2])
-				endLine, _ = strconv.Atoi(match[1])
-				endCol, _ = strconv.Atoi(match[3])
-				msg = match[4]
+			match := jsonnetErr.FindStringSubmatch(msg)
+			if len(match) == 10 {
+				msg = match[9]
+				if match[1] != "" {
+					line, _ = strconv.Atoi(match[1])
+					endLine = line + 1
+				}
+				if match[2] != "" {
+					line, _ = strconv.Atoi(match[2])
+					col, _ = strconv.Atoi(match[3])
+					endLine = line
+					endCol, _ = strconv.Atoi(match[4])
+				}
+				if match[5] != "" {
+					line, _ = strconv.Atoi(match[5])
+					col, _ = strconv.Atoi(match[6])
+					endLine, _ = strconv.Atoi(match[7])
+					endCol, _ = strconv.Atoi(match[8])
+				}
 			}
-
 			diags = append(diags, protocol.Diagnostic{
 				Range: protocol.Range{
 					Start: protocol.Position{Line: uint32(line - 1), Character: uint32(col - 1)},
 					End:   protocol.Position{Line: uint32(endLine - 1), Character: uint32(endCol - 1)},
 				},
-				Severity:           protocol.SeverityError,
-				Code:               nil,
-				CodeDescription:    &protocol.CodeDescription{},
-				Source:             "jsonnet evaluation",
-				Message:            msg,
-				Tags:               []protocol.DiagnosticTag{},
-				RelatedInformation: []protocol.DiagnosticRelatedInformation{},
-				Data:               nil,
+				Severity: protocol.SeverityError,
+				Source:   "jsonnet evaluation",
+				Message:  msg,
 			})
 		}
 		// TODO: Not ignore error.
+		// TODO: Fix context.
 		_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 			URI:         params.TextDocument.URI,
-			Version:     0,
 			Diagnostics: diags,
 		})
 	}()
 	return nil
 }
 
-func (s *server) DidChangeConfiguration(ctx context.Context, _gen *protocol.DidChangeConfigurationParams) error {
+func (s *server) DidChangeConfiguration(context.Context, *protocol.DidChangeConfigurationParams) error {
 	return notImplemented("DidChangeConfiguration")
 }
 
-func (s *server) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
+func (s *server) DidChangeWatchedFiles(context.Context, *protocol.DidChangeWatchedFilesParams) error {
 	return notImplemented("DidChangeWatchedFiles")
 }
 
-func (s *server) DidChangeWorkspaceFolders(ctx context.Context, params *protocol.DidChangeWorkspaceFoldersParams) error {
+func (s *server) DidChangeWorkspaceFolders(context.Context, *protocol.DidChangeWorkspaceFoldersParams) error {
 	return notImplemented("DidChangeWorkspaceFolders")
 }
 
-func (s *server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
+func (s *server) DidClose(context.Context, *protocol.DidCloseTextDocumentParams) error {
 	return notImplemented("DidClose")
 }
 
@@ -154,7 +163,7 @@ func (s *server) DidRenameFiles(context.Context, *protocol.RenameFilesParams) er
 	return notImplemented("DidRenameFiles")
 }
 
-func (s *server) DidSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
+func (s *server) DidSave(context.Context, *protocol.DidSaveTextDocumentParams) error {
 	return notImplemented("DidSave")
 }
 
@@ -162,28 +171,28 @@ func (s *server) DocumentColor(context.Context, *protocol.DocumentColorParams) (
 	return nil, notImplemented("DocumentColor")
 }
 
-func (s *server) DocumentHighlight(ctx context.Context, params *protocol.DocumentHighlightParams) ([]protocol.DocumentHighlight, error) {
+func (s *server) DocumentHighlight(context.Context, *protocol.DocumentHighlightParams) ([]protocol.DocumentHighlight, error) {
 	return nil, notImplemented("DocumentHighlight")
 }
 
-func (s *server) DocumentLink(ctx context.Context, params *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
+func (s *server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
 	// TODO: This is not implemented but I was unable to disable the capability.
 	return nil, nil
 }
 
-func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
+func (s *server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	return nil, notImplemented("DocumentSymbol")
 }
 
-func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *server) ExecuteCommand(context.Context, *protocol.ExecuteCommandParams) (interface{}, error) {
 	return nil, notImplemented("ExecuteCommand")
 }
 
-func (s *server) Exit(ctx context.Context) error {
+func (s *server) Exit(context.Context) error {
 	return notImplemented("Exit")
 }
 
-func (s *server) FoldingRange(ctx context.Context, params *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {
+func (s *server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {
 	return nil, notImplemented("FoldingRange")
 }
 
@@ -193,12 +202,11 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		return nil, fmt.Errorf("unable to retrieve document from cache: %w", err)
 	}
 	// TODO: This should be user configurable.
-	fmt.Fprintln(os.Stderr, doc.Text)
 	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.Text, formatter.DefaultOptions())
 	if err != nil {
 		return nil, fmt.Errorf("unable to format document: %w", err)
 	}
-	// Consider applying individual edits.
+	// TODO: Consider applying individual edits.
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
@@ -217,15 +225,15 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 	}, nil
 }
 
-func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+func (s *server) Hover(context.Context, *protocol.HoverParams) (*protocol.Hover, error) {
 	return nil, notImplemented("Hover")
 }
 
-func (s *server) Implementation(ctx context.Context, params *protocol.ImplementationParams) (protocol.Definition, error) {
+func (s *server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
 	return nil, notImplemented("Implementation")
 }
 
-func (s *server) IncomingCalls(ctx context.Context, params *protocol.CallHierarchyIncomingCallsParams) ([]protocol.CallHierarchyIncomingCall, error) {
+func (s *server) IncomingCalls(context.Context, *protocol.CallHierarchyIncomingCallsParams) ([]protocol.CallHierarchyIncomingCall, error) {
 	return nil, notImplemented("IncomingCalls")
 }
 
@@ -250,7 +258,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 	}, nil
 }
 
-func (s *server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
+func (s *server) Initialized(context.Context, *protocol.InitializedParams) error {
 	return nil
 }
 
@@ -266,7 +274,7 @@ func (s *server) Moniker(context.Context, *protocol.MonikerParams) ([]protocol.M
 	return nil, notImplemented("Moniker")
 }
 
-func (s *server) NonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {
+func (s *server) NonstandardRequest(context.Context, string, interface{}) (interface{}, error) {
 	return nil, notImplemented("NonstandardRequest")
 }
 
@@ -274,15 +282,15 @@ func (s *server) OnTypeFormatting(context.Context, *protocol.DocumentOnTypeForma
 	return nil, notImplemented("OnTypeFormatting")
 }
 
-func (s *server) OutgoingCalls(ctx context.Context, params *protocol.CallHierarchyOutgoingCallsParams) ([]protocol.CallHierarchyOutgoingCall, error) {
+func (s *server) OutgoingCalls(context.Context, *protocol.CallHierarchyOutgoingCallsParams) ([]protocol.CallHierarchyOutgoingCall, error) {
 	return nil, notImplemented("OutgoingCalls")
 }
 
-func (s *server) PrepareCallHierarchy(ctx context.Context, params *protocol.CallHierarchyPrepareParams) ([]protocol.CallHierarchyItem, error) {
+func (s *server) PrepareCallHierarchy(context.Context, *protocol.CallHierarchyPrepareParams) ([]protocol.CallHierarchyItem, error) {
 	return nil, notImplemented("PrepareCallHierarchy")
 }
 
-func (s *server) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
+func (s *server) PrepareRename(context.Context, *protocol.PrepareRenameParams) (*protocol.Range, error) {
 	return nil, notImplemented("PrepareRange")
 }
 
@@ -294,11 +302,11 @@ func (s *server) RangeFormatting(context.Context, *protocol.DocumentRangeFormatt
 	return nil, notImplemented("RangeFormatting")
 }
 
-func (s *server) References(ctx context.Context, params *protocol.ReferenceParams) ([]protocol.Location, error) {
+func (s *server) References(context.Context, *protocol.ReferenceParams) ([]protocol.Location, error) {
 	return nil, notImplemented("References")
 }
 
-func (s *server) Rename(ctx context.Context, params *protocol.RenameParams) (*protocol.WorkspaceEdit, error) {
+func (s *server) Rename(context.Context, *protocol.RenameParams) (*protocol.WorkspaceEdit, error) {
 	return nil, notImplemented("Rename")
 }
 
@@ -322,19 +330,19 @@ func (s *server) SelectionRange(context.Context, *protocol.SelectionRangeParams)
 	return nil, notImplemented("SelectionRange")
 }
 
-func (s *server) SemanticTokensFull(ctx context.Context, p *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
+func (s *server) SemanticTokensFull(context.Context, *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
 	return nil, notImplemented("SemanticTokensFull")
 }
 
-func (s *server) SemanticTokensFullDelta(ctx context.Context, p *protocol.SemanticTokensDeltaParams) (interface{}, error) {
+func (s *server) SemanticTokensFullDelta(context.Context, *protocol.SemanticTokensDeltaParams) (interface{}, error) {
 	return nil, notImplemented("SemanticTokensFullDelta")
 }
 
-func (s *server) SemanticTokensRange(ctx context.Context, p *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
+func (s *server) SemanticTokensRange(context.Context, *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
 	return nil, notImplemented("SemanticTokensRange")
 }
 
-func (s *server) SemanticTokensRefresh(ctx context.Context) error {
+func (s *server) SemanticTokensRefresh(context.Context) error {
 	return notImplemented("SemanticTokensRefresh")
 }
 
@@ -342,11 +350,11 @@ func (s *server) SetTrace(context.Context, *protocol.SetTraceParams) error {
 	return notImplemented("SetTrace")
 }
 
-func (s *server) Shutdown(ctx context.Context) error {
+func (s *server) Shutdown(context.Context) error {
 	return notImplemented("Shutdown")
 }
 
-func (s *server) SignatureHelp(ctx context.Context, params *protocol.SignatureHelpParams) (*protocol.SignatureHelp, error) {
+func (s *server) SignatureHelp(context.Context, *protocol.SignatureHelpParams) (*protocol.SignatureHelp, error) {
 	return nil, notImplemented("SignatureHelp")
 }
 
@@ -358,11 +366,11 @@ func (s *server) Supertypes(context.Context, *protocol.TypeHierarchySupertypesPa
 	return nil, notImplemented("Supertypes")
 }
 
-func (s *server) Symbol(ctx context.Context, params *protocol.WorkspaceSymbolParams) ([]protocol.SymbolInformation, error) {
+func (s *server) Symbol(context.Context, *protocol.WorkspaceSymbolParams) ([]protocol.SymbolInformation, error) {
 	return nil, notImplemented("Symbol")
 }
 
-func (s *server) TypeDefinition(ctx context.Context, params *protocol.TypeDefinitionParams) (protocol.Definition, error) {
+func (s *server) TypeDefinition(context.Context, *protocol.TypeDefinitionParams) (protocol.Definition, error) {
 	return nil, notImplemented("TypeDefinition")
 }
 
@@ -386,7 +394,7 @@ func (s *server) WillSaveWaitUntil(context.Context, *protocol.WillSaveTextDocume
 	return nil, notImplemented("WillSaveWaitUntil")
 }
 
-func (s *server) WorkDoneProgressCancel(ctx context.Context, params *protocol.WorkDoneProgressCancelParams) error {
+func (s *server) WorkDoneProgressCancel(context.Context, *protocol.WorkDoneProgressCancelParams) error {
 	return notImplemented("WorkDoneProgressCancel")
 }
 

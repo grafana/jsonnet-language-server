@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -32,7 +31,6 @@ func (c *cache) put(doc protocol.TextDocumentItem) error {
 		return errors.New("document already in cache")
 	}
 	c.docs[doc.URI] = doc
-	fmt.Fprintf(os.Stderr, "%+v\n", c.docs)
 
 	return nil
 }
