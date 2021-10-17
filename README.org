@@ -19,5 +19,13 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
    go get -u github.com/jdbaldry/jsonnet-language-server
    #+END_SRC
 
+   To download the latest release binary from GitHub:
+   #+NAME: Download from GitHub
+   #+BEGIN_SRC shell
+   curl -Lo jsonnet-language-server https://github.com/jdbaldry/jsonnet-language-server/releases/latest/download/jsonnet-language-server
+   #+END_SRC
+
+   #+RESULTS: Download from GitHub
+
 ** Editor integration
    For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server with lsp-mode.
