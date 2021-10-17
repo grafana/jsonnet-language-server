@@ -279,7 +279,7 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 			panic("There should only be a single root symbol for an AST")
 		}
 		doc.symbols = symbols[0]
-		// TODO: Work out better way to invalidate the VM cache.
+		// TODO(#10): Work out better way to invalidate the VM cache.
 		s.vm.Importer(&jsonnet.FileImporter{})
 		// TODO: Evaluate whether the raw AST is better for analysis than the desugared AST.
 		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
