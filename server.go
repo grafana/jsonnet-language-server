@@ -91,7 +91,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 				// super can only be used in the right hand side object of a binary `+` operation.
 				// The definition the "super" is referring to would be the left hand side.
 				// Simplified stack:
-				// + lhs obj ... field x super
+				// + lhs obj ... field x index super
 				prev := stack[len(stack)-1]
 				for len(stack) != 0 {
 					symbol := stack[len(stack)-1]
