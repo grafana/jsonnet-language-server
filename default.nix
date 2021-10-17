@@ -3,7 +3,7 @@
 with pkgs;
 buildGoModule rec {
   pname = "jsonnet-language-server";
-  version = "0.0.1";
+  version = "0.1.0";
 
   meta = with lib; { maintainers = with maintainers; [ jdbaldry ]; };
   src = lib.cleanSource ./.;
