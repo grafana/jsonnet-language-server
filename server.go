@@ -381,7 +381,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
-	// TODO: Formatting options should be user configurable.
+	// TODO(#14): Formatting options should be user configurable.
 	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
 	if err != nil {
 		err = fmt.Errorf("Formatting: unable to format document: %w", err)
