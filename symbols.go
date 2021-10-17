@@ -225,12 +225,16 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 
 	case *ast.SuperIndex:
 		symbols = append(symbols, protocol.DocumentSymbol{
-			Name:           "super",
+			Name:           "index",
 			Kind:           protocol.Field,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
-			Tags:           []protocol.SymbolTag{symbolTagDefinition},
-			Children:       analyseSymbols(n.Index),
+			Children: append([]protocol.DocumentSymbol{{
+				Name:           "super",
+				Kind:           protocol.Variable,
+				Range:          locationRangeToProtocolRange(*n.Loc()),
+				SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			}}, analyseSymbols(n.Index)...),
 		})
 
 	case *ast.Var:
