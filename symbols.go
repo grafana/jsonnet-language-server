@@ -201,7 +201,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			// Adding five (five minus the one for zero indexing plus one for a space) to the location range of the local
 			// symbol gets closer to the real location but any amount of whitespace could be inbetween.
 			// Assuming a single space, this works perfectly.
-			// TODO: Understand why identifiers in local function binds are missing.
+			// TODO(#7): Understand why identifiers in local function binds are missing.
 			if bind.LocRange.Begin.Line == 0 {
 				binds[i].Range = protocol.Range{
 					Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column + 5)},
