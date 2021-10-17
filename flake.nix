@@ -9,6 +9,7 @@
       overlay =
         (final: prev: {
           jsonnet-language-server = prev.callPackage ./default.nix { pkgs = prev; };
+          snitch = prev.callPackage ./snitch.nix { pkgs = prev; };
         });
     } //
     (flake-utils.lib.eachDefaultSystem (system:

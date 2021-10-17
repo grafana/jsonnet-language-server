@@ -6,6 +6,7 @@ mkShell {
     go_1_16
     golangci-lint
     gopls
+    snitch
   ];
   shellHook = ''
     export PATH="$PATH":"$(pwd)"
