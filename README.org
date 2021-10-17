@@ -11,4 +11,4 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
   Refer to [[file:example.jsonnet][example.jsonnet]] for a documented walkthrough.
 
 ** Editor integration
-   For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server.
+   For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server with lsp-mode.
