@@ -388,7 +388,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
-	// TODO: Consider applying individual edits instead of replacing the whole file when formatting.
+	// TODO(#15): Consider applying individual edits instead of replacing the whole file when formatting.
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
