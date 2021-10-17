@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,18 +16,23 @@ import (
 )
 
 var (
+	// errRegexp matches the various Jsonnet location formats in errors.
 	// file:line msg
 	// file:line:col-endCol msg
 	// file:(line:endLine)-(col:endCol) msg
-	jsonnetErr = regexp.MustCompile(`.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\)) (.*)`)
+	// Has 10 matching groups.
+	errRegexp = regexp.MustCompile(`/.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\))\s(.*)`)
 )
 
 // newServer returns a new language server.
 func newServer(client protocol.ClientCloser) (*server, error) {
+	vm := jsonnet.MakeVM()
+	importer := &jsonnet.FileImporter{JPaths: filepath.SplitList(os.Getenv("JSONNET_PATH"))}
+	vm.Importer(importer)
 	return &server{
 		cache:  newCache(),
 		client: client,
-		vm:     jsonnet.MakeVM(),
+		vm:     vm,
 	}, nil
 }
 
@@ -90,10 +97,24 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 				// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
 				line, col, endLine, endCol = 1, 1, 1, 1
 				msg                        = err.Error()
+				match                      []string
 			)
-			match := jsonnetErr.FindStringSubmatch(msg)
+
+			lines := strings.Split(msg, "\n")
+			if len(lines) == 0 {
+				panic("expected at least two lines of Jsonnet evaluation error output")
+			}
+			runtimeErr := strings.HasPrefix(lines[0], "RUNTIME ERROR:")
+			if runtimeErr {
+				match = errRegexp.FindStringSubmatch(lines[1])
+			} else {
+				match = errRegexp.FindStringSubmatch(lines[0])
+			}
+
 			if len(match) == 10 {
-				msg = match[9]
+				if !runtimeErr {
+					msg = match[9]
+				}
 				if match[1] != "" {
 					line, _ = strconv.Atoi(match[1])
 					endLine = line + 1
