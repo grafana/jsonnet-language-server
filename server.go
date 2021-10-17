@@ -64,8 +64,9 @@ func (s *server) ColorPresentation(context.Context, *protocol.ColorPresentationP
 	return nil, notImplemented("ColorPresentation")
 }
 
+// Completion is not implemented.
+// TODO: Understand why the server capabilities includes completion.
 func (s *server) Completion(context.Context, *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	// TODO: This is not implemented but I was unable to disable the capability.
 	return nil, nil
 }
 
@@ -78,9 +79,9 @@ func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 // Potentially it could backtrack outwards to guess what was probably meant.
 // In the case of an index "obj.field", lookup would work when the point is on either "obj" or "field" but not the "."
 // as it is not a terminal node and is instead part of the "index" symbol which has the children "obj" and "field".
-// This works well in all cases where the Jsonnet analyzer has put correct location information. Unfortunately,
+// This works well in all cases where the Jsonnet parser has put correct location information. Unfortunately,
 // the literal string node "field" of "obj.field" does not have correct location information.
-// TODO: Investigate Jsonnet parser and analyzer to understand why and potentially fix.
+// TODO: Understand why the parser has not attached correct location range for indexes.
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
@@ -247,7 +248,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 		diags = append(diags, diag)
 	}
 
-	// TODO: Fix context.
+	// TODO: Replace empty context with appropriate context.
 	err = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diags,
@@ -280,7 +281,7 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		doc.symbols = symbols[0]
 		// TODO: Work out better way to invalidate the VM cache.
 		s.vm.Importer(&jsonnet.FileImporter{})
-		// TODO: Would the raw AST be better?
+		// TODO: Evaluate whether the raw AST is better for analysis than the desugared AST.
 		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 		return s.cache.put(doc)
 	}
@@ -344,8 +345,9 @@ func (s *server) DocumentHighlight(context.Context, *protocol.DocumentHighlightP
 	return nil, notImplemented("DocumentHighlight")
 }
 
+// DocumentLink is not implemented.
+// TODO: Understand why the server capabilities includes documentlink.
 func (s *server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
-	// TODO: This is not implemented but I was unable to disable the capability.
 	return nil, nil
 }
 
@@ -386,7 +388,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
-	// TODO: Consider applying individual edits instead of replacing the whole file.
+	// TODO: Consider applying individual edits instead of replacing the whole file when formatting.
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
