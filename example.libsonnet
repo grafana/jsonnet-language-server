@@ -1,4 +1,5 @@
-// Now jump back.
+// Formatting can clean up the extraneous indentation.
 {
-  foo: 'bar',
+    foo: 'bar',
 }
+// Now jump back.
