@@ -1,0 +1,14 @@
+#+TITLE: Jsonnet Language Server
+
+A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[https://jsonnet.org][Jsonnet]].
+
+** Features
+  - Jump to definition :: For local variables, import and importstr files, and index targets.
+  - Workspace symbols :: Return a hierarchy of document symbols representing /most/ nodes of the Jsonnet AST.
+  - Diagnostics :: Static errors and warnings of runtime errors.
+  - Formatting :: Format document according to default options.
+
+  Refer to [[file:example.jsonnet][example.jsonnet]] for a documented walkthrough.
+
+** Editor integration
+   For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server.
