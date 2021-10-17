@@ -12,5 +12,12 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
 
   Refer to [[file:example.jsonnet][example.jsonnet]] for a documented walkthrough.
 
+** Installation
+   To install the LSP server with Go into "${GOPATH}"/bin:
+   #+NAME: Installation with Go
+   #+BEGIN_SRC shell
+   go get -u github.com/jdbaldry/jsonnet-language-server
+   #+END_SRC
+
 ** Editor integration
    For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server with lsp-mode.
