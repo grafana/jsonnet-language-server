@@ -10,14 +10,14 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/ast"
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
 const (
-	symbolTagDefinition protocol.SymbolTag = 100
+	symbolTagDefinition     protocol.SymbolTag = 100
+	errorRetrievingDocument                    = "unable to retrieve document from the cache"
 )
 
 var (
@@ -41,6 +41,7 @@ func newServer(client protocol.ClientCloser) (*server, error) {
 	}, nil
 }
 
+// server is the Jsonnet language server.
 type server struct {
 	cache  *cache
 	client protocol.ClientCloser
@@ -72,31 +73,16 @@ func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 	return nil, notImplemented("Declaration")
 }
 
-func isDefinition(s protocol.DocumentSymbol) bool {
-	for _, t := range s.Tags {
-		if t == symbolTagDefinition {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Definition: unable to get document from cache: %v\n", err)
+		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
 
 	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (protocol.Definition, error)
 	aux = func(stack []protocol.DocumentSymbol, symbol protocol.DocumentSymbol) (protocol.Definition, error) {
-		for i, s := range stack {
-			if i != 0 {
-				fmt.Fprint(os.Stderr, ", ")
-			}
-			fmt.Fprintf(os.Stderr, "(%s) %s", s.Kind, s.Name)
-		}
-		fmt.Fprintln(os.Stderr)
 		if symbol.Range.Start.Line == params.Position.Line &&
 			symbol.Range.Start.Character <= params.Position.Character &&
 			symbol.Range.End.Character >= params.Position.Character {
@@ -122,7 +108,8 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 			if symbol.Kind == protocol.File {
 				foundAt, err := s.vm.ResolveImport(doc.item.URI.SpanURI().Filename(), symbol.Name)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "Definition: unable to resolve import: %v\n", err)
+					err = fmt.Errorf("Definition: unable to resolve import: %w", err)
+					fmt.Fprintln(os.Stderr, err)
 					return nil, err
 				}
 				return protocol.Definition{{URI: "file:///" + protocol.DocumentURI(foundAt)}}, nil
@@ -175,7 +162,8 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 	diags := []protocol.Diagnostic{}
 	doc, err := s.cache.get(uri)
 	if err != nil {
-		panic("unable to get document from cache")
+		fmt.Fprintf(os.Stderr, "publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
+		return
 	}
 
 	diag := protocol.Diagnostic{Source: "jsonnet evaluation"}
@@ -184,7 +172,8 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 	if doc.err != nil {
 		lines := strings.Split(doc.err.Error(), "\n")
 		if len(lines) == 0 {
-			panic("expected at least two lines of Jsonnet evaluation error output")
+			fmt.Fprintf(os.Stderr, "publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
+			return
 		}
 
 		var match []string
@@ -228,18 +217,22 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 		diags = append(diags, diag)
 	}
 
-	// TODO: Not ignore error.
 	// TODO: Fix context.
-	_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+	err = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diags,
 	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "publishDiagnostics: unable to publish diagnostics: %v\n", err)
+	}
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		return fmt.Errorf("DidChange: %w", err)
+		err = fmt.Errorf("DidChange: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
+		return err
 	}
 
 	defer s.publishDiagnostics(params.TextDocument.URI)
@@ -288,279 +281,6 @@ func (s *server) DidDeleteFiles(context.Context, *protocol.DeleteFilesParams) er
 	return notImplemented("DidDeleteFiles")
 }
 
-func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
-	switch n := n.(type) {
-
-	case *ast.Array:
-		children := []protocol.DocumentSymbol{}
-		for _, elem := range n.Elements {
-			children = append(children, analyseSymbols(elem.Expr)...)
-		}
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: "array",
-			Kind: protocol.Array,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: children,
-		})
-
-	case *ast.Binary:
-		children := analyseSymbols(n.Left)
-		children = append(children, analyseSymbols(n.Right)...)
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: n.Op.String(),
-			Kind: protocol.Operator,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: children,
-		})
-
-	case *ast.DesugaredObject:
-		fields := make([]protocol.DocumentSymbol, len(n.Fields))
-		locals := make([]protocol.DocumentSymbol, len(n.Locals))
-		for i, bind := range n.Locals {
-			locals[i] = protocol.DocumentSymbol{
-				Name: string(bind.Variable),
-				Kind: protocol.Variable,
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				SelectionRange: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				Tags:     []protocol.SymbolTag{symbolTagDefinition},
-				Children: analyseSymbols(bind.Body),
-			}
-		}
-		for i, field := range n.Fields {
-			fields[i] = protocol.DocumentSymbol{
-				Name: "field",
-				Kind: protocol.Field,
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(field.LocRange.Begin.Line - 1), Character: uint32(field.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(field.LocRange.End.Line - 1), Character: uint32(field.LocRange.End.Column - 1)},
-				},
-				SelectionRange: protocol.Range{
-					Start: protocol.Position{Line: uint32(field.LocRange.Begin.Line - 1), Character: uint32(field.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(field.LocRange.End.Line - 1), Character: uint32(field.LocRange.End.Column - 1)},
-				},
-				Children: append(analyseSymbols(field.Name), analyseSymbols(field.Body)...),
-			}
-		}
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name:       "object",
-			Kind:       protocol.Object,
-			Tags:       []protocol.SymbolTag{},
-			Deprecated: false,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: append(locals, fields...),
-		})
-
-	case *ast.Import:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: n.File.Value,
-			Kind: protocol.File,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	case *ast.ImportStr:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: n.File.Value,
-			Kind: protocol.File,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-	case *ast.Index:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: "index",
-			Kind: protocol.Field,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: append(analyseSymbols(n.Target), analyseSymbols(n.Index)...),
-			Tags:     []protocol.SymbolTag{symbolTagDefinition},
-		})
-
-	case *ast.LiteralBoolean:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: fmt.Sprint(n.Value),
-			Kind: protocol.Boolean,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	case *ast.LiteralNull:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: "null",
-			Kind: protocol.Null,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	case *ast.LiteralNumber:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: n.OriginalString,
-			Kind: protocol.Number,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	case *ast.LiteralString:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: n.Value,
-			Kind: protocol.String,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	case *ast.Local:
-		binds := make([]protocol.DocumentSymbol, len(n.Binds))
-		for i, bind := range n.Binds {
-			binds[i] = protocol.DocumentSymbol{
-				Name: string(bind.Variable),
-				Kind: protocol.Variable,
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				SelectionRange: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				Children: analyseSymbols(bind.Body),
-				Tags:     []protocol.SymbolTag{symbolTagDefinition},
-			}
-		}
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name:       "local",
-			Kind:       protocol.Namespace,
-			Tags:       []protocol.SymbolTag{},
-			Deprecated: false,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: append(binds, analyseSymbols(n.Body)...),
-		})
-
-	case *ast.Self:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: "self",
-			Kind: protocol.Variable,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Tags: []protocol.SymbolTag{symbolTagDefinition},
-		})
-
-	case *ast.SuperIndex:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: "super",
-			Kind: protocol.Field,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			Children: analyseSymbols(n.Index),
-			Tags:     []protocol.SymbolTag{symbolTagDefinition},
-		})
-
-	case *ast.Var:
-		symbols = append(symbols, protocol.DocumentSymbol{
-			Name: string(n.Id),
-			Kind: protocol.Variable,
-			Range: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-			SelectionRange: protocol.Range{
-				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
-				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
-			},
-		})
-
-	default:
-		fmt.Fprintf(os.Stderr, "unhandled node: %T\n", n)
-	}
-	return
-}
-
 func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.publishDiagnostics(params.TextDocument.URI)
 	doc := document{item: params.TextDocument}
@@ -602,7 +322,8 @@ func (s *server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]
 func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "DocumentSymbol: unable to get document from cache: %v\n", err)
+		err = fmt.Errorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
 
@@ -624,14 +345,18 @@ func (s *server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]
 func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve document from cache: %w", err)
+		err = fmt.Errorf("Formatting: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, err
 	}
-	// TODO: This should be user configurable.
+	// TODO: Formatting options should be user configurable.
 	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
 	if err != nil {
-		return nil, fmt.Errorf("unable to format document: %w", err)
+		err = fmt.Errorf("Formatting: unable to format document: %w", err)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, err
 	}
-	// TODO: Consider applying individual edits.
+	// TODO: Consider applying individual edits instead of replacing the whole file.
 	return []protocol.TextEdit{
 		{
 			Range: protocol.Range{
