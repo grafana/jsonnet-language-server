@@ -15,6 +15,7 @@
   :new-connection (lsp-stdio-connection (lambda () lsp-jsonnet-executable))
   :activation-fn (lsp-activate-on "jsonnet")
   :server-id 'jsonnet))
+(add-hook 'jsonnet-mode-hook #'lsp-deferred)
 
 (provide 'jsonnet-language-server)
 ;;; jsonnet-language-server.el ends here
