@@ -346,7 +346,7 @@ func (s *server) DocumentHighlight(context.Context, *protocol.DocumentHighlightP
 }
 
 // DocumentLink is not implemented.
-// TODO: Understand why the server capabilities includes documentlink.
+// TODO(#13): Understand why the server capabilities includes documentlink.
 func (s *server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
 	return nil, nil
 }
