@@ -83,72 +83,95 @@ func (s *server) DiagnosticWorkspace(context.Context, *protocol.WorkspaceDiagnos
 	return nil, notImplemented("DiagnosticWorkspace")
 }
 
+func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
+	diags := []protocol.Diagnostic{}
+	doc, err := s.cache.get(uri)
+	if err != nil {
+		panic("unable to get document from cache")
+	}
+
+	diag := protocol.Diagnostic{Source: "jsonnet evaluation"}
+	// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
+	line, col, endLine, endCol := 1, 1, 1, 1
+	if doc.err != nil {
+		lines := strings.Split(doc.err.Error(), "\n")
+		if len(lines) == 0 {
+			panic("expected at least two lines of Jsonnet evaluation error output")
+		}
+
+		var match []string
+		runtimeErr := strings.HasPrefix(lines[0], "RUNTIME ERROR:")
+		if runtimeErr {
+			match = errRegexp.FindStringSubmatch(lines[1])
+		} else {
+			match = errRegexp.FindStringSubmatch(lines[0])
+		}
+		if len(match) == 10 {
+			if match[1] != "" {
+				line, _ = strconv.Atoi(match[1])
+				endLine = line + 1
+			}
+			if match[2] != "" {
+				line, _ = strconv.Atoi(match[2])
+				col, _ = strconv.Atoi(match[3])
+				endLine = line
+				endCol, _ = strconv.Atoi(match[4])
+			}
+			if match[5] != "" {
+				line, _ = strconv.Atoi(match[5])
+				col, _ = strconv.Atoi(match[6])
+				endLine, _ = strconv.Atoi(match[7])
+				endCol, _ = strconv.Atoi(match[8])
+			}
+		}
+
+		if runtimeErr {
+			diag.Message = doc.err.Error()
+			diag.Severity = protocol.SeverityWarning
+		} else {
+			diag.Message = match[9]
+			diag.Severity = protocol.SeverityError
+		}
+
+		diag.Range = protocol.Range{
+			Start: protocol.Position{Line: uint32(line - 1), Character: uint32(col - 1)},
+			End:   protocol.Position{Line: uint32(endLine - 1), Character: uint32(endCol - 1)},
+		}
+		diags = append(diags, diag)
+	}
+
+	// TODO: Not ignore error.
+	// TODO: Fix context.
+	_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+		URI:         uri,
+		Diagnostics: diags,
+	})
+}
+
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	if err := s.cache.update(params.TextDocument, params.ContentChanges); err != nil {
+	doc, err := s.cache.get(params.TextDocument.URI)
+	if err != nil {
 		return fmt.Errorf("DidChange: %w", err)
 	}
-	go func() {
-		var diags []protocol.Diagnostic
-		// TODO: Not ignore error.
-		doc, _ := s.cache.get(params.TextDocument.URI)
-		_, err := s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), doc.Text)
-		if err != nil {
-			var (
-				// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
-				line, col, endLine, endCol = 1, 1, 1, 1
-				msg                        = err.Error()
-				match                      []string
-			)
-
-			lines := strings.Split(msg, "\n")
-			if len(lines) == 0 {
-				panic("expected at least two lines of Jsonnet evaluation error output")
+	if params.TextDocument.Version > doc.item.Version && len(params.ContentChanges) != 0 {
+		doc.item.Text = params.ContentChanges[len(params.ContentChanges)-1].Text
+		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+		if doc.err != nil {
+			doc.ast = nil
+		} else {
+			var err error
+			// TODO: Would the raw AST be better?
+			doc.ast, err = jsonnet.SnippetToAST(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+			if err != nil {
+				panic("should not be able to manifest JSON if the snippet cannot be parsed!")
 			}
-			runtimeErr := strings.HasPrefix(lines[0], "RUNTIME ERROR:")
-			if runtimeErr {
-				match = errRegexp.FindStringSubmatch(lines[1])
-			} else {
-				match = errRegexp.FindStringSubmatch(lines[0])
-			}
-
-			if len(match) == 10 {
-				if !runtimeErr {
-					msg = match[9]
-				}
-				if match[1] != "" {
-					line, _ = strconv.Atoi(match[1])
-					endLine = line + 1
-				}
-				if match[2] != "" {
-					line, _ = strconv.Atoi(match[2])
-					col, _ = strconv.Atoi(match[3])
-					endLine = line
-					endCol, _ = strconv.Atoi(match[4])
-				}
-				if match[5] != "" {
-					line, _ = strconv.Atoi(match[5])
-					col, _ = strconv.Atoi(match[6])
-					endLine, _ = strconv.Atoi(match[7])
-					endCol, _ = strconv.Atoi(match[8])
-				}
-			}
-			diags = append(diags, protocol.Diagnostic{
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(line - 1), Character: uint32(col - 1)},
-					End:   protocol.Position{Line: uint32(endLine - 1), Character: uint32(endCol - 1)},
-				},
-				Severity: protocol.SeverityError,
-				Source:   "jsonnet evaluation",
-				Message:  msg,
-			})
 		}
-		// TODO: Not ignore error.
-		// TODO: Fix context.
-		_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
-			URI:         params.TextDocument.URI,
-			Diagnostics: diags,
-		})
-	}()
+	}
+	err = s.cache.put(doc)
+	if err != nil {
+		return fmt.Errorf("DidChange: %w", err)
+	}
+	go s.publishDiagnostics(params.TextDocument.URI)
 	return nil
 }
 
@@ -176,8 +199,19 @@ func (s *server) DidDeleteFiles(context.Context, *protocol.DeleteFilesParams) er
 	return notImplemented("DidDeleteFiles")
 }
 
-func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	return s.cache.put(params.TextDocument)
+func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
+	doc := document{item: params.TextDocument}
+	doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
+	go s.publishDiagnostics(params.TextDocument.URI)
+	if doc.err != nil {
+		return s.cache.put(doc)
+	}
+
+	doc.ast, err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
+	if err != nil {
+		panic("should not be able to manifest JSON if the snippet cannot be parsed!")
+	}
+	return s.cache.put(doc)
 }
 
 func (s *server) DidRenameFiles(context.Context, *protocol.RenameFilesParams) error {
@@ -223,7 +257,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		return nil, fmt.Errorf("unable to retrieve document from cache: %w", err)
 	}
 	// TODO: This should be user configurable.
-	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.Text, formatter.DefaultOptions())
+	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
 	if err != nil {
 		return nil, fmt.Errorf("unable to format document: %w", err)
 	}
@@ -239,7 +273,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		{
 			Range: protocol.Range{
 				Start: protocol.Position{Line: 0, Character: 0},
-				End:   protocol.Position{Line: uint32(strings.Count(formatted+doc.Text, "\n")), Character: ^uint32(0)},
+				End:   protocol.Position{Line: uint32(strings.Count(formatted+doc.item.Text, "\n")), Character: ^uint32(0)},
 			},
 			NewText: "",
 		},
