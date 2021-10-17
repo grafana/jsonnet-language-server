@@ -123,6 +123,11 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		})
 
 	case *ast.Import:
+		// Although the literal string is a child of an Import, it is ignored and the keyword
+		// and the literal string are captured by a single File document.
+		// This is one less symbol in the hierarchy and it means that go to definition works
+		// from either the keyword or the literal string.
+		// The same is true for ImportStr.
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           n.File.Value,
 			Kind:           protocol.File,
@@ -131,6 +136,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		})
 
 	case *ast.ImportStr:
+		// See comment associated with Import.
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           n.File.Value,
 			Kind:           protocol.File,
