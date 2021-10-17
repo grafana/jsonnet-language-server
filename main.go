@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
+	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
 type stdio struct{}
@@ -51,7 +52,14 @@ func main() {
 	ctx := context.TODO()
 	stream := jsonrpc2.NewHeaderStream(stdio{})
 	conn := jsonrpc2.NewConn(stream)
-	conn.Go(ctx, nil)
+	client := protocol.ClientDispatcher(conn)
+
+	s, err := newServer(client)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	conn.Go(ctx, protocol.Handlers(
+		protocol.ServerHandler(s, jsonrpc2.MethodNotFound)))
 	<-conn.Done()
 	if err := conn.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

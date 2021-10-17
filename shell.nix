@@ -1,4 +1,5 @@
 { pkgs ? import <nixpkgs> }:
+
 with pkgs;
 mkShell {
   buildInputs = [
@@ -7,6 +8,6 @@ mkShell {
     gopls
   ];
   shellHook = ''
-    # ...
+    export PATH="$PATH":"$(pwd)"
   '';
 }
