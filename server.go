@@ -324,7 +324,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		panic("There should only be a single root symbol for an AST")
 	}
 	doc.symbols = symbols[0]
-	// TODO: Work out better way to invalidate the VM cache.
+	// TODO(#12): Work out better way to invalidate the VM cache.
 	doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	return s.cache.put(doc)
 }
