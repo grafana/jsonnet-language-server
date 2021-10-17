@@ -281,7 +281,7 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		doc.symbols = symbols[0]
 		// TODO(#10): Work out better way to invalidate the VM cache.
 		s.vm.Importer(&jsonnet.FileImporter{})
-		// TODO: Evaluate whether the raw AST is better for analysis than the desugared AST.
+		// TODO(#11): Evaluate whether the raw AST is better for analysis than the desugared AST.
 		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 		return s.cache.put(doc)
 	}
