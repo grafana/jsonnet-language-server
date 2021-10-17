@@ -12,6 +12,22 @@ import (
 func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 	switch n := n.(type) {
 
+	case *ast.Apply:
+		// TODO: handle arguments
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name: "apply",
+			Kind: protocol.Function,
+			Range: protocol.Range{
+				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+			},
+			SelectionRange: protocol.Range{
+				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+			},
+			Children: analyseSymbols(n.Target),
+		})
+
 	case *ast.Array:
 		children := []protocol.DocumentSymbol{}
 		for _, elem := range n.Elements {
@@ -49,7 +65,6 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		})
 
 	case *ast.DesugaredObject:
-		fields := make([]protocol.DocumentSymbol, len(n.Fields))
 		locals := make([]protocol.DocumentSymbol, len(n.Locals))
 		for i, bind := range n.Locals {
 			// This variable is where `$` references for all children of this object.
@@ -85,6 +100,8 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 				}
 			}
 		}
+
+		fields := make([]protocol.DocumentSymbol, len(n.Fields))
 		for i, field := range n.Fields {
 			fields[i] = protocol.DocumentSymbol{
 				Name: "field",
@@ -116,6 +133,42 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			Children: append(locals, fields...),
 		})
 
+	case *ast.Error:
+		// Do nothing for now.
+
+	case *ast.Function:
+		params := make([]protocol.DocumentSymbol, len(n.Parameters))
+		for i, param := range n.Parameters {
+			params[i] = protocol.DocumentSymbol{
+				Name: string(param.Name),
+				Kind: protocol.Variable,
+				Range: protocol.Range{
+					Start: protocol.Position{Line: uint32(param.LocRange.Begin.Line - 1), Character: uint32(param.LocRange.Begin.Column - 1)},
+					End:   protocol.Position{Line: uint32(param.LocRange.End.Line - 1), Character: uint32(param.LocRange.End.Column - 1)},
+				},
+				SelectionRange: protocol.Range{
+					Start: protocol.Position{Line: uint32(param.LocRange.Begin.Line - 1), Character: uint32(param.LocRange.Begin.Column - 1)},
+					End:   protocol.Position{Line: uint32(param.LocRange.End.Line - 1), Character: uint32(param.LocRange.End.Column - 1)},
+				},
+				Tags: []protocol.SymbolTag{symbolTagDefinition},
+			}
+			if param.DefaultArg != nil {
+				params[i].Children = analyseSymbols(param.DefaultArg)
+			}
+		}
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name: "function",
+			Kind: protocol.Function,
+			Range: protocol.Range{
+				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+			},
+			SelectionRange: protocol.Range{
+				Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+			},
+		})
+
 	case *ast.Import:
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name: n.File.Value,
@@ -143,6 +196,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 				End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
 			},
 		})
+
 	case *ast.Index:
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name: "index",
@@ -219,19 +273,31 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		binds := make([]protocol.DocumentSymbol, len(n.Binds))
 		for i, bind := range n.Binds {
 			binds[i] = protocol.DocumentSymbol{
-				Name: string(bind.Variable),
-				Kind: protocol.Variable,
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				SelectionRange: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
+				Name:     string(bind.Variable),
+				Kind:     protocol.Variable,
 				Children: analyseSymbols(bind.Body),
 				Tags:     []protocol.SymbolTag{symbolTagDefinition},
 			}
+			// If the line is zero, it must be unset as Jsonnet location ranges are indexed at one.
+			// This seems to only happen with local definitions of functions which are preceded with the token "local".
+			// Adding five (five minus the one for zero indexing plus one for a space) to the location range of the local
+			// symbol gets closer to the real location but any amount of whitespace could be inbetween.
+			// Assuming a single space, this works perfectly.
+			// TODO: Understand why this is missing location information.
+			if bind.LocRange.Begin.Line == 0 {
+				binds[i].Range = protocol.Range{
+					Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column + 5)},
+					End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column + 5)},
+				}
+				binds[i].SelectionRange = binds[i].Range
+			} else {
+				binds[i].Range = protocol.Range{
+					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
+					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
+				}
+				binds[i].SelectionRange = binds[i].Range
+			}
+
 		}
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:       "local",
