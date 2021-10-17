@@ -23,7 +23,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 	switch n := n.(type) {
 
 	case *ast.Apply:
-		// TODO: Analyse symbols in *ast.Apply arguments.
+		// TODO(#5): Analyse symbols in *ast.Apply arguments.
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           "apply",
 			Kind:           protocol.Function,
