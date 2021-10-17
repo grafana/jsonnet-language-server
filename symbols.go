@@ -93,8 +93,6 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           "object",
 			Kind:           protocol.Object,
-			Tags:           []protocol.SymbolTag{},
-			Deprecated:     false,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
 			Children:       append(locals, fields...),
@@ -146,8 +144,8 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			Kind:           protocol.Field,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
-			Children:       append(analyseSymbols(n.Target), analyseSymbols(n.Index)...),
 			Tags:           []protocol.SymbolTag{symbolTagDefinition},
+			Children:       append(analyseSymbols(n.Target), analyseSymbols(n.Index)...),
 		})
 
 	case *ast.LiteralBoolean:
@@ -188,8 +186,8 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			binds[i] = protocol.DocumentSymbol{
 				Name:     string(bind.Variable),
 				Kind:     protocol.Variable,
-				Children: analyseSymbols(bind.Body),
 				Tags:     []protocol.SymbolTag{symbolTagDefinition},
+				Children: analyseSymbols(bind.Body),
 			}
 			// If the line is zero, it must be unset as Jsonnet location ranges are indexed at one.
 			// This seems to only happen with local definitions of functions which are preceded with the token "local".
@@ -207,13 +205,10 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 				binds[i].Range = locationRangeToProtocolRange(bind.LocRange)
 				binds[i].SelectionRange = locationRangeToProtocolRange(bind.LocRange)
 			}
-
 		}
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           "local",
 			Kind:           protocol.Namespace,
-			Tags:           []protocol.SymbolTag{},
-			Deprecated:     false,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
 			Children:       append(binds, analyseSymbols(n.Body)...),
@@ -234,8 +229,8 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			Kind:           protocol.Field,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
-			Children:       analyseSymbols(n.Index),
 			Tags:           []protocol.SymbolTag{symbolTagDefinition},
+			Children:       analyseSymbols(n.Index),
 		})
 
 	case *ast.Var:
