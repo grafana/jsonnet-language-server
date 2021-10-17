@@ -73,6 +73,14 @@ func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 	return nil, notImplemented("Declaration")
 }
 
+// Definition returns the location of the definition of the symbol at point.
+// Looking up the symbol at point depends on only looking up nodes that have no children and are therefore terminal.
+// Potentially it could backtrack outwards to guess what was probably meant.
+// In the case of an index "obj.field", lookup would work when the point is on either "obj" or "field" but not the "."
+// as it is not a terminal node and is instead part of the "index" symbol which has the children "obj" and "field".
+// This works well in all cases where the Jsonnet analyzer has put correct location information. Unfortunately,
+// the literal string node "field" of "obj.field" does not have correct location information.
+// TODO: Investigate Jsonnet parser and analyzer to understand why and potentially fix.
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
@@ -81,68 +89,74 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 		return nil, err
 	}
 
+	// For now, return the current symbol at point instead of looking up its definition.
 	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (protocol.Definition, error)
-	aux = func(stack []protocol.DocumentSymbol, symbol protocol.DocumentSymbol) (protocol.Definition, error) {
-		if symbol.Range.Start.Line == params.Position.Line &&
-			symbol.Range.Start.Character <= params.Position.Character &&
-			symbol.Range.End.Character >= params.Position.Character {
+	aux = func(stack []protocol.DocumentSymbol, ds protocol.DocumentSymbol) (protocol.Definition, error) {
+		// If the symbol has no children, it must be a terminal symbol.
+		if len(ds.Children) == 0 {
+			// Check if the point is contained within the symbol.
+			if params.Position.Line == ds.Range.Start.Line &&
+				params.Position.Character >= ds.Range.Start.Character &&
+				params.Position.Character <= ds.Range.End.Character {
 
-			if symbol.Name == "super" {
+				want := ds
+				// The point is on a super keyword.
 				// super can only be used in the right hand side object of a binary `+` operation.
 				// The definition the "super" is referring to would be the left hand side.
 				// Simplified stack:
 				// + lhs obj ... field x index super
-				prev := stack[len(stack)-1]
-				for len(stack) != 0 {
-					symbol := stack[len(stack)-1]
-					stack = stack[:len(stack)-1]
-					if symbol.Kind == protocol.Operator {
-						return protocol.Definition{{
-							URI:   doc.item.URI,
-							Range: prev.SelectionRange,
-						}}, nil
-					}
-					prev = symbol
-				}
-			}
-			if symbol.Kind == protocol.File {
-				foundAt, err := s.vm.ResolveImport(doc.item.URI.SpanURI().Filename(), symbol.Name)
-				if err != nil {
-					err = fmt.Errorf("Definition: unable to resolve import: %w", err)
-					fmt.Fprintln(os.Stderr, err)
-					return nil, err
-				}
-				return protocol.Definition{{URI: "file:///" + protocol.DocumentURI(foundAt)}}, nil
-			}
-
-			if symbol.Kind == protocol.Variable {
-				if !isDefinition(symbol) {
-					// Found the symbol at point which, the definition of which is the first definition
-					// with the same symbol name that we find going back through the stack.
-					want := symbol
+				if want.Name == "super" {
+					prev := stack[len(stack)-1]
 					for len(stack) != 0 {
-						symbol := stack[len(stack)-1]
+						ds := stack[len(stack)-1]
 						stack = stack[:len(stack)-1]
-						if symbol.Kind == protocol.Variable && symbol.Name == want.Name && isDefinition(symbol) {
+						if ds.Kind == protocol.Operator {
 							return protocol.Definition{{
 								URI:   doc.item.URI,
-								Range: symbol.SelectionRange,
+								Range: prev.SelectionRange,
+							}}, nil
+						}
+						prev = ds
+					}
+				}
+
+				// The point is on a file symbol which must be an import.
+				if want.Kind == protocol.File {
+					foundAt, err := s.vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
+					if err != nil {
+						err = fmt.Errorf("Definition: unable to resolve import: %w", err)
+						fmt.Fprintln(os.Stderr, err)
+						return nil, err
+					}
+					return protocol.Definition{{URI: "file:///" + protocol.DocumentURI(foundAt)}}, nil
+				}
+
+				// The point is on a variable, the definition of which is the first definition
+				// with the same name that we find going back through the stack.
+				if want.Kind == protocol.Variable && !isDefinition(want) {
+					for len(stack) != 0 {
+						ds := stack[len(stack)-1]
+						stack = stack[:len(stack)-1]
+						if ds.Kind == protocol.Variable && ds.Name == want.Name && isDefinition(ds) {
+							return protocol.Definition{{
+								URI:   doc.item.URI,
+								Range: ds.SelectionRange,
 							}}, nil
 						}
 					}
 				}
 			}
 		}
-		stack = append(stack, symbol.Children...)
-		for i := len(symbol.Children); i != 0; i-- {
-			definition, err := aux(stack, symbol.Children[i-1])
-			if definition != nil || err != nil {
-				return definition, err
+		stack = append(stack, ds.Children...)
+		for i := len(ds.Children); i != 0; i-- {
+			if def, err := aux(stack, ds.Children[i-1]); def != nil || err != nil {
+				return def, err
 			}
 			stack = stack[:len(stack)-1]
 		}
 		return nil, nil
 	}
+
 	return aux([]protocol.DocumentSymbol{doc.symbols}, doc.symbols)
 }
 
