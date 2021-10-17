@@ -65,7 +65,7 @@ func (s *server) ColorPresentation(context.Context, *protocol.ColorPresentationP
 }
 
 // Completion is not implemented.
-// TODO: Understand why the server capabilities includes completion.
+// TODO(#6): Understand why the server capabilities includes completion.
 func (s *server) Completion(context.Context, *protocol.CompletionParams) (*protocol.CompletionList, error) {
 	return nil, nil
 }
