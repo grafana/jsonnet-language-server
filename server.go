@@ -120,6 +120,22 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 					}
 				}
 
+				// The point is on a self keyword.
+				// self can only be used in an object so we can jump to the start of that object.
+				// I'm not sure that is very useful though.
+				if want.Name == "self" {
+					for len(stack) != 0 {
+						ds := stack[len(stack)-1]
+						stack = stack[:len(stack)-1]
+						if ds.Kind == protocol.Object {
+							return protocol.Definition{{
+								URI:   doc.item.URI,
+								Range: ds.SelectionRange,
+							}}, nil
+						}
+					}
+				}
+
 				// The point is on a file symbol which must be an import.
 				if want.Kind == protocol.File {
 					foundAt, err := s.vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
