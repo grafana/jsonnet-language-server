@@ -17,7 +17,6 @@ obj {
 
   // Jump to definition knows which local is relevant.
   // Try jumping from each usage of 'c'.
-  // Did the outcome match your mental model?
   local c = 1,
   c:
     [c]
@@ -38,3 +37,9 @@ obj {
   // Unfortunately, it is not yet able to jump to the field within the self object.
   e: self.b,
 }
+{
+  // Runtime errors are reported as a warning.
+  err: import 'does-not-exist.libsonnet',
+}
+// Static errors are reported as errors.
+// Uncomment this line to cause one.
