@@ -248,7 +248,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 		diags = append(diags, diag)
 	}
 
-	// TODO: Replace empty context with appropriate context.
+	// TODO(#9): Replace empty context with appropriate context.
 	err = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diags,
