@@ -18,7 +18,7 @@ func locationRangeToProtocolRange(lr ast.LocationRange) protocol.Range {
 }
 
 // analyseSymbols traverses the Jsonnet AST and produces a hierarchy of LSP symbols.
-// TODO: Implement symbol analysis for all AST nodes.
+// TODO(#4): Implement symbol analysis for all AST nodes.
 func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 	switch n := n.(type) {
 
