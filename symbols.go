@@ -52,19 +52,37 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		fields := make([]protocol.DocumentSymbol, len(n.Fields))
 		locals := make([]protocol.DocumentSymbol, len(n.Locals))
 		for i, bind := range n.Locals {
-			locals[i] = protocol.DocumentSymbol{
-				Name: string(bind.Variable),
-				Kind: protocol.Variable,
-				Range: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				SelectionRange: protocol.Range{
-					Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
-					End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
-				},
-				Tags:     []protocol.SymbolTag{symbolTagDefinition},
-				Children: analyseSymbols(bind.Body),
+			// This variable is where `$` references for all children of this object.
+			// Although this local has children, that is only a self reference and is currently ignored.
+			if string(bind.Variable) == "$" {
+				locals[i] = protocol.DocumentSymbol{
+					Name: string(bind.Variable),
+					Kind: protocol.Variable,
+					Range: protocol.Range{
+						Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+						End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{Line: uint32(n.Loc().Begin.Line - 1), Character: uint32(n.Loc().Begin.Column - 1)},
+						End:   protocol.Position{Line: uint32(n.Loc().End.Line - 1), Character: uint32(n.Loc().End.Column - 1)},
+					},
+					Tags: []protocol.SymbolTag{symbolTagDefinition},
+				}
+			} else {
+				locals[i] = protocol.DocumentSymbol{
+					Name: string(bind.Variable),
+					Kind: protocol.Variable,
+					Range: protocol.Range{
+						Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
+						End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{Line: uint32(bind.LocRange.Begin.Line - 1), Character: uint32(bind.LocRange.Begin.Column - 1)},
+						End:   protocol.Position{Line: uint32(bind.LocRange.End.Line - 1), Character: uint32(bind.LocRange.End.Column - 1)},
+					},
+					Tags:     []protocol.SymbolTag{symbolTagDefinition},
+					Children: analyseSymbols(bind.Body),
+				}
 			}
 		}
 		for i, field := range n.Fields {
