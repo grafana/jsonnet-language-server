@@ -106,7 +106,6 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 		return nil, err
 	}
 
-	// For now, return the current symbol at point instead of looking up its definition.
 	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (protocol.Definition, error)
 	aux = func(stack []protocol.DocumentSymbol, ds protocol.DocumentSymbol) (protocol.Definition, error) {
 		// If the symbol has no children, it must be a terminal symbol.
