@@ -39,13 +39,34 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 	switch n := n.(type) {
 
 	case *ast.Apply:
-		// TODO(#5): Analyse symbols in *ast.Apply arguments.
+		args := make([]protocol.DocumentSymbol, len(n.Arguments.Named))
+		for i, bind := range n.Arguments.Named {
+			args[i] = protocol.DocumentSymbol{
+				Name:           string(bind.Name),
+				Kind:           protocol.Variable,
+				Range:          locationRangeToProtocolRange(*n.Loc()),
+				SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+				Tags:           []protocol.SymbolTag{symbolTagDefinition},
+				Children:       analyseSymbols(bind.Arg),
+			}
+		}
+		for _, bind := range n.Arguments.Positional {
+			// TODO: Evaluate the bind expression to know what the argument is.
+			args = append(args, protocol.DocumentSymbol{
+				Name:           "expr",
+				Kind:           protocol.Variable,
+				Range:          locationRangeToProtocolRange(*n.Loc()),
+				SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+				Tags:           []protocol.SymbolTag{symbolTagDefinition},
+				Children:       analyseSymbols(bind.Expr),
+			})
+		}
 		symbols = append(symbols, protocol.DocumentSymbol{
 			Name:           "apply",
 			Kind:           protocol.Function,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
-			Children:       analyseSymbols(n.Target),
+			Children:       append(args, analyseSymbols(n.Target)...),
 		})
 
 	case *ast.Array:
