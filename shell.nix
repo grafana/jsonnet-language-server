@@ -9,6 +9,6 @@ mkShell {
     snitch
   ];
   shellHook = ''
-    export PATH="$PATH":"$(pwd)"
+    export PATH="$(pwd)":"$PATH"
   '';
 }

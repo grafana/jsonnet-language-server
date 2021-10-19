@@ -93,6 +93,15 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			Children:       children,
 		})
 
+	case *ast.Conditional:
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name:           "cond",
+			Deprecated:     false,
+			Range:          locationRangeToProtocolRange(*n.Loc()),
+			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			Children:       append(append(analyseSymbols(n.Cond), analyseSymbols(n.BranchTrue)...), analyseSymbols(n.BranchFalse)...),
+		})
+
 	case *ast.DesugaredObject:
 		locals := make([]protocol.DocumentSymbol, len(n.Locals))
 		for i, bind := range n.Locals {
@@ -158,6 +167,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			Kind:           protocol.Function,
 			Range:          locationRangeToProtocolRange(*n.Loc()),
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			Children:       append(params, analyseSymbols(n.Body)...),
 		})
 
 	case *ast.Import:
