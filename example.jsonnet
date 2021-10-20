@@ -36,10 +36,12 @@ obj {
   // Try jump from the usage of 'self'.
   // Unfortunately, it is not yet able to jump to the field within the self object.
   e: self.b,
-}
-{
+
+  // Jump to definition knows that a variable comes from a function parameter.
+  f:: function(x, y, z) x + y + z,
+
   // Runtime errors are reported as a warning.
   err: import 'does-not-exist.libsonnet',
+  // Static errors are reported as errors.
+  // Uncomment this line to cause one.
 }
-// Static errors are reported as errors.
-// Uncomment this line to cause one.
