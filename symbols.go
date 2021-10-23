@@ -50,7 +50,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			}
 		}
 		for _, bind := range n.Arguments.Positional {
-			// TODO: Evaluate the bind expression to know what the argument is.
+			// TODO(#17): Evaluate the bind expression to know what the argument is.
 			args = append(args, protocol.DocumentSymbol{
 				Name:           "expr",
 				Kind:           protocol.Variable,
