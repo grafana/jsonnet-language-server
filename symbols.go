@@ -34,7 +34,6 @@ func locationRangeToProtocolRange(lr ast.LocationRange) protocol.Range {
 }
 
 // analyseSymbols traverses the Jsonnet AST and produces a hierarchy of LSP symbols.
-// TODO(#4): Implement symbol analysis for all AST nodes.
 func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 	switch n := n.(type) {
 
@@ -146,7 +145,13 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		})
 
 	case *ast.Error:
-		// Do nothing for now.
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name:           "error",
+			Kind:           protocol.Event,
+			Range:          locationRangeToProtocolRange(*n.Loc()),
+			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			Children:       analyseSymbols(n.Expr),
+		})
 
 	case *ast.Function:
 		params := make([]protocol.DocumentSymbol, len(n.Parameters))
@@ -200,6 +205,16 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
 			Tags:           []protocol.SymbolTag{symbolTagDefinition},
 			Children:       append(analyseSymbols(n.Target), analyseSymbols(n.Index)...),
+		})
+
+	case *ast.InSuper:
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name:           "index",
+			Kind:           protocol.Field,
+			Range:          locationRangeToProtocolRange(*n.Loc()),
+			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			Tags:           []protocol.SymbolTag{symbolTagDefinition},
+			Children:       analyseSymbols(n.Index),
 		})
 
 	case *ast.LiteralBoolean:
@@ -289,6 +304,15 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 				Range:          locationRangeToProtocolRange(*n.Loc()),
 				SelectionRange: locationRangeToProtocolRange(*n.Loc()),
 			}}, analyseSymbols(n.Index)...),
+		})
+
+	case *ast.Unary:
+		symbols = append(symbols, protocol.DocumentSymbol{
+			Name:           n.Op.String(),
+			Kind:           protocol.Operator,
+			Range:          locationRangeToProtocolRange(*n.Loc()),
+			SelectionRange: locationRangeToProtocolRange(*n.Loc()),
+			Children:       analyseSymbols(n.Expr),
 		})
 
 	case *ast.Var:
