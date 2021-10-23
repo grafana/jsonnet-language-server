@@ -330,17 +330,19 @@ func (s *server) DidDeleteFiles(context.Context, *protocol.DeleteFilesParams) er
 func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.publishDiagnostics(params.TextDocument.URI)
 	doc := document{item: params.TextDocument}
-	doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
-	if doc.err != nil {
-		return s.cache.put(doc)
+	if params.TextDocument.Text != "" {
+		doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
+		if doc.err != nil {
+			return s.cache.put(doc)
+		}
+		symbols := analyseSymbols(doc.ast)
+		if len(symbols) != 1 {
+			panic("There should only be a single root symbol for an AST")
+		}
+		doc.symbols = symbols[0]
+		// TODO(#12): Work out better way to invalidate the VM cache.
+		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	}
-	symbols := analyseSymbols(doc.ast)
-	if len(symbols) != 1 {
-		panic("There should only be a single root symbol for an AST")
-	}
-	doc.symbols = symbols[0]
-	// TODO(#12): Work out better way to invalidate the VM cache.
-	doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	return s.cache.put(doc)
 }
 
