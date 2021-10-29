@@ -9,7 +9,7 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
 
 ** Features
   - Jump to definition :: For local variables, import and importstr files, and index targets.
-  - Workspace symbols :: Return a hierarchy of document symbols representing /most/ nodes of the Jsonnet AST.
+  - Workspace symbols :: Return a hierarchy of document symbols representing all desugared nodes of the Jsonnet AST.
   - Diagnostics :: Static errors and warnings of runtime errors.
   - Formatting :: Format document according to default options.
 
