@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"time"
@@ -65,6 +66,8 @@ func (stdio) Network() string { return "stdio" }
 func (stdio) String() string { return "stdio" }
 
 func main() {
+	log.Println("Starting the language server")
+
 	ctx := context.TODO()
 	stream := jsonrpc2.NewHeaderStream(stdio{})
 	conn := jsonrpc2.NewConn(stream)

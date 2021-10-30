@@ -1,0 +1,61 @@
+{
+	"name": "jsonnet-lsp",
+	"description": "Code navigation for Jsonnet. Use in combination with https://github.com/liamdawson/vscode-jsonnet-language",
+	"license": "AGPLv3",
+	"version": "0.0.1",
+	"publisher": "grafana",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jdbaldry/jsonnet-language-server"
+	},
+	"engines": {
+		"vscode": "^1.61.0"
+	},
+	"categories": [],
+	"keywords": [],
+	"activationEvents": [
+		"onLanguage:jsonnet"
+	],
+	"main": "./out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Jsonnet Language Server",
+			"properties": {
+				"jsonnet.languageServer": {
+					"pathToBinary": {
+						"scope": "resource",
+						"type": "string",
+						"description": "Path to language server binary"
+					},
+					"jpath": {
+						"scope": "resource",
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"description": "List of Jpaths to configure into the lsp"
+					}
+				}
+			}
+		}
+	},
+	"dependencies": {
+		"@types/vscode": "^1.61.0",
+		"vscode-languageclient": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^4.23.0",
+		"@typescript-eslint/parser": "^4.23.0",
+		"eslint": "^7.26.0",
+		"typescript": "^4.4.3"
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint ./src --ext .ts,.tsx",
+	}
+}

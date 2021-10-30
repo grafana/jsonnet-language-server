@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -47,8 +48,11 @@ var (
 
 // newServer returns a new language server.
 func newServer(client protocol.ClientCloser) (*server, error) {
+	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
+	log.Printf("Using the following jpaths: %v", jpaths)
+
 	vm := jsonnet.MakeVM()
-	importer := &jsonnet.FileImporter{JPaths: filepath.SplitList(os.Getenv("JSONNET_PATH"))}
+	importer := &jsonnet.FileImporter{JPaths: jpaths}
 	vm.Importer(importer)
 	return &server{
 		cache:  newCache(),
