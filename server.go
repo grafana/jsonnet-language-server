@@ -223,6 +223,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 		}
 
 		var match []string
+		// TODO(#22): Runtime errors that come from imported files report an incorrect location
 		runtimeErr := strings.HasPrefix(lines[0], "RUNTIME ERROR:")
 		if runtimeErr {
 			match = errRegexp.FindStringSubmatch(lines[1])
