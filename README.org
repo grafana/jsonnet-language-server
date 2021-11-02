@@ -33,6 +33,11 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
 ** Contributing
    Contributions are more than welcome and I will try my best to be prompt with reviews.
 
+*** Commits
+    Individual commits should be meaningful and have useful commit messages.
+    For tips on writing commit messages, refer to [[https://chris.beams.io/posts/git-commit/][How to write a commit message]].
+    Contributions will be rebased before merge to ensure a fast-forward merge.
+
 *** [[https://github.com/probot/dco#how-it-works][Developer Certificate of Origin (DCO)]]
     Contributors must sign the DCO for their contributions to be accepted.
 
