@@ -68,8 +68,8 @@ func (s *server) CodeAction(context.Context, *protocol.CodeActionParams) ([]prot
 	return nil, notImplemented("CodeAction")
 }
 
-func (s *server) CodeLens(context.Context, *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
-	return nil, notImplemented("CodeLens")
+func (s *server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
+	return []protocol.CodeLens{}, nil
 }
 
 func (s *server) CodeLensRefresh(context.Context) error {
