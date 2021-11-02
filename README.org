@@ -30,5 +30,14 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
 
    #+RESULTS: Download from GitHub
 
+** Contributing
+   Contributions are more than welcome and I will try my best to be prompt with reviews.
+
+*** [[https://github.com/probot/dco#how-it-works][Developer Certificate of Origin (DCO)]]
+    Contributors must sign the DCO for their contributions to be accepted.
+
+*** Code style
+    Go code should be formatted with ~gofmt~ and linted with [[https://golangci-lint.run/][golangci-lint]].
+
 ** Editor integration
    For Emacs, refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server with lsp-mode.
