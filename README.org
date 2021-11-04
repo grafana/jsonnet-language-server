@@ -50,7 +50,4 @@ A *[[https://langserver.org][Language Server Protocol (LSP)]]* server for [[http
    Refer to [[file:editor/jsonnet-language-server.el][editor/jsonnet-language-server.el]] for an example of enabling the LSP server with lsp-mode.
 
 *** [[https://github.com/VSCodium/vscodium][VSCodium]] / VSCode
-   The client is not yet published as a plugin. You can use it with these following steps:
-   1. Build/install or download the jsonnet language server
-   2. Build the vscode client (~npm run compile~ or ~npm run watch~ in the [[file:editor/vscode-client][vscode-client dir]])
-   3. Run vscode with following command: ~code <path_to_jsonnet> --extensionDevelopmentPath=<path_to_vscode_client>~
+   Use the [[https://github.com/julienduchesne/vscode-jsonnet][vscode-jsonnet extension]]
