@@ -164,7 +164,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 						fmt.Fprintln(os.Stderr, err)
 						return nil, err
 					}
-					return protocol.Definition{{URI: "file:///" + protocol.DocumentURI(foundAt)}}, nil
+					return protocol.Definition{{URI: "file://" + protocol.DocumentURI(foundAt)}}, nil
 				}
 
 				// The point is on a variable, the definition of which is the first definition
