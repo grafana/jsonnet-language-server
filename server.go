@@ -410,23 +410,8 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
-	// TODO(#15): Consider applying individual edits instead of replacing the whole file when formatting.
-	return []protocol.TextEdit{
-		{
-			Range: protocol.Range{
-				Start: protocol.Position{Line: 0, Character: 0},
-				End:   protocol.Position{Line: 0, Character: 0},
-			},
-			NewText: formatted,
-		},
-		{
-			Range: protocol.Range{
-				Start: protocol.Position{Line: 0, Character: 0},
-				End:   protocol.Position{Line: uint32(strings.Count(formatted+doc.item.Text, "\n")), Character: ^uint32(0)},
-			},
-			NewText: "",
-		},
-	}, nil
+
+	return getTextEdits(doc.item.Text, formatted), nil
 }
 
 func (s *server) Hover(context.Context, *protocol.HoverParams) (*protocol.Hover, error) {
