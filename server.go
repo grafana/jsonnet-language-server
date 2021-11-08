@@ -51,6 +51,8 @@ func newServer(client protocol.ClientCloser) (*server, error) {
 	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
 	log.Printf("Using the following jpaths: %v", jpaths)
 
+	// TODO(#32): The language server VM has no support for Top Level Arguments (TLAs).
+	// TODO: The language server VM has no support for native functions.
 	vm := jsonnet.MakeVM()
 	importer := &jsonnet.FileImporter{JPaths: jpaths}
 	vm.Importer(importer)
