@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,8 +46,7 @@ var (
 )
 
 // newServer returns a new language server.
-func newServer(client protocol.ClientCloser) (*server, error) {
-	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
+func newServer(client protocol.ClientCloser, jpaths []string) (*server, error) {
 	log.Printf("Using the following jpaths: %v", jpaths)
 
 	// TODO(#32): The language server VM has no support for Top Level Arguments (TLAs).
