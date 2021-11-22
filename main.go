@@ -68,7 +68,7 @@ func (stdio) String() string { return "stdio" }
 func main() {
 	log.Println("Starting the language server")
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	stream := jsonrpc2.NewHeaderStream(stdio{})
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
