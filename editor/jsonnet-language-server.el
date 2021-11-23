@@ -1,5 +1,4 @@
-;;; jsonnet-language-server -- Summary
-;; Development lsp registration for Emacs lsp-mode.
+;;; jsonnet-language-server -- LSP registration for Emacs lsp-mode.
 ;;; Commentary:
 ;;; Code:
 (require 'jsonnet-mode)
