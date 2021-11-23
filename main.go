@@ -45,20 +45,21 @@ func printVersion(w io.Writer) {
 // printVersion prints help text to the provided writer.
 func printHelp(w io.Writer) {
 	printVersion(w)
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Options:\n")
-	fmt.Fprintf(w, "  -h / --help        Print this help message.\n")
-	fmt.Fprintf(w, "  -J / --jpath <dir> Specify an additional library search dir\n")
-	fmt.Fprintf(w, "                     (right-most wins).\n")
-	fmt.Fprintf(w, "  -v / --version     Print version.\n")
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Environment variables:\n")
-	fmt.Fprintf(w, "  JSONNET_PATH is a %q separated list of directories\n", filepath.ListSeparator)
-	fmt.Fprintf(w, "  added in reverse order before the paths specified by --jpath.\n")
-	fmt.Fprintf(w, "  These are equivalent:\n")
-	fmt.Fprintf(w, "    JSONNET_PATH=a:b %s -J c -J d\n", name)
-	fmt.Fprintf(w, "    JSONNET_PATH=d:c:a:b %s\n", name)
-	fmt.Fprintf(w, "    %s -J b -J a -J c -J d\n", name)
+	fmt.Fprintf(w, `
+Options:
+  -h / --help        Print this help message.
+  -J / --jpath <dir> Specify an additional library search dir
+                     (right-most wins).
+  -v / --version     Print version.
+
+Environment variables:
+  JSONNET_PATH is a %[2]q separated list of directories
+  added in reverse order before the paths specified by --jpath
+  These are equivalent:
+    JSONNET_PATH=a%[2]cb %[1]s -J c -J d
+    JSONNET_PATH=d%[2]cc%[2]ca%[2]cb %[1]s\n
+    %[1]s -J b -J a -J c -J d
+`, name, filepath.ListSeparator)
 }
 
 func main() {
