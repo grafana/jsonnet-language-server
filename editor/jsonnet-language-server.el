@@ -11,8 +11,6 @@
   :type 'file)
 
 ;; Configure lsp-mode language identifiers.
-;; If you use jsonnet-mode, you only need the first configuration.
-;; If not, you probably need both the file regexps.
 (add-to-list 'lsp-language-id-configuration '(jsonnet-mode . "jsonnet"))
 
 ;; Register jsonnet-language-server with the LSP client.
