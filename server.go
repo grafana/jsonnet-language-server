@@ -29,6 +29,7 @@ import (
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/jdbaldry/jsonnet-language-server/stdlib"
 )
 
 const (
@@ -54,15 +55,25 @@ func newServer(client protocol.ClientCloser, jpaths []string) (*server, error) {
 	vm := jsonnet.MakeVM()
 	importer := &jsonnet.FileImporter{JPaths: jpaths}
 	vm.Importer(importer)
-	return &server{
+
+	server := &server{
 		cache:  newCache(),
 		client: client,
 		vm:     vm,
-	}, nil
+	}
+
+	log.Println("Reading stdlib")
+	var err error
+	if server.stdlib, err = stdlib.Functions(); err != nil {
+		return nil, err
+	}
+
+	return server, nil
 }
 
 // server is the Jsonnet language server.
 type server struct {
+	stdlib []stdlib.Function
 	cache  *cache
 	client protocol.ClientCloser
 	vm     *jsonnet.VM
@@ -414,8 +425,14 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 	return getTextEdits(doc.item.Text, formatted), nil
 }
 
-func (s *server) Hover(context.Context, *protocol.HoverParams) (*protocol.Hover, error) {
-	return nil, notImplemented("Hover")
+func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+	doc, err := s.cache.get(params.TextDocument.URI)
+	if err != nil {
+		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, err
+	}
+	return handleHover(doc, params)
 }
 
 func (s *server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
@@ -429,6 +446,7 @@ func (s *server) IncomingCalls(context.Context, *protocol.CallHierarchyIncomingC
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
+			HoverProvider:              true,
 			DefinitionProvider:         true,
 			DocumentSymbolProvider:     true,
 			DocumentFormattingProvider: true,
