@@ -16,30 +16,43 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, err
 	}
 
-	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (*protocol.Hover, error)
-	aux = func(stack []protocol.DocumentSymbol, ds protocol.DocumentSymbol) (*protocol.Hover, error) {
-		if params.Position.Line == ds.Range.Start.Line &&
-			params.Position.Line == ds.Range.End.Line &&
-			params.Position.Character >= ds.Range.Start.Character &&
-			params.Position.Character <= ds.Range.End.Character {
-
-			if ds.Kind == protocol.Function {
-				// Look before if it's a std function
-			}
-			if ds.Kind == protocol.Variable && ds.Name == "std" {
-				return &protocol.Hover{Range: ds.Range, Contents: protocol.MarkupContent{Kind: protocol.PlainText, Value: "test"}}, nil
-			}
-
-		}
-		stack = append(stack, ds.Children...)
-		for i := len(ds.Children); i != 0; i-- {
-			if def, err := aux(stack, ds.Children[i-1]); def != nil || err != nil {
-				return def, err
-			}
-			stack = stack[:len(stack)-1]
-		}
-		return nil, nil
+	stack, err := findNodeByPosition(doc.ast, params.Position)
+	if err != nil {
+		return nil, err
 	}
 
-	return aux([]protocol.DocumentSymbol{doc.symbols}, doc.symbols)
+	_, node := stack.Pop()
+
+	// DEBUG
+	// r := protocol.Range{
+	// 	Start: protocol.Position{
+	// 		Line:      uint32(node.Loc().Begin.Line) - 1,
+	// 		Character: uint32(node.Loc().Begin.Column) - 1,
+	// 	},
+	// 	End: protocol.Position{
+	// 		Line:      uint32(node.Loc().End.Line) - 1,
+	// 		Character: uint32(node.Loc().End.Column) - 1,
+	// 	},
+	// }
+	// return &protocol.Hover{Range: r, Contents: protocol.MarkupContent{Kind: protocol.PlainText, Value: fmt.Sprintf("%v: %+v", reflect.TypeOf(node), node)}}, nil
+
+	if vars := node.FreeVariables(); len(vars) > 0 && vars[0] == "std" {
+		lineIndex := uint32(node.Loc().Begin.Line) - 1
+		startIndex := uint32(node.Loc().Begin.Column) - 1
+		// line := strings.Split(doc.item.Text, "\n")[lineIndex]
+
+		r := protocol.Range{
+			Start: protocol.Position{
+				Line:      lineIndex,
+				Character: startIndex,
+			},
+			End: protocol.Position{
+				Line:      uint32(node.Loc().End.Line) - 1,
+				Character: uint32(node.Loc().End.Column) - 1,
+			},
+		}
+		return &protocol.Hover{Range: r, Contents: protocol.MarkupContent{Kind: protocol.PlainText, Value: fmt.Sprintf("test")}}, nil
+	}
+
+	return nil, nil
 }
