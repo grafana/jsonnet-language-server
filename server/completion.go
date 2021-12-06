@@ -22,9 +22,10 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 	items := []protocol.CompletionItem{}
 
 	line := strings.Split(doc.item.Text, "\n")[params.Position.Line]
-	stdIndex := strings.LastIndex(line[:params.Position.Character], "std.")
+	line = line[:params.Position.Character]
+	stdIndex := strings.LastIndex(line, "std.")
 	if stdIndex != -1 {
-		userInput := strings.Split(line[stdIndex+4:], "(")[0]
+		userInput := line[stdIndex+4:]
 		funcStartWith := []protocol.CompletionItem{}
 		funcContains := []protocol.CompletionItem{}
 		for _, f := range s.stdlib {
