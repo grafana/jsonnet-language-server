@@ -96,7 +96,7 @@ func TestDefinition(t *testing.T) {
 			},
 		},
 		{
-			name: "test goto definition on with multi diff scoped vars",
+			name: "test goto inner definition",
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
@@ -135,40 +135,40 @@ func TestDefinition(t *testing.T) {
 			},
 		},
 		{
-			name: "test goto definition on with multi diff scoped vars",
+			name: "test goto super",
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_goto_definition_multi_locals.jsonnet",
+						URI: "../testdata/test_combined_object.jsonnet",
 					},
 					Position: protocol.Position{
-						Line:      6,
-						Character: 11,
+						Line:      5,
+						Character: 13,
 					},
 				},
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: protocol.DefinitionLink{
-				TargetURI: "./testdata/test_goto_definition_multi_locals.jsonnet",
+				TargetURI: "../testdata/test_goto_definition_multi_locals.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
-						Line:      4,
-						Character: 10,
+						Line:      1,
+						Character: 4,
 					},
 					End: protocol.Position{
-						Line:      4,
-						Character: 28,
+						Line:      3,
+						Character: 5,
 					},
 				},
 				TargetSelectionRange: protocol.Range{
 					Start: protocol.Position{
-						Line:      4,
-						Character: 10,
+						Line:      1,
+						Character: 4,
 					},
 					End: protocol.Position{
-						Line:      4,
-						Character: 19,
+						Line:      1,
+						Character: 5,
 					},
 				},
 			},
