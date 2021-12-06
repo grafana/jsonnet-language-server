@@ -154,7 +154,7 @@ func serverWithFile(t *testing.T, fileContent string) (server *server, fileURI p
 	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
-	server = NewServer(client, nil)
+	server = NewServer(client).WithStaticVM([]string{})
 	server.stdlib = testStdLib
 	require.NoError(t, server.Init())
 
