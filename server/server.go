@@ -460,16 +460,6 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 	return getTextEdits(doc.item.Text, formatted), nil
 }
 
-func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
-	if err != nil {
-		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
-	}
-	return handleHover(doc, params)
-}
-
 func (s *server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
 	return nil, notImplemented("Implementation")
 }

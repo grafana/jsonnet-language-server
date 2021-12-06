@@ -1,10 +1,21 @@
 package server
 
 import (
+	"context"
+	"fmt"
+	"os"
+
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
-func handleHover(doc document, params *protocol.HoverParams) (*protocol.Hover, error) {
+func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+	doc, err := s.cache.get(params.TextDocument.URI)
+	if err != nil {
+		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, err
+	}
+
 	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (*protocol.Hover, error)
 	aux = func(stack []protocol.DocumentSymbol, ds protocol.DocumentSymbol) (*protocol.Hover, error) {
 		if params.Position.Line == ds.Range.Start.Line &&
