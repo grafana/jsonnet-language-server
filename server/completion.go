@@ -9,8 +9,6 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
-// Completion is not implemented.
-// TODO(#6): Understand why the server capabilities includes completion.
 func (s *server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
