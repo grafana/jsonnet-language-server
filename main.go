@@ -91,8 +91,8 @@ func main() {
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 
-	s, err := newServer(client, jpaths)
-	if err != nil {
+	s := newServer(client, jpaths)
+	if err := s.Init(); err != nil {
 		log.Fatal(err)
 	}
 	conn.Go(ctx, protocol.Handlers(

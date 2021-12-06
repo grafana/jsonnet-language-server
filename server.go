@@ -47,7 +47,7 @@ var (
 )
 
 // newServer returns a new language server.
-func newServer(client protocol.ClientCloser, jpaths []string) (*server, error) {
+func newServer(client protocol.ClientCloser, jpaths []string) *server {
 	log.Printf("Using the following jpaths: %v", jpaths)
 
 	// TODO(#32): The language server VM has no support for Top Level Arguments (TLAs).
@@ -62,13 +62,7 @@ func newServer(client protocol.ClientCloser, jpaths []string) (*server, error) {
 		vm:     vm,
 	}
 
-	log.Println("Reading stdlib")
-	var err error
-	if server.stdlib, err = stdlib.Functions(); err != nil {
-		return nil, err
-	}
-
-	return server, nil
+	return server
 }
 
 // server is the Jsonnet language server.
@@ -77,6 +71,19 @@ type server struct {
 	cache  *cache
 	client protocol.ClientCloser
 	vm     *jsonnet.VM
+}
+
+func (s *server) Init() error {
+	var err error
+
+	if s.stdlib == nil {
+		log.Println("Reading stdlib")
+		if s.stdlib, err = stdlib.Functions(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *server) CodeAction(context.Context, *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
@@ -93,12 +100,6 @@ func (s *server) CodeLensRefresh(context.Context) error {
 
 func (s *server) ColorPresentation(context.Context, *protocol.ColorPresentationParams) ([]protocol.ColorPresentation, error) {
 	return nil, notImplemented("ColorPresentation")
-}
-
-// Completion is not implemented.
-// TODO(#6): Understand why the server capabilities includes completion.
-func (s *server) Completion(context.Context, *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	return nil, nil
 }
 
 func (s *server) Declaration(context.Context, *protocol.DeclarationParams) (protocol.Declaration, error) {
@@ -446,6 +447,7 @@ func (s *server) IncomingCalls(context.Context, *protocol.CallHierarchyIncomingC
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
+			CompletionProvider:         protocol.CompletionOptions{TriggerCharacters: []string{"."}},
 			HoverProvider:              true,
 			DefinitionProvider:         true,
 			DocumentSymbolProvider:     true,

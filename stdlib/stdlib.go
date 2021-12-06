@@ -3,6 +3,7 @@ package stdlib
 import (
 	_ "embed"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -11,23 +12,29 @@ import (
 
 var (
 	//go:embed html.libsonnet
-	htmlLib string
+	htmlLibsonnetContent string
 	//go:embed stdlib-content.jsonnet
-	stdLib string
+	stdLibContent string
+
+	mathFuncRegex = regexp.MustCompile(`<ul><code>std\.(?P<name>[a-z0-9]+)\((?P<params>[a-z, ]+)\)<\/code><\/ul>`)
 )
 
 type Function struct {
-	Name                string      `json:"name"`
-	Params              []string    `json:"params"`
+	Name           string   `json:"name"`
+	AvailableSince string   `json:"availableSince"`
+	Params         []string `json:"params"`
+
 	Description         interface{} `json:"description"`
-	RenderedDescription string      `json:"rendered_description"`
+	RenderedDescription string      `json:"renderedDescription"`
 	MarkdownDescription string
 }
 
 type group struct {
-	ID     string     `json:"id"`
-	Name   string     `json:"name"`
-	Fields []Function `json:"fields"`
+	ID            string      `json:"id"`
+	Intro         interface{} `json:"intro"`
+	RenderedIntro string      `json:"renderedIntro"`
+	Name          string      `json:"name"`
+	Fields        []Function  `json:"fields"`
 }
 
 type stdlib struct {
@@ -41,15 +48,17 @@ func Functions() ([]Function, error) {
 	vm := jsonnet.MakeVM()
 	vm.Importer(&jsonnet.MemoryImporter{
 		Data: map[string]jsonnet.Contents{
-			"html.libsonnet": jsonnet.MakeContents(htmlLib),
+			"html.libsonnet": jsonnet.MakeContents(htmlLibsonnetContent),
 		},
 	})
 
 	// Hack. Remove the examples, they use some new functions that may not be ready yet in the go lib
-	stdLib = strings.ReplaceAll(stdLib, "examples:", "examples::")
-	stdLib = strings.ReplaceAll(stdLib, "description:", "rendered_description: html.render(self.description), \ndescription:")
+	modifiedStdLibContent := strings.ReplaceAll(stdLibContent, "examples:", "examples::")
+	// Hack. Render some of the descriptions
+	modifiedStdLibContent = strings.ReplaceAll(modifiedStdLibContent, "intro:", "renderedIntro: html.render(self.intro), \nintro:")
+	modifiedStdLibContent = strings.ReplaceAll(modifiedStdLibContent, "description:", "renderedDescription: html.render(self.description), \ndescription:")
 
-	jsonContent, err := vm.EvaluateAnonymousSnippet("", stdLib)
+	jsonContent, err := vm.EvaluateAnonymousSnippet("", modifiedStdLibContent)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +70,24 @@ func Functions() ([]Function, error) {
 	converter := md.NewConverter("", true, nil)
 	allFunctions := []Function{}
 	for _, group := range lib.Groups {
+		if group.ID == "math" {
+			mathFuncs := mathFuncRegex.FindAllStringSubmatch(group.RenderedIntro, -1)
+			for _, mathFunc := range mathFuncs {
+				params := strings.Split(mathFunc[2], ",")
+				for i, param := range params {
+					params[i] = strings.TrimSpace(param)
+				}
+				allFunctions = append(allFunctions, Function{
+					Name:   mathFunc[1],
+					Params: params,
+				})
+			}
+		}
+
 		for _, field := range group.Fields {
+			if field.AvailableSince == "upcoming" {
+				continue
+			}
 			field.MarkdownDescription, err = converter.ConvertString(field.RenderedDescription)
 			if err != nil {
 				return nil, err

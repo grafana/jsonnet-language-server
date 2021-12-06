@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
@@ -16,10 +14,8 @@ func handleHover(doc document, params *protocol.HoverParams) (*protocol.Hover, e
 
 			if ds.Kind == protocol.Function {
 				// Look before if it's a std function
-				log.Printf("\n%+v\n", ds)
 			}
 			if ds.Kind == protocol.Variable && ds.Name == "std" {
-				log.Printf("\nstd\n\n%+v\n", ds)
 				return &protocol.Hover{Range: ds.Range, Contents: protocol.MarkupContent{Kind: protocol.PlainText, Value: "test"}}, nil
 			}
 
