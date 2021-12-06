@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"

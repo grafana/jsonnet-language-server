@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package server
 
 import (
 	"fmt"
@@ -23,6 +23,8 @@ import (
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
+
+const symbolTagDefinition protocol.SymbolTag = 100
 
 // locationRangeToProtocolRange translates a ast.LocationRange to a protocol.Range.
 // The former is one indexed and the latter is zero indexed.
@@ -327,14 +329,4 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		fmt.Fprintf(os.Stderr, "analyseSymbols: unhandled node: %T\n", n)
 	}
 	return
-}
-
-// isDefinition returns true if a symbol is tagged as a definition.
-func isDefinition(s protocol.DocumentSymbol) bool {
-	for _, t := range s.Tags {
-		if t == symbolTagDefinition {
-			return true
-		}
-	}
-	return false
 }

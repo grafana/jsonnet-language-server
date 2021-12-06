@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package server
 
 import (
 	"context"
@@ -33,8 +33,7 @@ import (
 )
 
 const (
-	symbolTagDefinition     protocol.SymbolTag = 100
-	errorRetrievingDocument                    = "unable to retrieve document from the cache"
+	errorRetrievingDocument = "unable to retrieve document from the cache"
 )
 
 var (
@@ -46,8 +45,8 @@ var (
 	errRegexp = regexp.MustCompile(`/.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\))\s(.*)`)
 )
 
-// newServer returns a new language server.
-func newServer(client protocol.ClientCloser, jpaths []string) *server {
+// New returns a new language server.
+func NewServer(client protocol.ClientCloser, jpaths []string) *server {
 	log.Printf("Using the following jpaths: %v", jpaths)
 
 	// TODO(#32): The language server VM has no support for Top Level Arguments (TLAs).

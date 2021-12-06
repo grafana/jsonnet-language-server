@@ -26,6 +26,8 @@ import (
 
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/jdbaldry/jsonnet-language-server/server"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 )
 
 const (
@@ -87,11 +89,11 @@ func main() {
 	log.Println("Starting the language server")
 
 	ctx := context.Background()
-	stream := jsonrpc2.NewHeaderStream(stdio{})
+	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 
-	s := newServer(client, jpaths)
+	s := server.NewServer(client, jpaths)
 	if err := s.Init(); err != nil {
 		log.Fatal(err)
 	}

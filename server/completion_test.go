@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -165,10 +166,10 @@ func TestCompletion(t *testing.T) {
 func serverWithFile(t *testing.T, fileContent string) (server *server, fileURI protocol.DocumentURI) {
 	t.Helper()
 
-	stream := jsonrpc2.NewHeaderStream(stdio{})
+	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
-	server = newServer(client, nil)
+	server = NewServer(client, nil)
 	server.stdlib = testStdLib
 	require.NoError(t, server.Init())
 

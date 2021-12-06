@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"github.com/google/go-jsonnet/ast"
@@ -205,4 +205,14 @@ func inRange(point protocol.Position, theRange ast.LocationRange) bool {
 	} else {
 		return theRange.Begin.Line-1 <= int(point.Line) && int(point.Line) < theRange.End.Line-1
 	}
+}
+
+// isDefinition returns true if a symbol is tagged as a definition.
+func isDefinition(s protocol.DocumentSymbol) bool {
+	for _, t := range s.Tags {
+		if t == symbolTagDefinition {
+			return true
+		}
+	}
+	return false
 }
