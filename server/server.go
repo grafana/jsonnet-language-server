@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/formatter"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
@@ -443,24 +442,6 @@ func (s *server) Exit(context.Context) error {
 
 func (s *server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {
 	return nil, notImplemented("FoldingRange")
-}
-
-func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
-	if err != nil {
-		err = fmt.Errorf("Formatting: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
-	}
-	// TODO(#14): Formatting options should be user configurable.
-	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
-	if err != nil {
-		err = fmt.Errorf("Formatting: unable to format document: %w", err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
-	}
-
-	return getTextEdits(doc.item.Text, formatted), nil
 }
 
 func (s *server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
