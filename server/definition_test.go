@@ -134,6 +134,45 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test goto definition on with multi diff scoped vars",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/test_goto_definition_multi_locals.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      6,
+						Character: 11,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/test_goto_definition_multi_locals.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      4,
+						Character: 10,
+					},
+					End: protocol.Position{
+						Line:      4,
+						Character: 28,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      4,
+						Character: 10,
+					},
+					End: protocol.Position{
+						Line:      4,
+						Character: 19,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

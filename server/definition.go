@@ -69,65 +69,20 @@ func findDefinition(node ast.Node, position protocol.Position) (ast.LocalBind, e
 
 func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (ast.LocalBind, error) {
 	for !stack.IsEmpty() {
-		stack, curr := stack.Pop()
+		_, curr := stack.Pop()
 		switch curr := curr.(type) {
 		case *ast.Local:
 			for _, bind := range curr.Binds {
 				if bind.Variable == id {
 					return bind, nil
 				}
-				stack = stack.Push(bind.Body)
-			}
-			if curr.Body != nil {
-				stack = stack.Push(curr.Body)
 			}
 		case *ast.DesugaredObject:
 			for _, bind := range curr.Locals {
 				if bind.Variable == id {
 					return bind, nil
 				}
-				stack = stack.Push(bind.Body)
 			}
-			for _, field := range curr.Fields {
-				stack = stack.Push(field.Body)
-			}
-		case *ast.Binary:
-			stack = stack.Push(curr.Left)
-			stack = stack.Push(curr.Right)
-		case *ast.Array:
-			for _, element := range curr.Elements {
-				stack = stack.Push(element.Expr)
-			}
-		case *ast.Apply:
-			for _, posArg := range curr.Arguments.Positional {
-				stack = stack.Push(posArg.Expr)
-			}
-			for _, namedArg := range curr.Arguments.Named {
-				stack = stack.Push(namedArg.Arg)
-			}
-			stack = stack.Push(curr.Target)
-		case *ast.Conditional:
-			stack = stack.Push(curr.Cond)
-			stack = stack.Push(curr.BranchTrue)
-			stack = stack.Push(curr.BranchFalse)
-		case *ast.Error:
-			stack = stack.Push(curr.Expr)
-		case *ast.Function:
-			for _, param := range curr.Parameters {
-				if param.DefaultArg != nil {
-					stack = stack.Push(param.DefaultArg)
-				}
-			}
-			stack = stack.Push(curr.Body)
-		case *ast.Index:
-			stack = stack.Push(curr.Target)
-			stack = stack.Push(curr.Index)
-		case *ast.InSuper:
-			stack = stack.Push(curr.Index)
-		case *ast.SuperIndex:
-			stack = stack.Push(curr.Index)
-		case *ast.Unary:
-			stack = stack.Push(curr.Expr)
 		}
 	}
 	return ast.LocalBind{}, nil
