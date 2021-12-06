@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
@@ -26,48 +27,129 @@ func (s *NodeStack) IsEmpty() bool {
 }
 
 func Definition(node ast.Node, params protocol.DefinitionParams) (protocol.DefinitionLink, error) {
-	foundDefinition, _ := findDefinition(node, params.Position)
-	foundLocRange := foundDefinition.LocRange
-	if foundLocRange.Begin.Line == 0 {
-		foundLocRange = *foundDefinition.Body.Loc()
-	}
-	responseDefLink := protocol.DefinitionLink{
-		TargetURI: protocol.DocumentURI(foundLocRange.FileName),
-		TargetRange: protocol.Range{
-			Start: protocol.Position{
-				Line:      uint32(foundLocRange.Begin.Line - 1),
-				Character: uint32(foundLocRange.Begin.Column - 1),
+	responseDefLink, _ := findDefinition(node, params.Position)
+	return responseDefLink, nil
+}
+
+func findDefinition(node ast.Node, position protocol.Position) (protocol.DefinitionLink, error) {
+	searchStack, _ := findNodeByPosition(node, position)
+	var deepestNode ast.Node
+	searchStack, deepestNode = searchStack.Pop()
+	var responseDefLink protocol.DefinitionLink
+	switch deepestNode := deepestNode.(type) {
+	case *ast.Var:
+		var matchingBind *ast.LocalBind
+		matchingBind, _ = findBindByIdViaStack(searchStack, deepestNode.Id)
+		foundLocRange := &matchingBind.LocRange
+		if foundLocRange.Begin.Line == 0 {
+			foundLocRange = matchingBind.Body.Loc()
+		}
+		responseDefLink = protocol.DefinitionLink{
+			TargetURI: protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1),
+				},
+				End: protocol.Position{
+					Line:      uint32(foundLocRange.End.Line - 1),
+					Character: uint32(foundLocRange.End.Column - 1),
+				},
 			},
-			End: protocol.Position{
-				Line:      uint32(foundLocRange.End.Line - 1),
-				Character: uint32(foundLocRange.End.Column - 1),
+			TargetSelectionRange: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1),
+				},
+				End: protocol.Position{
+					Line:      uint32(foundLocRange.End.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column + len(matchingBind.Variable)),
+				},
 			},
-		},
-		TargetSelectionRange: protocol.Range{
-			Start: protocol.Position{
-				Line:      uint32(foundLocRange.Begin.Line - 1),
-				Character: uint32(foundLocRange.Begin.Column - 1),
-			},
-			End: protocol.Position{
-				Line:      uint32(foundLocRange.End.Line - 1),
-				Character: uint32(foundLocRange.Begin.Column + len(foundDefinition.Variable)),
-			},
-		},
+		}
+	case *ast.SuperIndex:
+		matchingNode, _ := findNodeFromIndex(searchStack, deepestNode.Index)
+		fmt.Println(matchingNode)
+		//foundLocRange :=
+		//if foundLocRange.Begin.Line == 0 {
+		//	foundLocRange = matchingBind.Body.Loc()
+		//}
+		//responseDefLink = protocol.DefinitionLink{
+		//	TargetURI: protocol.DocumentURI(foundLocRange.FileName),
+		//	TargetRange: protocol.Range{
+		//		Start: protocol.Position{
+		//			Line:      uint32(foundLocRange.Begin.Line - 1),
+		//			Character: uint32(foundLocRange.Begin.Column - 1),
+		//		},
+		//		End: protocol.Position{
+		//			Line:      uint32(foundLocRange.End.Line - 1),
+		//			Character: uint32(foundLocRange.End.Column - 1),
+		//		},
+		//	},
+		//	TargetSelectionRange: protocol.Range{
+		//		Start: protocol.Position{
+		//			Line:      uint32(foundLocRange.Begin.Line - 1),
+		//			Character: uint32(foundLocRange.Begin.Column - 1),
+		//		},
+		//		End: protocol.Position{
+		//			Line:      uint32(foundLocRange.End.Line - 1),
+		//			Character: uint32(foundLocRange.Begin.Column + len(matchingBind.Variable)),
+		//		},
+		//	},
+		//}
 	}
 	return responseDefLink, nil
 }
 
-func findDefinition(node ast.Node, position protocol.Position) (ast.LocalBind, error) {
-	queriedNode, _ := findNodeByPosition(node, position)
-	var matchingBind ast.LocalBind
-	switch queriedNode := queriedNode.(type) {
-	case *ast.Var:
-		matchingBind, _ = findBindById(node, queriedNode.Id)
+func findNodeFromIndex(stack *NodeStack, indexNode ast.Node) (*ast.Node, error) {
+	var indexId string
+	switch indexNode := indexNode.(type) {
+	case *ast.LiteralString:
+		indexId = indexNode.Value
 	}
-	return matchingBind, nil
+	for !stack.IsEmpty() {
+		_, curr := stack.Pop()
+		switch curr := curr.(type) {
+		case *ast.Binary:
+			stack = stack.Push(curr.Left)
+			stack = stack.Push(curr.Right)
+		case *ast.DesugaredObject:
+			for _, field := range curr.Fields {
+				switch name := field.Name.(type) {
+				case *ast.LiteralString:
+					if name.Value == indexId {
+						return nil, nil
+					}
+				}
+			}
+
+		}
+	}
+	return nil, nil
 }
 
-func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
+func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
+	for !stack.IsEmpty() {
+		_, curr := stack.Pop()
+		switch curr := curr.(type) {
+		case *ast.Local:
+			for _, bind := range curr.Binds {
+				if bind.Variable == id {
+					return &bind, nil
+				}
+			}
+		case *ast.DesugaredObject:
+			for _, bind := range curr.Locals {
+				if bind.Variable == id {
+					return &bind, nil
+				}
+			}
+		}
+	}
+	return nil, nil
+}
+
+func findBindById(node ast.Node, id ast.Identifier) (*ast.LocalBind, error) {
 	stack := NodeStack{}
 	stack.Push(node)
 	for !stack.IsEmpty() {
@@ -76,7 +158,7 @@ func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
 		case *ast.Local:
 			for _, bind := range curr.Binds {
 				if bind.Variable == id {
-					return bind, nil
+					return &bind, nil
 				}
 				stack = stack.Push(bind.Body)
 			}
@@ -86,7 +168,7 @@ func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
 		case *ast.DesugaredObject:
 			for _, bind := range curr.Locals {
 				if bind.Variable == id {
-					return bind, nil
+					return &bind, nil
 				}
 				stack = stack.Push(bind.Body)
 			}
@@ -132,16 +214,21 @@ func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
 			stack = stack.Push(curr.Expr)
 		}
 	}
-	return ast.LocalBind{}, nil
+	return nil, nil
 }
 
-func findNodeByPosition(node ast.Node, position protocol.Position) (ast.Node, error) {
-	stack := NodeStack{}
+func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, error) {
+	stack := &NodeStack{}
 	stack.Push(node)
+	// keeps the history of the navigation path to the requested Node.
+	// used to backwards search Nodes from the found node to the root.
+	searchStack := &NodeStack{}
 	for !stack.IsEmpty() {
 		stack, curr := stack.Pop()
 		if !inRange(position, *curr.Loc()) {
 			continue
+		} else {
+			searchStack = searchStack.Push(curr)
 		}
 		switch curr := curr.(type) {
 		case *ast.Local:
@@ -192,11 +279,9 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (ast.Node, er
 			stack = stack.Push(curr.Index)
 		case *ast.Unary:
 			stack = stack.Push(curr.Expr)
-		case *ast.Var:
-			return curr, nil
 		}
 	}
-	return nil, nil
+	return searchStack, nil
 }
 
 func inRange(point protocol.Position, theRange ast.LocationRange) bool {
