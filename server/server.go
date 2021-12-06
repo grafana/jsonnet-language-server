@@ -49,11 +49,12 @@ var (
 )
 
 // New returns a new language server.
-func NewServer(client protocol.ClientCloser) *server {
-
+func NewServer(name, version string, client protocol.ClientCloser) *server {
 	server := &server{
-		cache:  newCache(),
-		client: client,
+		name:    name,
+		version: version,
+		cache:   newCache(),
+		client:  client,
 	}
 
 	return server
@@ -61,6 +62,8 @@ func NewServer(client protocol.ClientCloser) *server {
 
 // server is the Jsonnet language server.
 type server struct {
+	name, version string
+
 	stdlib []stdlib.Function
 	cache  *cache
 	client protocol.ClientCloser
@@ -469,6 +472,8 @@ func (s *server) IncomingCalls(context.Context, *protocol.CallHierarchyIncomingC
 }
 
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
+	log.Printf("Initializing %s version %s", s.name, s.version)
+
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			CompletionProvider:         protocol.CompletionOptions{TriggerCharacters: []string{"."}},
@@ -488,7 +493,8 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 			Name    string `json:"name"`
 			Version string `json:"version,omitempty"`
 		}{
-			Name: "jsonnet-language-server",
+			Name:    s.name,
+			Version: s.version,
 		},
 	}, nil
 }
