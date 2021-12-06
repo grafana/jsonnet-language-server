@@ -58,13 +58,79 @@ func Definition(node ast.Node, params protocol.DefinitionParams) (protocol.Defin
 }
 
 func findDefinition(node ast.Node, position protocol.Position) (ast.LocalBind, error) {
-	queriedNode, _ := findNodeByPosition(node, position)
+	queriedNode, searchStack, _ := findNodeByPosition(node, position)
 	var matchingBind ast.LocalBind
 	switch queriedNode := queriedNode.(type) {
 	case *ast.Var:
-		matchingBind, _ = findBindById(node, queriedNode.Id)
+		matchingBind, _ = findBindByIdViaStack(searchStack, queriedNode.Id)
 	}
 	return matchingBind, nil
+}
+
+func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (ast.LocalBind, error) {
+	for !stack.IsEmpty() {
+		stack, curr := stack.Pop()
+		switch curr := curr.(type) {
+		case *ast.Local:
+			for _, bind := range curr.Binds {
+				if bind.Variable == id {
+					return bind, nil
+				}
+				stack = stack.Push(bind.Body)
+			}
+			if curr.Body != nil {
+				stack = stack.Push(curr.Body)
+			}
+		case *ast.DesugaredObject:
+			for _, bind := range curr.Locals {
+				if bind.Variable == id {
+					return bind, nil
+				}
+				stack = stack.Push(bind.Body)
+			}
+			for _, field := range curr.Fields {
+				stack = stack.Push(field.Body)
+			}
+		case *ast.Binary:
+			stack = stack.Push(curr.Left)
+			stack = stack.Push(curr.Right)
+		case *ast.Array:
+			for _, element := range curr.Elements {
+				stack = stack.Push(element.Expr)
+			}
+		case *ast.Apply:
+			for _, posArg := range curr.Arguments.Positional {
+				stack = stack.Push(posArg.Expr)
+			}
+			for _, namedArg := range curr.Arguments.Named {
+				stack = stack.Push(namedArg.Arg)
+			}
+			stack = stack.Push(curr.Target)
+		case *ast.Conditional:
+			stack = stack.Push(curr.Cond)
+			stack = stack.Push(curr.BranchTrue)
+			stack = stack.Push(curr.BranchFalse)
+		case *ast.Error:
+			stack = stack.Push(curr.Expr)
+		case *ast.Function:
+			for _, param := range curr.Parameters {
+				if param.DefaultArg != nil {
+					stack = stack.Push(param.DefaultArg)
+				}
+			}
+			stack = stack.Push(curr.Body)
+		case *ast.Index:
+			stack = stack.Push(curr.Target)
+			stack = stack.Push(curr.Index)
+		case *ast.InSuper:
+			stack = stack.Push(curr.Index)
+		case *ast.SuperIndex:
+			stack = stack.Push(curr.Index)
+		case *ast.Unary:
+			stack = stack.Push(curr.Expr)
+		}
+	}
+	return ast.LocalBind{}, nil
 }
 
 func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
@@ -135,13 +201,18 @@ func findBindById(node ast.Node, id ast.Identifier) (ast.LocalBind, error) {
 	return ast.LocalBind{}, nil
 }
 
-func findNodeByPosition(node ast.Node, position protocol.Position) (ast.Node, error) {
-	stack := NodeStack{}
+func findNodeByPosition(node ast.Node, position protocol.Position) (ast.Node, *NodeStack, error) {
+	stack := &NodeStack{}
 	stack.Push(node)
+	// keeps the history of the navigation path to the requested Node.
+	// used to backwards search Nodes from the found node to the root.
+	searchStack := &NodeStack{}
 	for !stack.IsEmpty() {
 		stack, curr := stack.Pop()
 		if !inRange(position, *curr.Loc()) {
 			continue
+		} else {
+			searchStack = searchStack.Push(curr)
 		}
 		switch curr := curr.(type) {
 		case *ast.Local:
@@ -193,10 +264,10 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (ast.Node, er
 		case *ast.Unary:
 			stack = stack.Push(curr.Expr)
 		case *ast.Var:
-			return curr, nil
+			return curr, searchStack, nil
 		}
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func inRange(point protocol.Position, theRange ast.LocationRange) bool {
