@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -19,7 +18,41 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	}
-	log.Printf("%+v\nLine: %s", params, strings.Split(doc.item.Text, "\n")[params.Position.Line])
 
-	return &protocol.CompletionList{IsIncomplete: false, Items: nil}, nil
+	items := []protocol.CompletionItem{}
+
+	line := strings.Split(doc.item.Text, "\n")[params.Position.Line]
+	stdIndex := strings.LastIndex(line[:params.Position.Character], "std.")
+	if stdIndex != -1 {
+		userInput := strings.Split(line[stdIndex+4:], "(")[0]
+		funcStartWith := []protocol.CompletionItem{}
+		funcContains := []protocol.CompletionItem{}
+		for _, f := range s.stdlib {
+			if f.Name == userInput {
+				break
+			}
+			lowerFuncName := strings.ToLower(f.Name)
+			findName := strings.ToLower(userInput)
+			item := protocol.CompletionItem{
+				Label:         f.Name,
+				Kind:          protocol.FunctionCompletion,
+				Detail:        fmt.Sprintf("%s(%s)", f.Name, strings.Join(f.Params, ", ")),
+				Documentation: f.MarkdownDescription,
+			}
+
+			if len(findName) > 0 && strings.HasPrefix(lowerFuncName, findName) {
+				funcStartWith = append(funcStartWith, item)
+				continue
+			}
+
+			if strings.Contains(lowerFuncName, findName) {
+				funcContains = append(funcContains, item)
+			}
+		}
+
+		items = append(items, funcStartWith...)
+		items = append(items, funcContains...)
+	}
+
+	return &protocol.CompletionList{IsIncomplete: false, Items: items}, nil
 }

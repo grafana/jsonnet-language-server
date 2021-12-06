@@ -14,32 +14,56 @@ import (
 
 const (
 	testCompletionDocument = `{
-	no_std1: d
-	no_std2: s
-	no_std3: d.
-	no_std4: s.
-	all_std_funcs: std.
-	std_funcs_starting_with: std.m
+    no_std1: d
+    no_std2: s
+    no_std3: d.
+    no_std4: s.
+    all_std_funcs: std.
+    std_funcs_starting_with: std.aaa
+    partial_match: std.ther
+    case_insensitive: std.MAX
+    submatch_and_startwith: std.Min
 }`
 )
 
 var (
 	testStdLib = []stdlib.Function{
+		// Starts with aaa to be the first match
+		// A `min` subquery should matche this and `min`, but `min` should be first anyways
 		{
-			Name:                "length",
-			Params:              []string{"x"},
+			Name:                "aaaotherMin",
+			Params:              []string{"a"},
 			MarkdownDescription: "blabla",
+		},
+		{
+			Name:                "max",
+			Params:              []string{"a", "b"},
+			MarkdownDescription: "max gets the max",
 		},
 		{
 			Name:                "min",
 			Params:              []string{"a", "b"},
 			MarkdownDescription: "min gets the min",
 		},
-		{
-			Name:                "max",
-			Params:              []string{"x"},
-			MarkdownDescription: "max gets the max",
-		},
+	}
+
+	otherMinItem = protocol.CompletionItem{
+		Label:         "aaaotherMin",
+		Kind:          protocol.FunctionCompletion,
+		Detail:        "aaaotherMin(a)",
+		Documentation: "blabla",
+	}
+	minItem = protocol.CompletionItem{
+		Label:         "min",
+		Kind:          protocol.FunctionCompletion,
+		Detail:        "min(a, b)",
+		Documentation: "min gets the min",
+	}
+	maxItem = protocol.CompletionItem{
+		Label:         "max",
+		Kind:          protocol.FunctionCompletion,
+		Detail:        "max(a, b)",
+		Documentation: "max gets the max",
 	}
 )
 
@@ -70,15 +94,53 @@ func TestCompletion(t *testing.T) {
 		{
 			name:     "std: all functions",
 			position: protocol.Position{Line: 5, Character: 23},
+			expected: protocol.CompletionList{
+				Items:        []protocol.CompletionItem{otherMinItem, maxItem, minItem},
+				IsIncomplete: false,
+			},
 		},
 		{
-			name:     "std: starting with m",
+			name:     "std: starting with aaa",
 			position: protocol.Position{Line: 6, Character: 34},
+			expected: protocol.CompletionList{
+				Items:        []protocol.CompletionItem{otherMinItem},
+				IsIncomplete: false,
+			},
+		},
+		{
+			name:     "std: partial match",
+			position: protocol.Position{Line: 7, Character: 26},
+			expected: protocol.CompletionList{
+				Items:        []protocol.CompletionItem{otherMinItem},
+				IsIncomplete: false,
+			},
+		},
+		{
+			name:     "std: case insensitive",
+			position: protocol.Position{Line: 8, Character: 29},
+			expected: protocol.CompletionList{
+				Items:        []protocol.CompletionItem{maxItem},
+				IsIncomplete: false,
+			},
+		},
+		{
+			name:     "std: submatch + startswith",
+			position: protocol.Position{Line: 9, Character: 35},
+			expected: protocol.CompletionList{
+				Items:        []protocol.CompletionItem{minItem, otherMinItem},
+				IsIncomplete: false,
+			},
 		},
 	}
 	for _, tc := range testCases {
 		if tc.document == "" {
 			tc.document = testCompletionDocument
+		}
+		if tc.expected.Items == nil {
+			tc.expected = protocol.CompletionList{
+				IsIncomplete: false,
+				Items:        []protocol.CompletionItem{},
+			}
 		}
 
 		t.Run(tc.name, func(t *testing.T) {
@@ -95,7 +157,7 @@ func TestCompletion(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, tc.expected.Items, result.Items)
+			assert.Equal(t, &tc.expected, result)
 		})
 	}
 }
@@ -107,6 +169,7 @@ func serverWithFile(t *testing.T, fileContent string) (server *server, fileURI p
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 	server = newServer(client, nil)
+	server.stdlib = testStdLib
 	require.NoError(t, server.Init())
 
 	tmpFile, err := os.CreateTemp("", "")
