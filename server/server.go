@@ -27,9 +27,12 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/formatter"
+	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
+	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -46,19 +49,11 @@ var (
 )
 
 // New returns a new language server.
-func NewServer(client protocol.ClientCloser, jpaths []string) *server {
-	log.Printf("Using the following jpaths: %v", jpaths)
-
-	// TODO(#32): The language server VM has no support for Top Level Arguments (TLAs).
-	// TODO(#33): The language server VM has no support for native functions.
-	vm := jsonnet.MakeVM()
-	importer := &jsonnet.FileImporter{JPaths: jpaths}
-	vm.Importer(importer)
+func NewServer(client protocol.ClientCloser) *server {
 
 	server := &server{
 		cache:  newCache(),
 		client: client,
-		vm:     vm,
 	}
 
 	return server
@@ -69,7 +64,38 @@ type server struct {
 	stdlib []stdlib.Function
 	cache  *cache
 	client protocol.ClientCloser
-	vm     *jsonnet.VM
+	getVM  func(path string) (*jsonnet.VM, error)
+}
+
+func (s *server) WithStaticVM(jpaths []string) *server {
+	log.Printf("Using the following jpaths: %v", jpaths)
+	s.getVM = func(path string) (*jsonnet.VM, error) {
+		vm := jsonnet.MakeVM()
+		importer := &jsonnet.FileImporter{JPaths: jpaths}
+		vm.Importer(importer)
+		return vm, nil
+	}
+	return s
+}
+
+func (s *server) WithTankaVM() *server {
+	log.Printf("Using tanka mode")
+	s.getVM = func(path string) (*jsonnet.VM, error) {
+		jpath, _, _, err := jpath.Resolve(path)
+		if err != nil {
+			return nil, errors.Wrap(err, "resolving import paths")
+		}
+		opts := tankaJsonnet.Opts{
+			ImportPaths: jpath,
+		}
+		return tankaJsonnet.MakeVM(opts), nil
+	}
+	return s
+}
+
+func (s *server) WithStdlib(stdlib []stdlib.Function) *server {
+	s.stdlib = stdlib
+	return s
 }
 
 func (s *server) Init() error {
@@ -169,7 +195,11 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 
 				// The point is on a file symbol which must be an import.
 				if want.Kind == protocol.File {
-					foundAt, err := s.vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
+					vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+					if err != nil {
+						return nil, err
+					}
+					foundAt, err := vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
 					if err != nil {
 						err = fmt.Errorf("Definition: unable to resolve import: %w", err)
 						fmt.Fprintln(os.Stderr, err)
@@ -310,10 +340,12 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 			panic("There should only be a single root symbol for an AST")
 		}
 		doc.symbols = symbols[0]
-		// TODO(#10): Work out better way to invalidate the VM cache.
-		s.vm.Importer(&jsonnet.FileImporter{})
+		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+		if err != nil {
+			return err
+		}
 		// TODO(#11): Evaluate whether the raw AST is better for analysis than the desugared AST.
-		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 		return s.cache.put(doc)
 	}
 	return nil
@@ -356,8 +388,11 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 			panic("There should only be a single root symbol for an AST")
 		}
 		doc.symbols = symbols[0]
-		// TODO(#12): Work out better way to invalidate the VM cache.
-		doc.val, doc.err = s.vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
+		vm, err := s.getVM(params.TextDocument.URI.SpanURI().Filename())
+		if err != nil {
+			return err
+		}
+		doc.val, doc.err = vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	}
 	return s.cache.put(doc)
 }

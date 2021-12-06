@@ -66,6 +66,7 @@ Environment variables:
 
 func main() {
 	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
+	tankaMode := false
 
 	for i, arg := range os.Args {
 		if arg == "-h" || arg == "--help" {
@@ -83,7 +84,14 @@ func main() {
 			}
 
 			jpaths = append([]string{os.Args[i+1]}, jpaths...)
+		} else if arg == "-t" || arg == "--tanka" {
+			tankaMode = true
 		}
+	}
+
+	if len(jpaths) > 0 && tankaMode {
+		fmt.Println("Cannot set JPATH and use tanka mode at the same time")
+		os.Exit(1)
 	}
 
 	log.Println("Starting the language server")
@@ -93,10 +101,16 @@ func main() {
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 
-	s := server.NewServer(client, jpaths)
+	s := server.NewServer(client)
 	if err := s.Init(); err != nil {
 		log.Fatal(err)
 	}
+	if tankaMode {
+		s = s.WithTankaVM()
+	} else {
+		s = s.WithStaticVM(jpaths)
+	}
+
 	conn.Go(ctx, protocol.Handlers(
 		protocol.ServerHandler(s, jsonrpc2.MethodNotFound)))
 	<-conn.Done()

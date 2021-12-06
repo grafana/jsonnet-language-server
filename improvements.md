@@ -6,7 +6,7 @@
 - [x] Autocomplete standard functions
 - [ ] Follow sub-attributes into the imported file (e.g. configMap.new())
 - [ ] Follow root elements ($.x)
-- [ ] Tanka support (no need to specify jpaths)
+- [x] Tanka support (no need to specify jpaths)
 - [ ] Formatting settings
 - [ ] jsonnetlint support
 - [ ] syntax coloring from the server
