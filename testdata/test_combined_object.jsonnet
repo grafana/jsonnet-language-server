@@ -1,6 +1,6 @@
 {
     a: {
-        b: "something"
+        b: "something",
     }
 } + {
     b: super.a.b.s
