@@ -78,6 +78,7 @@ func Functions() ([]Function, error) {
 	converter := md.NewConverter("", true, nil)
 	allFunctions := []Function{}
 	for _, group := range lib.Groups {
+		// Add math library functions
 		if group.ID == "math" {
 			mathFuncs := mathFuncRegex.FindAllStringSubmatch(group.RenderedIntro, -1)
 			for _, mathFunc := range mathFuncs {
@@ -102,6 +103,26 @@ func Functions() ([]Function, error) {
 			}
 			allFunctions = append(allFunctions, field)
 		}
+	}
+
+	// Add undocumented functions
+	// https://github.com/google/go-jsonnet/blob/12bd29d164b131a4cd84f22f1456fe37136abc6d/linter/internal/types/stdlib.go#L162-L170
+	for key, params := range map[string][]string{
+		"manifestJson":     {"value"},
+		"objectHasEx":      {"obj", "fname", "hidden"},
+		"objectFieldsEx":   {"obj", "hidden"},
+		"modulo":           {"x", "y"},
+		"primitiveEquals":  {"x", "y"},
+		"mod":              {"a", "b"},
+		"native":           {"x"},
+		"$objectFlatMerge": {"x"},
+	} {
+		allFunctions = append(allFunctions, Function{
+			Name:                key,
+			Params:              params,
+			MarkdownDescription: "**Undocumented**\n\nSee https://github.com/google/go-jsonnet/blob/12bd29d164b131a4cd84f22f1456fe37136abc6d/linter/internal/types/stdlib.go#L162-L170",
+		},
+		)
 	}
 
 	return allFunctions, nil
