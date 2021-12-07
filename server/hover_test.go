@@ -62,34 +62,6 @@ var (
 			End:   protocol.Position{Line: 7, Character: 87},
 		},
 	}
-	expectedListComprehensionFor = &protocol.Hover{
-		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
-		Range: protocol.Range{
-			Start: protocol.Position{Line: 14, Character: 7},
-			End:   protocol.Position{Line: 14, Character: 23},
-		},
-	}
-	expectedListComprehensionIf = &protocol.Hover{
-		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
-		Range: protocol.Range{
-			Start: protocol.Position{Line: 15, Character: 7},
-			End:   protocol.Position{Line: 15, Character: 14},
-		},
-	}
-	expectedMapComprehensionFor = &protocol.Hover{
-		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
-		Range: protocol.Range{
-			Start: protocol.Position{Line: 4, Character: 7},
-			End:   protocol.Position{Line: 4, Character: 23},
-		},
-	}
-	expectedMapComprehensionIf = &protocol.Hover{
-		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
-		Range: protocol.Range{
-			Start: protocol.Position{Line: 5, Character: 7},
-			End:   protocol.Position{Line: 5, Character: 14},
-		},
-	}
 )
 
 func TestHover(t *testing.T) {
@@ -152,25 +124,61 @@ func TestHover(t *testing.T) {
 			name:     "list comprehension for",
 			document: "./testdata/hover-std.jsonnet",
 			position: protocol.Position{Line: 14, Character: 21},
-			expected: expectedListComprehensionFor,
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 14, Character: 7},
+					End:   protocol.Position{Line: 14, Character: 23},
+				},
+			},
 		},
 		{
 			name:     "list comprehension if",
 			document: "./testdata/hover-std.jsonnet",
 			position: protocol.Position{Line: 15, Character: 12},
-			expected: expectedListComprehensionIf,
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 15, Character: 7},
+					End:   protocol.Position{Line: 15, Character: 14},
+				},
+			},
 		},
 		{
 			name:     "map comprehension for",
 			document: "./testdata/map-comprehension.jsonnet",
 			position: protocol.Position{Line: 4, Character: 21},
-			expected: expectedMapComprehensionFor,
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 4, Character: 7},
+					End:   protocol.Position{Line: 4, Character: 23},
+				},
+			},
 		},
 		{
 			name:     "map comprehension if",
 			document: "./testdata/map-comprehension.jsonnet",
 			position: protocol.Position{Line: 5, Character: 12},
-			expected: expectedMapComprehensionIf,
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 5, Character: 7},
+					End:   protocol.Position{Line: 5, Character: 14},
+				},
+			},
+		},
+		{
+			name:     "local in local",
+			document: "./testdata/hover-local-in-local.jsonnet",
+			position: protocol.Position{Line: 3, Character: 27},
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 3, Character: 13},
+					End:   protocol.Position{Line: 3, Character: 29},
+				},
+			},
 		},
 		{
 			// We don't want to crash the server if we get an error

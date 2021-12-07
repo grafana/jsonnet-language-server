@@ -318,6 +318,9 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 			for _, field := range curr.Fields {
 				stack = stack.Push(field.Body)
 			}
+			for _, local := range curr.Locals {
+				stack = stack.Push(local.Body)
+			}
 		case *ast.Binary:
 			stack = stack.Push(curr.Left)
 			stack = stack.Push(curr.Right)
