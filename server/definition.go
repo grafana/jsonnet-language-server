@@ -352,7 +352,7 @@ func inRange(point protocol.Position, theRange ast.LocationRange) bool {
 	}
 
 	if int(point.Line) != theRange.Begin.Line-1 || int(point.Line) != theRange.End.Line-1 {
-		return theRange.Begin.Line-1 <= int(point.Line) && int(point.Line) < theRange.End.Line-1
+		return theRange.Begin.Line-1 <= int(point.Line) && int(point.Line) <= theRange.End.Line-1
 	}
 
 	return true

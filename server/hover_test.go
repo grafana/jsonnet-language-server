@@ -170,13 +170,25 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name:     "local in local",
-			document: "./testdata/hover-local-in-local.jsonnet",
+			document: "./testdata/hover-locals.jsonnet",
 			position: protocol.Position{Line: 3, Character: 27},
 			expected: &protocol.Hover{
 				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 3, Character: 13},
 					End:   protocol.Position{Line: 3, Character: 29},
+				},
+			},
+		},
+		{
+			name:     "local function call",
+			document: "./testdata/hover-locals.jsonnet",
+			position: protocol.Position{Line: 9, Character: 10},
+			expected: &protocol.Hover{
+				Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 9, Character: 2},
+					End:   protocol.Position{Line: 9, Character: 18},
 				},
 			},
 		},
