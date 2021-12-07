@@ -25,6 +25,13 @@ func TestFunctions(t *testing.T) {
 	}
 	contains(t, functions, ceilFunc)
 
+	// Check std.isNumber
+	isNumberFunc := Function{
+		Name:   "isNumber",
+		Params: []string{"v"},
+	}
+	contains(t, functions, isNumberFunc)
+
 	// Check std.clamp
 	clampFunc := Function{
 		Name:                "clamp",

@@ -16,7 +16,8 @@ var (
 	//go:embed stdlib-content.jsonnet
 	stdLibContent string
 
-	mathFuncRegex = regexp.MustCompile(`<ul><code>std\.(?P<name>[a-z0-9]+)\((?P<params>[a-z, ]+)\)<\/code><\/ul>`)
+	mathFuncRegex = regexp.MustCompile(`<ul><code>std\.(?P<name>[a-zA-Z0-9]+)\((?P<params>[a-z, ]+)\)<\/code><\/ul>`)
+	typeFuncRegex = regexp.MustCompile(`<code>std\.(?P<name>[a-zA-Z0-9]+)\(v\)<\/code>`)
 )
 
 type Function struct {
@@ -101,6 +102,18 @@ func Functions() ([]Function, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// Add type library functions
+			if field.Name == "type" {
+				typeFuncs := typeFuncRegex.FindAllStringSubmatch(field.RenderedDescription, -1)
+				for _, typeFunc := range typeFuncs {
+					allFunctions = append(allFunctions, Function{
+						Name:   typeFunc[1],
+						Params: []string{"v"},
+					})
+				}
+			}
+
 			allFunctions = append(allFunctions, field)
 		}
 	}
