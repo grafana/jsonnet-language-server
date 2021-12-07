@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/server"
 	"github.com/jdbaldry/jsonnet-language-server/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -67,6 +67,7 @@ Environment variables:
 func main() {
 	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
 	tankaMode := false
+	log.SetLevel(log.InfoLevel)
 
 	for i, arg := range os.Args {
 		if arg == "-h" || arg == "--help" {
@@ -76,20 +77,19 @@ func main() {
 			printVersion(os.Stdout)
 			os.Exit(0)
 		} else if arg == "-J" || arg == "--jpath" {
-			if i == len(os.Args)-1 {
-				fmt.Printf("Expected value for option %s but found none.\n", arg)
-				fmt.Println()
-				printHelp(os.Stdout)
-				os.Exit(1)
-			}
-
-			jpaths = append([]string{os.Args[i+1]}, jpaths...)
+			jpaths = append([]string{getArgValue(i)}, jpaths...)
 		} else if arg == "-t" || arg == "--tanka" {
 			tankaMode = true
+		} else if arg == "-l" || arg == "--log-level" {
+			logLevel, err := log.ParseLevel(getArgValue(i))
+			if err != nil {
+				log.Fatalf("Invalid log level: %s", err)
+			}
+			log.SetLevel(logLevel)
 		}
 	}
 
-	log.Println("Starting the language server")
+	log.Infoln("Starting the language server")
 
 	ctx := context.Background()
 	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
@@ -109,4 +109,12 @@ func main() {
 	if err := conn.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+}
+
+func getArgValue(i int) string {
+	if i == len(os.Args)-1 {
+		printHelp(os.Stdout)
+		log.Fatalf("Expected value for option %s but found none.", os.Args[i])
+	}
+	return os.Args[i+1]
 }

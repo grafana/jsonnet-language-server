@@ -19,7 +19,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -30,6 +29,7 @@ import (
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -68,7 +68,7 @@ type server struct {
 }
 
 func (s *server) WithStaticVM(jpaths []string) *server {
-	log.Printf("Using the following jpaths: %v", jpaths)
+	log.Infof("Using the following jpaths: %v", jpaths)
 	s.getVM = func(path string) (*jsonnet.VM, error) {
 		vm := jsonnet.MakeVM()
 		importer := &jsonnet.FileImporter{JPaths: jpaths}
@@ -79,11 +79,11 @@ func (s *server) WithStaticVM(jpaths []string) *server {
 }
 
 func (s *server) WithTankaVM(fallbackJPath []string) *server {
-	log.Printf("Using tanka mode. Will fall back to the following jpaths: %v", fallbackJPath)
+	log.Infof("Using tanka mode. Will fall back to the following jpaths: %v", fallbackJPath)
 	s.getVM = func(path string) (*jsonnet.VM, error) {
 		jpath, _, _, err := jpath.Resolve(path)
 		if err != nil {
-			log.Printf("[DEBUG] Unable to resolve jpath for %s: %s", path, err)
+			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
 			jpath = fallbackJPath
 		}
 		opts := tankaJsonnet.Opts{
@@ -317,7 +317,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		doc.symbols = symbols[0]
 		vm, err := s.getVM(params.TextDocument.URI.SpanURI().Filename())
 		if err != nil {
-			log.Printf("DidOpen: %v", err)
+			log.Infof("DidOpen: %v", err)
 			return err
 		}
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
@@ -337,12 +337,12 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 }
 
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
-	log.Printf("Initializing %s version %s", s.name, s.version)
+	log.Infof("Initializing %s version %s", s.name, s.version)
 
 	var err error
 
 	if s.stdlib == nil {
-		log.Println("Reading stdlib")
+		log.Infoln("Reading stdlib")
 		if s.stdlib, err = stdlib.Functions(); err != nil {
 			return nil, err
 		}
