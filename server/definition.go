@@ -1,7 +1,9 @@
 package server
 
 import (
-	"fmt"
+	"errors"
+	"sort"
+
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
@@ -24,6 +26,24 @@ func (s *NodeStack) Pop() (*NodeStack, ast.Node) {
 
 func (s *NodeStack) IsEmpty() bool {
 	return len(s.stack) == 0
+}
+
+func (s *NodeStack) reorderDesugaredObjects() *NodeStack {
+	sort.SliceStable(s.stack, func(i, j int) bool {
+		_, iIsDesugared := s.stack[i].(*ast.DesugaredObject)
+		_, jIsDesugared := s.stack[j].(*ast.DesugaredObject)
+		if !iIsDesugared && !jIsDesugared {
+			return false
+		}
+
+		iLoc, jLoc := s.stack[i].Loc(), s.stack[j].Loc()
+		if iLoc.Begin.Line < jLoc.Begin.Line && iLoc.End.Line > jLoc.End.Line {
+			return true
+		}
+
+		return false
+	})
+	return s
 }
 
 func Definition(node ast.Node, params protocol.DefinitionParams) (protocol.DefinitionLink, error) {
@@ -269,6 +289,10 @@ func findBindById(node ast.Node, id ast.Identifier) (*ast.LocalBind, error) {
 }
 
 func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, error) {
+	if node == nil {
+		return nil, errors.New("node is nil")
+	}
+
 	stack := &NodeStack{}
 	stack.Push(node)
 	// keeps the history of the navigation path to the requested Node.
@@ -276,10 +300,11 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 	searchStack := &NodeStack{}
 	for !stack.IsEmpty() {
 		stack, curr := stack.Pop()
-		if !inRange(position, *curr.Loc()) && curr.Loc().Begin.IsSet() {
-			continue
-		} else {
+		inRange := inRange(position, *curr.Loc())
+		if inRange {
 			searchStack = searchStack.Push(curr)
+		} else if curr.Loc().End.IsSet() {
+			continue
 		}
 		switch curr := curr.(type) {
 		case *ast.Local:
@@ -332,7 +357,7 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 			stack = stack.Push(curr.Expr)
 		}
 	}
-	return searchStack, nil
+	return searchStack.reorderDesugaredObjects(), nil
 }
 
 func inRange(point protocol.Position, theRange ast.LocationRange) bool {

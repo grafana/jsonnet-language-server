@@ -28,26 +28,66 @@ var (
 			Params:              []string{"any"},
 			MarkdownDescription: "desc",
 		},
+		{
+			Name:                "manifestJson",
+			Params:              []string{"any"},
+			MarkdownDescription: "desc",
+		},
 	}
-	expectedThisFileHover = protocol.Hover{
+	expectedThisFileHover = &protocol.Hover{
 		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.thisFile`\n\nNote that this is a field. It contains the current Jsonnet filename as a string."},
 		Range: protocol.Range{
 			Start: protocol.Position{Line: 1, Character: 12},
 			End:   protocol.Position{Line: 1, Character: 24},
 		},
 	}
-	expectedObjectFieldsHover = protocol.Hover{
+	expectedObjectFieldsHover = &protocol.Hover{
 		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
 		Range: protocol.Range{
 			Start: protocol.Position{Line: 2, Character: 10},
 			End:   protocol.Position{Line: 2, Character: 26},
 		},
 	}
-	expectedMapHover = protocol.Hover{
+	expectedMapHover = &protocol.Hover{
 		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
 		Range: protocol.Range{
 			Start: protocol.Position{Line: 5, Character: 17},
 			End:   protocol.Position{Line: 5, Character: 24},
+		},
+	}
+	expectedManifestJson = &protocol.Hover{
+		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.manifestJson(any)`\n\ndesc"},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 7, Character: 71},
+			End:   protocol.Position{Line: 7, Character: 87},
+		},
+	}
+	expectedListComprehensionFor = &protocol.Hover{
+		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 14, Character: 7},
+			End:   protocol.Position{Line: 14, Character: 23},
+		},
+	}
+	expectedListComprehensionIf = &protocol.Hover{
+		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 15, Character: 7},
+			End:   protocol.Position{Line: 15, Character: 14},
+		},
+	}
+	expectedMapComprehensionFor = &protocol.Hover{
+		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.objectFields(o)`\n\nReturns an array of strings, each element being a field from the given object. Does not include\nhidden fields."},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 4, Character: 7},
+			End:   protocol.Position{Line: 4, Character: 23},
+		},
+	}
+	expectedMapComprehensionIf = &protocol.Hover{
+		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.map(any)`\n\ndesc"},
+		Range: protocol.Range{
+			Start: protocol.Position{Line: 5, Character: 7},
+			End:   protocol.Position{Line: 5, Character: 14},
 		},
 	}
 )
@@ -57,7 +97,7 @@ func TestHover(t *testing.T) {
 		name        string
 		document    string
 		position    protocol.Position
-		expected    protocol.Hover
+		expected    *protocol.Hover
 		expectedErr error
 	}{
 		{
@@ -96,6 +136,49 @@ func TestHover(t *testing.T) {
 			position: protocol.Position{Line: 5, Character: 23},
 			expected: expectedMapHover,
 		},
+		{
+			name:     "std.manifestJson over std",
+			document: "./testdata/hover-std.jsonnet",
+			position: protocol.Position{Line: 7, Character: 73},
+			expected: expectedManifestJson,
+		},
+		{
+			name:     "std.manifestJson over func name",
+			document: "./testdata/hover-std.jsonnet",
+			position: protocol.Position{Line: 7, Character: 82},
+			expected: expectedManifestJson,
+		},
+		{
+			name:     "list comprehension for",
+			document: "./testdata/hover-std.jsonnet",
+			position: protocol.Position{Line: 14, Character: 21},
+			expected: expectedListComprehensionFor,
+		},
+		{
+			name:     "list comprehension if",
+			document: "./testdata/hover-std.jsonnet",
+			position: protocol.Position{Line: 15, Character: 12},
+			expected: expectedListComprehensionIf,
+		},
+		{
+			name:     "map comprehension for",
+			document: "./testdata/map-comprehension.jsonnet",
+			position: protocol.Position{Line: 4, Character: 21},
+			expected: expectedMapComprehensionFor,
+		},
+		{
+			name:     "map comprehension if",
+			document: "./testdata/map-comprehension.jsonnet",
+			position: protocol.Position{Line: 5, Character: 12},
+			expected: expectedMapComprehensionIf,
+		},
+		{
+			// We don't want to crash the server if we get an error
+			name:     "hover parsing error",
+			document: "./testdata/hover-error.jsonnet",
+			position: protocol.Position{Line: 0, Character: 0},
+			expected: nil,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -124,7 +207,7 @@ func TestHover(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, &tc.expected, result)
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }

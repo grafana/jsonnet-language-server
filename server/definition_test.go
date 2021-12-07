@@ -1,15 +1,14 @@
 package server
 
 import (
-	"github.com/google/go-jsonnet/ast"
 	"os"
 	"testing"
 
 	"github.com/google/go-jsonnet"
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefinition(t *testing.T) {

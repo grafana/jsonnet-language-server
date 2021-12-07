@@ -9,4 +9,10 @@
       } } else v, super.templates),
     },
   },
+  listComprehension: [
+    item
+    for item
+    in std.objectFields({ test: 'test' })
+    if std.map({ test: 'test' }, item)
+  ],
 }

@@ -8,12 +8,19 @@ import (
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Hover: %s: %w", errorRetrievingDocument, err)
+	}
+
+	if doc.ast == nil {
+		// Hover triggers often. Throwing an error on each request is noisy
+		log.Error("Hover: error parsing the document")
+		return nil, nil
 	}
 
 	stack, err := findNodeByPosition(doc.ast, params.Position)
