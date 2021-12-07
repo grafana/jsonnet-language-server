@@ -20,7 +20,8 @@ func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
 	client := protocol.ClientDispatcher(conn)
 	server = NewServer("jsonnet-language-server", "dev", client).WithStaticVM([]string{})
 	server.stdlib = stdlib
-	require.NoError(t, server.Init())
+	_, err := server.Initialize(context.Background(), &protocol.ParamInitialize{})
+	require.NoError(t, err)
 
 	return server
 }

@@ -94,19 +94,6 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 	return s
 }
 
-func (s *server) Init() error {
-	var err error
-
-	if s.stdlib == nil {
-		log.Println("Reading stdlib")
-		if s.stdlib, err = stdlib.Functions(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Definition returns the location of the definition of the symbol at point.
 // Looking up the symbol at point depends on only looking up nodes that have no children and are therefore terminal.
 // Potentially it could backtrack outwards to guess what was probably meant.
@@ -351,6 +338,15 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	log.Printf("Initializing %s version %s", s.name, s.version)
+
+	var err error
+
+	if s.stdlib == nil {
+		log.Println("Reading stdlib")
+		if s.stdlib, err = stdlib.Functions(); err != nil {
+			return nil, err
+		}
+	}
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
