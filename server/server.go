@@ -18,8 +18,6 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -163,9 +161,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 					}
 					foundAt, err := vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
 					if err != nil {
-						err = fmt.Errorf("Definition: unable to resolve import: %w", err)
-						fmt.Fprintln(os.Stderr, err)
-						return nil, err
+						return nil, utils.LogErrorf("Definition: unable to resolve import: %w", err)
 					}
 					return protocol.Definition{{URI: "file://" + protocol.DocumentURI(foundAt)}}, nil
 				}
@@ -203,7 +199,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 	diags := []protocol.Diagnostic{}
 	doc, err := s.cache.get(uri)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
+		log.Errorf("publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
 		return
 	}
 
@@ -213,7 +209,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 	if doc.err != nil {
 		lines := strings.Split(doc.err.Error(), "\n")
 		if len(lines) == 0 {
-			fmt.Fprintf(os.Stderr, "publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
+			log.Errorf("publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
 			return
 		}
 
@@ -265,7 +261,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 		Diagnostics: diags,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "publishDiagnostics: unable to publish diagnostics: %v\n", err)
+		log.Errorf("publishDiagnostics: unable to publish diagnostics: %v\n", err)
 	}
 }
 

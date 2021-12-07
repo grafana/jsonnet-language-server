@@ -2,14 +2,13 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
@@ -21,7 +20,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 	// TODO(#14): Formatting options should be user configurable.
 	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Errorf("error formatting document: %w", err))
+		log.Errorf("error formatting document: %w", err)
 		return nil, nil
 	}
 

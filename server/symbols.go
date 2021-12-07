@@ -18,10 +18,10 @@ package server
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	log "github.com/sirupsen/logrus"
 )
 
 const symbolTagDefinition protocol.SymbolTag = 100
@@ -326,7 +326,7 @@ func analyseSymbols(n ast.Node) (symbols []protocol.DocumentSymbol) {
 		})
 
 	default:
-		fmt.Fprintf(os.Stderr, "analyseSymbols: unhandled node: %T\n", n)
+		log.Errorf("analyseSymbols: unhandled node: %T\n", n)
 	}
 	return
 }
