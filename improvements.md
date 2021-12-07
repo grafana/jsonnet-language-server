@@ -2,7 +2,7 @@
 
 - [ ] Auto install new versions in vscode
 - [ ] Fix formatting that throws a 400
-- [ ] Hovering over standard functions
+- [x] Hovering over standard functions
 - [x] Autocomplete standard functions
 - [ ] Follow sub-attributes into the imported file (e.g. configMap.new())
 - [ ] Follow root elements ($.x)
