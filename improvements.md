@@ -1,7 +1,7 @@
 # Improvements
 
 - [ ] Auto install new versions in vscode
-- [ ] Fix formatting that throws a 400
+- [x] Fix formatting that throws a 400
 - [x] Hovering over standard functions
 - [x] Autocomplete standard functions
 - [ ] Follow sub-attributes into the imported file (e.g. configMap.new())
