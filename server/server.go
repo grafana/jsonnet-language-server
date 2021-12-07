@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/ast"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -93,106 +94,44 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 	return s
 }
 
-// Definition returns the location of the definition of the symbol at point.
-// Looking up the symbol at point depends on only looking up nodes that have no children and are therefore terminal.
-// Potentially it could backtrack outwards to guess what was probably meant.
-// In the case of an index "obj.field", lookup would work when the point is on either "obj" or "field" but not the "."
-// as it is not a terminal node and is instead part of the "index" symbol which has the children "obj" and "field".
-// This works well in all cases where the Jsonnet parser has put correct location information. Unfortunately,
-// the literal string node "field" of "obj.field" does not have correct location information.
-// TODO(#8): Understand why the parser has not attached correct location range for indexes.
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
-	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (protocol.Definition, error)
-	aux = func(stack []protocol.DocumentSymbol, ds protocol.DocumentSymbol) (protocol.Definition, error) {
-		// If the symbol has no children, it must be a terminal symbol.
-		if len(ds.Children) == 0 {
-			// Check if the point is contained within the symbol.
-			if params.Position.Line == ds.Range.Start.Line &&
-				params.Position.Character >= ds.Range.Start.Character &&
-				params.Position.Character <= ds.Range.End.Character {
+	if doc.ast == nil {
+		return nil, utils.LogErrorf("Definition: error parsing the document")
+	}
 
-				want := ds
-				// The point is on a super keyword.
-				// super can only be used in the right hand side object of a binary `+` operation.
-				// The definition the "super" is referring to would be the left hand side.
-				// Simplified stack:
-				// + lhs obj ... field x index super
-				if want.Name == "super" {
-					prev := stack[len(stack)-1]
-					for len(stack) != 0 {
-						ds := stack[len(stack)-1]
-						stack = stack[:len(stack)-1]
-						if ds.Kind == protocol.Operator {
-							return protocol.Definition{{
-								URI:   doc.item.URI,
-								Range: prev.SelectionRange,
-							}}, nil
-						}
-						prev = ds
-					}
-				}
+	stack, err := findNodeByPosition(doc.ast, params.Position)
+	if err != nil {
+		return nil, err
+	}
 
-				// The point is on a self keyword.
-				// self can only be used in an object so we can jump to the start of that object.
-				// I'm not sure that is very useful though.
-				if want.Name == "self" {
-					for len(stack) != 0 {
-						ds := stack[len(stack)-1]
-						stack = stack[:len(stack)-1]
-						if ds.Kind == protocol.Object {
-							return protocol.Definition{{
-								URI:   doc.item.URI,
-								Range: ds.SelectionRange,
-							}}, nil
-						}
-					}
-				}
-
-				// The point is on a file symbol which must be an import.
-				if want.Kind == protocol.File {
-					vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-					if err != nil {
-						return nil, err
-					}
-					foundAt, err := vm.ResolveImport(doc.item.URI.SpanURI().Filename(), ds.Name)
-					if err != nil {
-						return nil, utils.LogErrorf("Definition: unable to resolve import: %w", err)
-					}
-					return protocol.Definition{{URI: "file://" + protocol.DocumentURI(foundAt)}}, nil
-				}
-
-				// The point is on a variable, the definition of which is the first definition
-				// with the same name that we find going back through the stack.
-				if want.Kind == protocol.Variable && !isDefinition(want) {
-					for len(stack) != 0 {
-						ds := stack[len(stack)-1]
-						stack = stack[:len(stack)-1]
-						if ds.Kind == protocol.Variable && ds.Name == want.Name && isDefinition(ds) {
-							return protocol.Definition{{
-								URI:   doc.item.URI,
-								Range: ds.SelectionRange,
-							}}, nil
-						}
-					}
-				}
-			}
-		}
-		stack = append(stack, ds.Children...)
-		for i := len(ds.Children); i != 0; i-- {
-			if def, err := aux(stack, ds.Children[i-1]); def != nil || err != nil {
-				return def, err
-			}
-			stack = stack[:len(stack)-1]
-		}
+	if stack.IsEmpty() {
 		return nil, nil
 	}
 
-	return aux([]protocol.DocumentSymbol{doc.symbols}, doc.symbols)
+	var result protocol.Definition
+	_, node := stack.Pop()
+	switch node := node.(type) {
+	case *ast.Import:
+		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+		if err != nil {
+			return nil, err
+		}
+		foundAt, err := vm.ResolveImport(doc.item.URI.SpanURI().Filename(), node.File.Value)
+		if err != nil {
+			return nil, utils.LogErrorf("Definition: unable to resolve import: %w", err)
+		}
+		result = protocol.Definition{
+			{URI: "file://" + protocol.DocumentURI(foundAt)},
+		}
+	}
+
+	return result, nil
+
 }
 
 func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
@@ -279,11 +218,6 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		if doc.err != nil {
 			return s.cache.put(doc)
 		}
-		symbols := analyseSymbols(doc.ast)
-		if len(symbols) != 1 {
-			panic("There should only be a single root symbol for an AST")
-		}
-		doc.symbols = symbols[0]
 		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
 		if err != nil {
 			return err
@@ -303,11 +237,6 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		if doc.err != nil {
 			return s.cache.put(doc)
 		}
-		symbols := analyseSymbols(doc.ast)
-		if len(symbols) != 1 {
-			panic("There should only be a single root symbol for an AST")
-		}
-		doc.symbols = symbols[0]
 		vm, err := s.getVM(params.TextDocument.URI.SpanURI().Filename())
 		if err != nil {
 			log.Infof("DidOpen: %v", err)
@@ -316,15 +245,6 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	}
 	return s.cache.put(doc)
-}
-
-func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
-	if err != nil {
-		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
-	}
-
-	return []interface{}{doc.symbols}, nil
 }
 
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
@@ -344,7 +264,6 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 			CompletionProvider:         protocol.CompletionOptions{TriggerCharacters: []string{"."}},
 			HoverProvider:              true,
 			DefinitionProvider:         true,
-			DocumentSymbolProvider:     true,
 			DocumentFormattingProvider: true,
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,

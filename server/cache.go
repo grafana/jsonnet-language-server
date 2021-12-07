@@ -30,8 +30,6 @@ type document struct {
 	val  string
 	ast  ast.Node
 	err  error
-	// Symbols are hierarchical and there is only ever a single root symbol.
-	symbols protocol.DocumentSymbol
 }
 
 // newCache returns a document cache.

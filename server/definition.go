@@ -357,13 +357,3 @@ func inRange(point protocol.Position, theRange ast.LocationRange) bool {
 
 	return true
 }
-
-// isDefinition returns true if a symbol is tagged as a definition.
-func isDefinition(s protocol.DocumentSymbol) bool {
-	for _, t := range s.Tags {
-		if t == symbolTagDefinition {
-			return true
-		}
-	}
-	return false
-}
