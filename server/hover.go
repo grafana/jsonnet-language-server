@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
@@ -14,9 +13,7 @@ import (
 func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
+		return nil, utils.LogErrorf("Hover: %s: %w", errorRetrievingDocument, err)
 	}
 
 	stack, err := findNodeByPosition(doc.ast, params.Position)

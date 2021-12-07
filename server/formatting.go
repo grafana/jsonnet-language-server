@@ -9,15 +9,15 @@ import (
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 )
 
 func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("Formatting: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
+		return nil, utils.LogErrorf("Formatting: %s: %w", errorRetrievingDocument, err)
 	}
+
 	// TODO(#14): Formatting options should be user configurable.
 	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
 	if err != nil {

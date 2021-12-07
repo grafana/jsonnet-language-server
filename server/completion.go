@@ -2,19 +2,16 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 )
 
 func (s *server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
+		return nil, utils.LogErrorf("Completion: %s: %w", errorRetrievingDocument, err)
 	}
 
 	items := []protocol.CompletionItem{}

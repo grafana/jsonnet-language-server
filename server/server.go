@@ -29,6 +29,7 @@ import (
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -105,9 +106,7 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("Definition: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
+		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
 	var aux func([]protocol.DocumentSymbol, protocol.DocumentSymbol) (protocol.Definition, error)
@@ -273,9 +272,7 @@ func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("DidChange: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return err
+		return utils.LogErrorf("DidChange: %s: %w", errorRetrievingDocument, err)
 	}
 
 	defer s.publishDiagnostics(params.TextDocument.URI)
@@ -328,9 +325,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		err = fmt.Errorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, err
+		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
 	}
 
 	return []interface{}{doc.symbols}, nil
