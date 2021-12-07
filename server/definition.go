@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
@@ -225,10 +226,11 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 	searchStack := &NodeStack{}
 	for !stack.IsEmpty() {
 		stack, curr := stack.Pop()
-		if !inRange(position, *curr.Loc()) {
-			continue
-		} else {
+		inRange := inRange(position, *curr.Loc())
+		if inRange {
 			searchStack = searchStack.Push(curr)
+		} else if !inRange && curr.Loc().End.IsSet() {
+			continue
 		}
 		switch curr := curr.(type) {
 		case *ast.Local:
@@ -285,11 +287,19 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 }
 
 func inRange(point protocol.Position, theRange ast.LocationRange) bool {
-	if int(point.Line) == theRange.Begin.Line-1 && int(point.Line) == theRange.End.Line-1 {
-		return theRange.Begin.Column <= int(point.Character) && int(point.Character) <= theRange.End.Column
-	} else {
+	if int(point.Line) == theRange.Begin.Line-1 && int(point.Character) < theRange.Begin.Column-1 {
+		return false
+	}
+
+	if int(point.Line) == theRange.End.Line-1 && int(point.Character) >= theRange.End.Column-1 {
+		return false
+	}
+
+	if int(point.Line) != theRange.Begin.Line-1 || int(point.Line) != theRange.End.Line-1 {
 		return theRange.Begin.Line-1 <= int(point.Line) && int(point.Line) < theRange.End.Line-1
 	}
+
+	return true
 }
 
 // isDefinition returns true if a symbol is tagged as a definition.
