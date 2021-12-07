@@ -18,6 +18,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/google/go-jsonnet/ast"
@@ -72,7 +73,7 @@ func (c *cache) get(uri protocol.DocumentURI) (document, error) {
 
 	doc, ok := c.docs[uri]
 	if !ok {
-		return document{}, errors.New("document not found")
+		return document{}, fmt.Errorf("document %s not found in cache", uri)
 	}
 
 	return doc, nil

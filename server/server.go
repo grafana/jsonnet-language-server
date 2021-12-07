@@ -31,7 +31,6 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -80,12 +79,13 @@ func (s *server) WithStaticVM(jpaths []string) *server {
 	return s
 }
 
-func (s *server) WithTankaVM() *server {
-	log.Printf("Using tanka mode")
+func (s *server) WithTankaVM(fallbackJPath []string) *server {
+	log.Printf("Using tanka mode. Will fall back to the following jpaths: %v", fallbackJPath)
 	s.getVM = func(path string) (*jsonnet.VM, error) {
 		jpath, _, _, err := jpath.Resolve(path)
 		if err != nil {
-			return nil, errors.Wrap(err, "resolving import paths")
+			log.Printf("[DEBUG] Unable to resolve jpath for %s: %s", path, err)
+			jpath = fallbackJPath
 		}
 		opts := tankaJsonnet.Opts{
 			ImportPaths: jpath,
@@ -392,6 +392,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		doc.symbols = symbols[0]
 		vm, err := s.getVM(params.TextDocument.URI.SpanURI().Filename())
 		if err != nil {
+			log.Printf("DidOpen: %v", err)
 			return err
 		}
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)

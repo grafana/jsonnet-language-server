@@ -89,11 +89,6 @@ func main() {
 		}
 	}
 
-	if len(jpaths) > 0 && tankaMode {
-		fmt.Println("Cannot set JPATH and use tanka mode at the same time")
-		os.Exit(1)
-	}
-
 	log.Println("Starting the language server")
 
 	ctx := context.Background()
@@ -106,7 +101,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if tankaMode {
-		s = s.WithTankaVM()
+		s = s.WithTankaVM(jpaths)
 	} else {
 		s = s.WithStaticVM(jpaths)
 	}

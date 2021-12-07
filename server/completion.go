@@ -20,7 +20,11 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 	items := []protocol.CompletionItem{}
 
 	line := strings.Split(doc.item.Text, "\n")[params.Position.Line]
-	line = line[:params.Position.Character]
+	charIndex := int(params.Position.Character)
+	if charIndex > len(line) {
+		charIndex = len(line)
+	}
+	line = line[:charIndex]
 	stdIndex := strings.LastIndex(line, "std.")
 	if stdIndex != -1 {
 		userInput := line[stdIndex+4:]
