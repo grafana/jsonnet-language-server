@@ -29,6 +29,14 @@ type Function struct {
 	MarkdownDescription string
 }
 
+func (f *Function) Signature() string {
+	sig := "std." + f.Name
+	if len(f.Params) > 0 {
+		sig += "(" + strings.Join(f.Params, ", ") + ")"
+	}
+	return sig
+}
+
 type group struct {
 	ID            string      `json:"id"`
 	Intro         interface{} `json:"intro"`

@@ -3,19 +3,15 @@ package server
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
-	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/jdbaldry/jsonnet-language-server/stdlib"
-	"github.com/jdbaldry/jsonnet-language-server/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
-	testStdLib = []stdlib.Function{
+	completionTestStdlib = []stdlib.Function{
 		// Starts with aaa to be the first match
 		// A `min` subquery should matche this and `min`, but `min` should be first anyways
 		{
@@ -38,19 +34,19 @@ var (
 	otherMinItem = protocol.CompletionItem{
 		Label:         "aaaotherMin",
 		Kind:          protocol.FunctionCompletion,
-		Detail:        "aaaotherMin(a)",
+		Detail:        "std.aaaotherMin(a)",
 		Documentation: "blabla",
 	}
 	minItem = protocol.CompletionItem{
 		Label:         "min",
 		Kind:          protocol.FunctionCompletion,
-		Detail:        "min(a, b)",
+		Detail:        "std.min(a, b)",
 		Documentation: "min gets the min",
 	}
 	maxItem = protocol.CompletionItem{
 		Label:         "max",
 		Kind:          protocol.FunctionCompletion,
-		Detail:        "max(a, b)",
+		Detail:        "std.max(a, b)",
 		Documentation: "max gets the max",
 	}
 )
@@ -130,7 +126,7 @@ func TestCompletion(t *testing.T) {
 				}
 			}
 
-			server, fileURI := serverWithFile(t, document)
+			server, fileURI := testServerWithFile(t, completionTestStdlib, document)
 
 			result, err := server.Completion(context.TODO(), &protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -146,34 +142,4 @@ func TestCompletion(t *testing.T) {
 			assert.Equal(t, &tc.expected, result)
 		})
 	}
-}
-
-func serverWithFile(t *testing.T, fileContent string) (server *server, fileURI protocol.DocumentURI) {
-	t.Helper()
-
-	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
-	conn := jsonrpc2.NewConn(stream)
-	client := protocol.ClientDispatcher(conn)
-	server = NewServer("jsonnet-language-server", "dev", client).WithStaticVM([]string{})
-	server.stdlib = testStdLib
-	require.NoError(t, server.Init())
-
-	tmpFile, err := os.CreateTemp("", "")
-	require.NoError(t, err)
-	uri := protocol.URIFromPath(tmpFile.Name())
-
-	_, err = tmpFile.WriteString(fileContent)
-	require.NoError(t, err)
-
-	err = server.DidOpen(context.Background(), &protocol.DidOpenTextDocumentParams{
-		TextDocument: protocol.TextDocumentItem{
-			URI:        uri,
-			Text:       fileContent,
-			Version:    1,
-			LanguageID: "jsonnet",
-		},
-	})
-	require.NoError(t, err)
-
-	return server, uri
 }

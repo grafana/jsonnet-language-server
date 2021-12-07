@@ -39,7 +39,7 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 			item := protocol.CompletionItem{
 				Label:         f.Name,
 				Kind:          protocol.FunctionCompletion,
-				Detail:        fmt.Sprintf("%s(%s)", f.Name, strings.Join(f.Params, ", ")),
+				Detail:        f.Signature(),
 				Documentation: f.MarkdownDescription,
 			}
 

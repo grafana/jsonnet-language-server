@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/jdbaldry/jsonnet-language-server/utils"
 )
 
 func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
@@ -49,7 +50,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	if isIndex || isVar && strings.HasPrefix(line[startIndex:], "std") {
 		functionNameIndex := startIndex + 4
 		if functionNameIndex < uint32(len(line)) {
-			functionName := strings.Split(line[functionNameIndex:], "(")[0]
+			functionName := utils.FirstWord(line[functionNameIndex:])
 			functionName = strings.TrimSpace(functionName)
 
 			for _, function := range s.stdlib {
@@ -60,7 +61,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 							End:   protocol.Position{Line: lineIndex, Character: functionNameIndex + uint32(len(functionName))}},
 						Contents: protocol.MarkupContent{
 							Kind:  protocol.Markdown,
-							Value: fmt.Sprintf("`std.%s(%s)`\n\n%s", function.Name, strings.Join(function.Params, ", "), function.MarkdownDescription),
+							Value: fmt.Sprintf("`%s`\n\n%s", function.Signature(), function.MarkdownDescription),
 						},
 					}, nil
 				}
