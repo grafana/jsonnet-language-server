@@ -24,6 +24,10 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	_, node := stack.Pop()
 
 	// // DEBUG
+	// var node2 ast.Node
+	// if !stack.IsEmpty() {
+	// 	_, node2 = stack.Pop()
+	// }
 	// r := protocol.Range{
 	// 	Start: protocol.Position{
 	// 		Line:      uint32(node.Loc().Begin.Line) - 1,
