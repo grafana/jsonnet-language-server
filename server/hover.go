@@ -28,6 +28,11 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, err
 	}
 
+	if stack.IsEmpty() {
+		log.Debug("Hover: empty stack")
+		return nil, nil
+	}
+
 	_, node := stack.Pop()
 
 	// // DEBUG
