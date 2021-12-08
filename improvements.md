@@ -1,6 +1,6 @@
 # Improvements
 
-- [ ] Auto install new versions in vscode
+- [x] Auto install new versions in vscode (done through <https://github.com/julienduchesne/vscode-jsonnet> -> v0.1.0)
 - [x] Fix formatting that throws a 400
 - [x] Hovering over standard functions
 - [x] Autocomplete standard functions
