@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/google/go-jsonnet"
 	"sort"
 
 	"github.com/google/go-jsonnet/ast"
@@ -47,12 +48,13 @@ func (s *NodeStack) reorderDesugaredObjects() *NodeStack {
 	return s
 }
 
-func Definition(node ast.Node, params protocol.DefinitionParams) (protocol.DefinitionLink, error) {
-	responseDefLink, _ := findDefinition(node, params.Position)
+func Definition(node ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (protocol.DefinitionLink, error) {
+	responseDefLink, _ := findDefinition(node, params, vm)
 	return *responseDefLink, nil
 }
 
-func findDefinition(root ast.Node, position protocol.Position) (*protocol.DefinitionLink, error) {
+func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
+	position := params.Position
 	searchStack, _ := findNodeByPosition(root, position)
 	var deepestNode ast.Node
 	searchStack, deepestNode = searchStack.Pop()
@@ -93,7 +95,7 @@ func findDefinition(root ast.Node, position protocol.Position) (*protocol.Defini
 		indexSearchStack.Push(deepestNode)
 		indexList := buildIndexList(&indexSearchStack)
 		tempSearchStack := *searchStack
-		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList)
+		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
 		if err != nil {
 			return nil, err
 		}
@@ -121,6 +123,12 @@ func findDefinition(root ast.Node, position protocol.Position) (*protocol.Defini
 				},
 			},
 		}
+	case *ast.Import:
+		filename := deepestNode.File.Value
+		importedFile, _ := vm.ResolveImport(string(params.TextDocument.URI), filename)
+		responseDefLink = protocol.DefinitionLink{
+			TargetURI: protocol.DocumentURI(importedFile),
+		}
 	}
 	return &responseDefLink, nil
 }
@@ -147,45 +155,65 @@ func buildIndexList(stack *NodeStack) []string {
 	return indexList
 }
 
-func findObjectFieldFromIndexList(stack *NodeStack, indexList []string) (*ast.DesugaredObjectField, error) {
+func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, error) {
 	var foundField *ast.DesugaredObjectField
-	var foundDesugaredObject *ast.DesugaredObject
+	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
 	if start == "super" {
 		// Find the LHS desugared object of a binary node
-		foundDesugaredObject = findLhsDesugaredObject(stack)
+		foundDesugaredObjects = append(foundDesugaredObjects, findLhsDesugaredObject(stack))
 	} else if start == "self" {
 		// Get the most recent ast.DesugaredObject as that will be our self object
-		foundDesugaredObject = findDesugaredObjectFromStack(stack)
+		foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind, _ := findBindByIdViaStack(stack, ast.Identifier(start))
-		foundDesugaredObject = bind.Body.(*ast.DesugaredObject)
+		switch bodyNode := bind.Body.(type) {
+		case *ast.DesugaredObject:
+			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
+		case *ast.Import:
+			filename := bodyNode.File.Value
+			rootNode, _, _ := vm.ImportAST("", filename)
+			foundDesugaredObjects = findTopLevelObjects(&NodeStack{
+				stack: []ast.Node{rootNode},
+			})
+		}
 	}
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		foundField = findObjectFieldInObject(foundDesugaredObject, index)
+		foundField = findObjectFieldInObjects(foundDesugaredObjects, index)
+		foundDesugaredObjects = foundDesugaredObjects[:0]
 		if foundField == nil {
 			return nil, fmt.Errorf("field was not found in ast.DesugaredObject")
 		}
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Var:
 			bind, _ := findBindByIdViaStack(stack, fieldNode.Id)
-			foundDesugaredObject = bind.Body.(*ast.DesugaredObject)
+			foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
 		case *ast.DesugaredObject:
 			stack = stack.Push(fieldNode)
-			foundDesugaredObject = findDesugaredObjectFromStack(stack)
+			foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
 		case *ast.Index:
 			tempStack := &NodeStack{}
 			tempStack = tempStack.Push(fieldNode)
 			additionalIndexList := buildIndexList(tempStack)
 			additionalIndexList = append(additionalIndexList, indexList...)
-			return findObjectFieldFromIndexList(stack, additionalIndexList)
+			return findObjectFieldFromIndexList(stack, additionalIndexList, vm)
 		}
 	}
 	return foundField, nil
+}
+
+func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) *ast.DesugaredObjectField {
+	for _, object := range objectNodes {
+		field := findObjectFieldInObject(object, index)
+		if field != nil {
+			return field
+		}
+	}
+	return nil
 }
 
 func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {
@@ -204,11 +232,27 @@ func findDesugaredObjectFromStack(stack *NodeStack) *ast.DesugaredObject {
 		switch curr := curr.(type) {
 		case *ast.DesugaredObject:
 			return curr
-		case *ast.Local:
-
 		}
 	}
 	return nil
+}
+
+// Find all ast.DesugaredObject's from NodeStack
+func findTopLevelObjects(stack *NodeStack) []*ast.DesugaredObject {
+	var objects []*ast.DesugaredObject
+	for !stack.IsEmpty() {
+		_, curr := stack.Pop()
+		switch curr := curr.(type) {
+		case *ast.DesugaredObject:
+			objects = append(objects, curr)
+		case *ast.Binary:
+			stack = stack.Push(curr.Left)
+			stack = stack.Push(curr.Right)
+		case *ast.Local:
+			stack = stack.Push(curr.Body)
+		}
+	}
+	return objects
 }
 
 func findLhsDesugaredObject(stack *NodeStack) *ast.DesugaredObject {

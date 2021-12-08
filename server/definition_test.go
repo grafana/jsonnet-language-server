@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"os"
 	"testing"
 
@@ -9,6 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var (
+	//go:embed testdata/goto-basic-object.jsonnet
+	basicJsonnetContent string
+)
+
+func getVM() (vm *jsonnet.VM) {
+	vm = jsonnet.MakeVM()
+	vm.Importer(&jsonnet.MemoryImporter{
+		Data: map[string]jsonnet.Contents{
+			"goto-basic-object.jsonnet": jsonnet.MakeContents(basicJsonnetContent),
+		},
+	})
+	return
+}
 
 func TestDefinition(t *testing.T) {
 	testCases := []struct {
@@ -484,16 +500,132 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test goto imported file",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/goto-imported-file.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      0,
+						Character: 22,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 0,
+					},
+					End: protocol.Position{
+						Line:      0,
+						Character: 0,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 0,
+					},
+					End: protocol.Position{
+						Line:      0,
+						Character: 0,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto imported file at lhs index",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/goto-imported-file.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      3,
+						Character: 18,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 7,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto imported file at rhs index",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/goto-imported-file.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      4,
+						Character: 18,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      5,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      5,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      5,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      5,
+						Character: 7,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			filename := string(tc.params.TextDocument.URI)
 			var content, err = os.ReadFile(filename)
 			require.NoError(t, err)
-
 			ast, err := jsonnet.SnippetToAST(filename, string(content))
 			require.NoError(t, err)
-			got, err := Definition(ast, tc.params)
+			got, err := Definition(ast, &tc.params, getVM())
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, got)
 		})
