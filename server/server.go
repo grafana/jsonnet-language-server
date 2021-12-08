@@ -63,6 +63,9 @@ type server struct {
 	cache  *cache
 	client protocol.ClientCloser
 	getVM  func(path string) (*jsonnet.VM, error)
+
+	// Feature flags
+	Lint bool
 }
 
 func (s *server) WithStaticVM(jpaths []string) *server {
@@ -146,11 +149,6 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		if doc.err != nil {
 			return s.cache.put(doc)
 		}
-		doc.vm, err = s.getVM(doc.item.URI.SpanURI().Filename())
-		if err != nil {
-			return err
-		}
-		return s.cache.put(doc)
 	}
 	return nil
 }
@@ -163,11 +161,6 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 		if doc.err != nil {
 			return s.cache.put(doc)
-		}
-		doc.vm, err = s.getVM(params.TextDocument.URI.SpanURI().Filename())
-		if err != nil {
-			log.Infof("DidOpen: %v", err)
-			return err
 		}
 	}
 	return s.cache.put(doc)

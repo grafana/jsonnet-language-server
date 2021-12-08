@@ -52,6 +52,9 @@ Options:
   -h / --help        Print this help message.
   -J / --jpath <dir> Specify an additional library search dir
                      (right-most wins).
+  -t / --tanka       Create the jsonnet VM with Tanka (finds jpath automatically).
+  -l / --log-level   Set the log level (default: info).
+  --lint             Enable linting.
   -v / --version     Print version.
 
 Environment variables:
@@ -67,6 +70,7 @@ Environment variables:
 func main() {
 	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
 	tankaMode := false
+	lint := false
 	log.SetLevel(log.InfoLevel)
 
 	for i, arg := range os.Args {
@@ -86,6 +90,8 @@ func main() {
 				log.Fatalf("Invalid log level: %s", err)
 			}
 			log.SetLevel(logLevel)
+		} else if arg == "--lint" {
+			lint = true
 		}
 	}
 
@@ -102,6 +108,7 @@ func main() {
 	} else {
 		s = s.WithStaticVM(jpaths)
 	}
+	s.Lint = lint
 
 	conn.Go(ctx, protocol.Handlers(
 		protocol.ServerHandler(s, jsonrpc2.MethodNotFound)))

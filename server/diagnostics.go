@@ -31,14 +31,40 @@ func (s *server) diagnosticsLoop() {
 				go func() {
 					s.cache.diagRunning.Store(uri, true)
 
-					log.Info("Publishing diagnostics for ", uri)
+					log.Debug("Publishing diagnostics for ", uri)
 					doc, err := s.cache.get(uri)
 					if err != nil {
 						log.Errorf("publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
 						return
 					}
 
-					diags := append(s.getEvalDiags(doc), s.getLintDiags(doc)...)
+					diags := []protocol.Diagnostic{}
+					evalChannel := make(chan []protocol.Diagnostic, 1)
+					go func() {
+						evalChannel <- s.getEvalDiags(doc)
+					}()
+
+					lintChannel := make(chan []protocol.Diagnostic, 1)
+					if s.Lint {
+						go func() {
+							lintChannel <- s.getLintDiags(doc)
+						}()
+					}
+
+					diags = append(diags, <-evalChannel...)
+
+					if s.Lint {
+						err = s.client.PublishDiagnostics(context.Background(), &protocol.PublishDiagnosticsParams{
+							URI:         uri,
+							Diagnostics: diags,
+						})
+						if err != nil {
+							log.Errorf("publishDiagnostics: unable to publish diagnostics: %v\n", err)
+						}
+
+						diags = append(diags, <-lintChannel...)
+					}
+
 					if len(diags) == 0 {
 						diags = []protocol.Diagnostic{
 							{
@@ -48,7 +74,6 @@ func (s *server) diagnosticsLoop() {
 							},
 						}
 					}
-					doc.diagnostics = diags
 
 					err = s.client.PublishDiagnostics(context.Background(), &protocol.PublishDiagnosticsParams{
 						URI:         uri,
@@ -58,7 +83,9 @@ func (s *server) diagnosticsLoop() {
 						log.Errorf("publishDiagnostics: unable to publish diagnostics: %v\n", err)
 					}
 
-					log.Info("Done publishing diagnostics for ", uri)
+					doc.diagnostics = diags
+
+					log.Debug("Done publishing diagnostics for ", uri)
 
 					s.cache.diagRunning.Delete(uri)
 				}()
@@ -73,7 +100,12 @@ func (s *server) diagnosticsLoop() {
 
 func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 	if doc.err == nil {
-		doc.val, doc.err = doc.vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+		if err != nil {
+			log.Errorf("getEvalDiags: %s: %v\n", errorRetrievingDocument, err)
+			return
+		}
+		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 	}
 
 	// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
@@ -132,7 +164,7 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 }
 
 func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
-	result, err := lintWithRecover(doc)
+	result, err := s.lintWithRecover(doc)
 	if err != nil {
 		log.Errorf("getLintDiags: %s: %v\n", errorRetrievingDocument, err)
 	} else {
@@ -172,15 +204,20 @@ func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 	return diags
 }
 
-func lintWithRecover(doc *document) (result string, err error) {
+func (s *server) lintWithRecover(doc *document) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error linting: %v", r)
 		}
 	}()
 
+	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+	if err != nil {
+		return "", err
+	}
+
 	buf := &bytes.Buffer{}
-	linter.LintSnippet(doc.vm, buf, doc.item.URI.SpanURI().Filename(), doc.item.Text)
+	linter.LintSnippet(vm, buf, doc.item.URI.SpanURI().Filename(), doc.item.Text)
 	result = buf.String()
 
 	return

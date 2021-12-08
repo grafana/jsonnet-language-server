@@ -8,7 +8,7 @@
 - [ ] Follow root elements ($.x)
 - [x] Tanka support (no need to specify jpaths)
 - [ ] Formatting settings
-- [ ] jsonnetlint support (TODO: Publish intermediate diagnostics (eval then lint))
+- [x] jsonnetlint support
 - [ ] syntax coloring from the server
 - [ ] `self` support (autocomplete)
 - [ ] `super` support (autocomplete)

@@ -21,17 +21,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
 type document struct {
-	item protocol.TextDocumentItem
-
 	// From DidOpen and DidChange
-	ast ast.Node
-	vm  *jsonnet.VM
+	item protocol.TextDocumentItem
+	ast  ast.Node
 
 	// From diagnostics
 	val         string
