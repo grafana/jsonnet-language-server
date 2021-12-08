@@ -161,7 +161,7 @@ func (s *server) SetTrace(context.Context, *protocol.SetTraceParams) error {
 }
 
 func (s *server) Shutdown(context.Context) error {
-	return notImplemented("Shutdown")
+	return nil
 }
 
 func (s *server) SignatureHelp(context.Context, *protocol.SignatureHelpParams) (*protocol.SignatureHelp, error) {
