@@ -21,7 +21,6 @@ import (
 	"regexp"
 
 	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/ast"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -96,6 +95,17 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 }
 
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+	definitionLink, _ := s.DefinitionLink(ctx, params)
+	definition := protocol.Definition{
+		{
+			URI:   definitionLink.TargetURI,
+			Range: definitionLink.TargetRange,
+		},
+	}
+	return definition, nil
+}
+
+func (s *server) DefinitionLink(ctx context.Context, params *protocol.DefinitionParams) (*protocol.DefinitionLink, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
@@ -105,34 +115,13 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 		return nil, utils.LogErrorf("Definition: error parsing the document")
 	}
 
-	stack, err := findNodeByPosition(doc.ast, params.Position)
+	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+	definition, err := Definition(doc.ast, params, vm)
 	if err != nil {
 		return nil, err
 	}
 
-	if stack.IsEmpty() {
-		return nil, nil
-	}
-
-	var result protocol.Definition
-	_, node := stack.Pop()
-	switch node := node.(type) {
-	case *ast.Import:
-		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-		if err != nil {
-			return nil, err
-		}
-		foundAt, err := vm.ResolveImport(doc.item.URI.SpanURI().Filename(), node.File.Value)
-		if err != nil {
-			return nil, utils.LogErrorf("Definition: unable to resolve import: %w", err)
-		}
-		result = protocol.Definition{
-			{URI: "file://" + protocol.DocumentURI(foundAt)},
-		}
-	}
-
-	return result, nil
-
+	return &definition, nil
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
