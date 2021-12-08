@@ -494,6 +494,7 @@ func TestDefinition(t *testing.T) {
 			ast, err := jsonnet.SnippetToAST(filename, string(content))
 			require.NoError(t, err)
 			got, err := Definition(ast, tc.params)
+			require.NoError(t, err)
 			assert.Equal(t, tc.expected, got)
 		})
 	}

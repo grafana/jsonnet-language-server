@@ -268,8 +268,9 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 	// keeps the history of the navigation path to the requested Node.
 	// used to backwards search Nodes from the found node to the root.
 	searchStack := &NodeStack{}
+	var curr ast.Node
 	for !stack.IsEmpty() {
-		stack, curr := stack.Pop()
+		stack, curr = stack.Pop()
 		// This is needed because SuperIndex only spans "key: super" and not the ".foo" after. This only occurs
 		// when super only has 1 additional index. "super.foo.bar" will not have this issue
 		if curr, isType := curr.(*ast.SuperIndex); isType {
