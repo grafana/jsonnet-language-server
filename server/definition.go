@@ -182,8 +182,7 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string) (*ast.De
 			tempStack = tempStack.Push(fieldNode)
 			additionalIndexList := buildIndexList(tempStack)
 			additionalIndexList = append(additionalIndexList, indexList...)
-			indexList = indexList[1:]
-			foundField, _ = findObjectFieldFromIndexList(stack, additionalIndexList)
+			return findObjectFieldFromIndexList(stack, additionalIndexList)
 		}
 	}
 	return foundField, nil
