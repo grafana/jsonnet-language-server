@@ -50,7 +50,7 @@ func TestDefinition(t *testing.T) {
 					},
 					End: protocol.Position{
 						Line:      0,
-						Character: 12,
+						Character: 11,
 					},
 				},
 			},
@@ -89,7 +89,7 @@ func TestDefinition(t *testing.T) {
 					},
 					End: protocol.Position{
 						Line:      1,
-						Character: 13,
+						Character: 12,
 					},
 				},
 			},
@@ -128,13 +128,52 @@ func TestDefinition(t *testing.T) {
 					},
 					End: protocol.Position{
 						Line:      4,
-						Character: 19,
+						Character: 18,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto super index",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "../testdata/test_combined_object.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      5,
+						Character: 13,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "../testdata/test_combined_object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 5,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 5,
 					},
 				},
 			},
 		},
 		//{
-		//	name: "test goto super",
+		//	name: "test goto super index doesnt exist",
 		//	params: protocol.DefinitionParams{
 		//		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 		//			TextDocument: protocol.TextDocumentIdentifier{
@@ -142,123 +181,6 @@ func TestDefinition(t *testing.T) {
 		//			},
 		//			Position: protocol.Position{
 		//				Line:      5,
-		//				Character: 13,
-		//			},
-		//		},
-		//		WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-		//		PartialResultParams:    protocol.PartialResultParams{},
-		//	},
-		//	expected: protocol.DefinitionLink{
-		//		TargetURI: "../testdata/test_combined_object.jsonnet",
-		//		TargetRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 4,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      3,
-		//				Character: 5,
-		//			},
-		//		},
-		//		TargetSelectionRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 4,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      3,
-		//				Character: 5,
-		//			},
-		//		},
-		//	},
-		//},
-		//{
-		//	name: "test goto super nested",
-		//	params: protocol.DefinitionParams{
-		//		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-		//			TextDocument: protocol.TextDocumentIdentifier{
-		//				URI: "../testdata/test_combined_object.jsonnet",
-		//			},
-		//			Position: protocol.Position{
-		//				Line:      5,
-		//				Character: 10,
-		//			},
-		//		},
-		//		WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-		//		PartialResultParams:    protocol.PartialResultParams{},
-		//	},
-		//	expected: protocol.DefinitionLink{
-		//		TargetURI: "../testdata/test_combined_object.jsonnet",
-		//		TargetRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      2,
-		//				Character: 9,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      2,
-		//				Character: 23,
-		//			},
-		//		},
-		//		TargetSelectionRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      2,
-		//				Character: 9,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      2,
-		//				Character: 10,
-		//			},
-		//		},
-		//	},
-		//},
-		//{
-		//	name: "test goto self object field function",
-		//	params: protocol.DefinitionParams{
-		//		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-		//			TextDocument: protocol.TextDocumentIdentifier{
-		//				URI: "../testdata/test_basic_lib.libsonnet",
-		//			},
-		//			Position: protocol.Position{
-		//				Line:      4,
-		//				Character: 19,
-		//			},
-		//		},
-		//		WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-		//		PartialResultParams:    protocol.PartialResultParams{},
-		//	},
-		//	expected: protocol.DefinitionLink{
-		//		TargetURI: "../testdata/test_basic_lib.libsonnet",
-		//		TargetRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 4,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      3,
-		//				Character: 20,
-		//			},
-		//		},
-		//		TargetSelectionRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 4,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      1,
-		//				Character: 10,
-		//			},
-		//		},
-		//	},
-		//},
-		//{
-		//	name: "test goto super object field ",
-		//	params: protocol.DefinitionParams{
-		//		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-		//			TextDocument: protocol.TextDocumentIdentifier{
-		//				URI: "./testdata/oo-contrived.jsonnet",
-		//			},
-		//			Position: protocol.Position{
-		//				Line:      12,
 		//				Character: 17,
 		//			},
 		//		},
@@ -266,29 +188,302 @@ func TestDefinition(t *testing.T) {
 		//		PartialResultParams:    protocol.PartialResultParams{},
 		//	},
 		//	expected: protocol.DefinitionLink{
-		//		TargetURI: "./testdata/oo-contrived.jsonnet",
+		//		TargetURI: "../testdata/test_combined_object.jsonnet",
 		//		TargetRange: protocol.Range{
 		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 2,
+		//				Line:      2,
+		//				Character: 8,
 		//			},
 		//			End: protocol.Position{
-		//				Line:      1,
-		//				Character: 6,
+		//				Line:      2,
+		//				Character: 22,
 		//			},
 		//		},
 		//		TargetSelectionRange: protocol.Range{
 		//			Start: protocol.Position{
-		//				Line:      1,
-		//				Character: 2,
+		//				Line:      2,
+		//				Character: 8,
 		//			},
 		//			End: protocol.Position{
-		//				Line:      1,
-		//				Character: 3,
+		//				Line:      2,
+		//				Character: 9,
 		//			},
 		//		},
 		//	},
 		//},
+		{
+			name: "test goto super nested",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "../testdata/test_combined_object.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      5,
+						Character: 15,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "../testdata/test_combined_object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 8,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 22,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 8,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 9,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto self object field function",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "../testdata/test_basic_lib.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      4,
+						Character: 19,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "../testdata/test_basic_lib.libsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 20,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 9,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto super object field local defined obj 'foo'",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/oo-contrived.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      12,
+						Character: 17,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 8,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 5,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto super object field local defined obj 'g'",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/oo-contrived.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      13,
+						Character: 17,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 19,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 3,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto local var from other local var",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/oo-contrived.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      6,
+						Character: 9,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 6,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 1,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 6,
+					},
+					End: protocol.Position{
+						Line:      0,
+						Character: 10,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto local obj field from 'self.attr' from other obj",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/goto-indexes.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      9,
+						Character: 17,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/goto-indexes.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 8,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 23,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 8,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 11,
+					},
+				},
+			},
+		},
+		{
+			name: "test goto local object 'obj' via obj index 'obj.foo'",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "./testdata/goto-indexes.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      8,
+						Character: 15,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: protocol.DefinitionLink{
+				TargetURI: "./testdata/goto-indexes.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 5,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      1,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 7,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

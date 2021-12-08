@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 
 	"github.com/google/go-jsonnet/ast"
@@ -82,74 +83,44 @@ func findDefinition(root ast.Node, position protocol.Position) (*protocol.Defini
 					Character: uint32(foundLocRange.Begin.Column - 1),
 				},
 				End: protocol.Position{
-					Line:      uint32(foundLocRange.End.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column + len(matchingBind.Variable)),
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1 + len(matchingBind.Variable)),
 				},
 			},
 		}
-	case *ast.SuperIndex:
-		rootSearchStack := NodeStack{
-			stack: []ast.Node{searchStack.stack[len(searchStack.stack)-1]},
+	case *ast.SuperIndex, *ast.Index:
+		indexSearchStack := NodeStack{}
+		indexSearchStack.Push(deepestNode)
+		indexList := buildIndexList(&indexSearchStack)
+		tempSearchStack := *searchStack
+		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList)
+		if err != nil {
+			return nil, err
 		}
-		indexList := buildIndexList(&rootSearchStack)
-		matchingField, _ := findObjectFieldFromIndexList(&rootSearchStack, indexList)
-		print(matchingField)
-		//foundLocRange := &matchingField.LocRange
-		//if foundLocRange.Begin.Line == 0 {
-		//	foundLocRange = matchingField.Body.Loc()
-		//}
-		//responseDefLink = protocol.DefinitionLink{
-		//	TargetURI: protocol.DocumentURI(foundLocRange.FileName),
-		//	TargetRange: protocol.Range{
-		//		Start: protocol.Position{
-		//			Line:      uint32(foundLocRange.Begin.Line - 1),
-		//			Character: uint32(foundLocRange.Begin.Column - 1),
-		//		},
-		//		End: protocol.Position{
-		//			Line:      uint32(foundLocRange.End.Line - 1),
-		//			Character: uint32(foundLocRange.End.Column - 1),
-		//		},
-		//	},
-		//	TargetSelectionRange: protocol.Range{
-		//		Start: protocol.Position{
-		//			Line:      uint32(foundLocRange.Begin.Line - 1),
-		//			Character: uint32(foundLocRange.Begin.Column - 1),
-		//		},
-		//		End: protocol.Position{
-		//			Line:      uint32(foundLocRange.End.Line - 1),
-		//			Character: uint32(foundLocRange.End.Column - 1),
-		//		},
-		//	},
-		//}
-		//case *ast.Index:
-		//	matchingField, _ := findObjectFieldFromIndexList(searchStack, deepestNode.Index)
-		//	foundLocRange := &matchingField.LocRange
-		//	if foundLocRange.Begin.Line == 0 {
-		//		foundLocRange = matchingField.Body.Loc()
-		//	}
-		//	responseDefLink = protocol.DefinitionLink{
-		//		TargetURI: protocol.DocumentURI(foundLocRange.FileName),
-		//		TargetRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      uint32(foundLocRange.Begin.Line - 1),
-		//				Character: uint32(foundLocRange.Begin.Column - 1),
-		//			},
-		//			End: protocol.Position{
-		//				Line:      uint32(foundLocRange.End.Line - 1),
-		//				Character: uint32(foundLocRange.End.Column - 1),
-		//			},
-		//		},
-		//		TargetSelectionRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      uint32(foundLocRange.Begin.Line - 1),
-		//				Character: uint32(foundLocRange.Begin.Column - 1),
-		//			},
-		//			End: protocol.Position{
-		//				Line:      uint32(foundLocRange.End.Line - 1),
-		//				Character: uint32(foundLocRange.End.Column - 1),
-		//			},
-		//		},
-		//	}
+		foundLocRange := &matchingField.LocRange
+		responseDefLink = protocol.DefinitionLink{
+			TargetURI: protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1),
+				},
+				End: protocol.Position{
+					Line:      uint32(foundLocRange.End.Line - 1),
+					Character: uint32(foundLocRange.End.Column - 1),
+				},
+			},
+			TargetSelectionRange: protocol.Range{
+				Start: protocol.Position{
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1),
+				},
+				End: protocol.Position{
+					Line:      uint32(foundLocRange.Begin.Line - 1),
+					Character: uint32(foundLocRange.Begin.Column - 1 + len(matchingField.Name.(*ast.LiteralString).Value)),
+				},
+			},
+		}
 	}
 	return &responseDefLink, nil
 }
@@ -167,34 +138,62 @@ func buildIndexList(stack *NodeStack) []string {
 			stack = stack.Push(curr.Target)
 		case *ast.LiteralString:
 			indexList = append(indexList, curr.Value)
+		case *ast.Self:
+			indexList = append(indexList, "self")
+		case *ast.Var:
+			indexList = append(indexList, string(curr.Id))
 		}
 	}
 	return indexList
 }
 
-func findObjectFieldFromIndexList(stack *NodeStack, indexList []string) (*ast.Node, error) {
-	var foundNode *ast.DesugaredObject
-	for _, index := range indexList {
-		if index == "super" {
-			// Find the LHS desugared object of a binary node
-			foundNode = findLhsDesugaredObject(stack)
-		} else if index == "self" {
-			// In our search stack, we want to find the closest ast.DesugaredObject as this will be our
-			// self object
-			foundNode = findDesugaredObjectFromStack(stack)
-		} else {
-			field := findFieldInObject(foundNode, index)
-			print(field)
+func findObjectFieldFromIndexList(stack *NodeStack, indexList []string) (*ast.DesugaredObjectField, error) {
+	var foundField *ast.DesugaredObjectField
+	var foundDesugaredObject *ast.DesugaredObject
+	// First element will be super, self, or var name
+	start, indexList := indexList[0], indexList[1:]
+	if start == "super" {
+		// Find the LHS desugared object of a binary node
+		foundDesugaredObject = findLhsDesugaredObject(stack)
+	} else if start == "self" {
+		// Get the most recent ast.DesugaredObject as that will be our self object
+		foundDesugaredObject = findDesugaredObjectFromStack(stack)
+	} else {
+		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
+		bind, _ := findBindByIdViaStack(stack, ast.Identifier(start))
+		foundDesugaredObject = bind.Body.(*ast.DesugaredObject)
+	}
+	for len(indexList) > 0 {
+		index := indexList[0]
+		indexList = indexList[1:]
+		foundField = findObjectFieldInObject(foundDesugaredObject, index)
+		if foundField == nil {
+			return nil, fmt.Errorf("field was not found in ast.DesugaredObject")
+		}
+		switch fieldNode := foundField.Body.(type) {
+		case *ast.Var:
+			bind, _ := findBindByIdViaStack(stack, fieldNode.Id)
+			foundDesugaredObject = bind.Body.(*ast.DesugaredObject)
+		case *ast.DesugaredObject:
+			stack = stack.Push(fieldNode)
+			foundDesugaredObject = findDesugaredObjectFromStack(stack)
+		case *ast.Index:
+			tempStack := &NodeStack{}
+			tempStack = tempStack.Push(fieldNode)
+			additionalIndexList := buildIndexList(tempStack)
+			additionalIndexList = append(additionalIndexList, indexList...)
+			indexList = indexList[1:]
+			foundField, _ = findObjectFieldFromIndexList(stack, additionalIndexList)
 		}
 	}
-	return nil, nil
+	return foundField, nil
 }
 
-func findFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.Node {
+func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {
 	for _, field := range objectNode.Fields {
 		literalString := field.Name.(*ast.LiteralString)
 		if index == literalString.Value {
-			return &field.Body
+			return &field
 		}
 	}
 	return nil
@@ -206,6 +205,8 @@ func findDesugaredObjectFromStack(stack *NodeStack) *ast.DesugaredObject {
 		switch curr := curr.(type) {
 		case *ast.DesugaredObject:
 			return curr
+		case *ast.Local:
+
 		}
 	}
 	return nil
@@ -216,34 +217,24 @@ func findLhsDesugaredObject(stack *NodeStack) *ast.DesugaredObject {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
 		case *ast.Binary:
-			if lhs, isType := curr.Left.(*ast.DesugaredObject); isType {
-				return lhs
+			lhsNode := curr.Left
+			switch lhsNode := lhsNode.(type) {
+			case *ast.DesugaredObject:
+				return lhsNode
+			case *ast.Var:
+				bind, _ := findBindByIdViaStack(stack, lhsNode.Id)
+				return bind.Body.(*ast.DesugaredObject)
+			}
+		case *ast.Local:
+			for _, bind := range curr.Binds {
+				stack = stack.Push(bind.Body)
+			}
+			if curr.Body != nil {
+				stack = stack.Push(curr.Body)
 			}
 		}
 	}
 	return nil
-}
-
-func findObjectFieldFromIndex(stack *NodeStack, index string) (*ast.DesugaredObjectField, *NodeStack, error) {
-	for !stack.IsEmpty() {
-		_, curr := stack.Pop()
-		switch curr := curr.(type) {
-		case *ast.Binary:
-			stack = stack.Push(curr.Left)
-			stack = stack.Push(curr.Right)
-		case *ast.DesugaredObject:
-			for _, field := range curr.Fields {
-				switch name := field.Name.(type) {
-				case *ast.LiteralString:
-					if name.Value == index {
-						return &field, stack, nil
-					}
-				}
-			}
-
-		}
-	}
-	return nil, nil, nil
 }
 
 func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
@@ -279,6 +270,11 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 	searchStack := &NodeStack{}
 	for !stack.IsEmpty() {
 		stack, curr := stack.Pop()
+		// This is needed because SuperIndex only spans "key: super" and not the ".foo" after. This only occurs
+		// when super only has 1 additional index. "super.foo.bar" will not have this issue
+		if curr, isType := curr.(*ast.SuperIndex); isType {
+			curr.Loc().End.Column = curr.Loc().End.Column + len(curr.Index.(*ast.LiteralString).Value) + 1
+		}
 		inRange := inRange(position, *curr.Loc())
 		if inRange {
 			searchStack = searchStack.Push(curr)

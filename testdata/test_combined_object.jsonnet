@@ -3,5 +3,5 @@
         b: "something",
     }
 } + {
-    b: super.a.b.s
+    b: super.a.b.s.x
 }

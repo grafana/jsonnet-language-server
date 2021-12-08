@@ -1,6 +1,6 @@
 local Base = {
-  f: 2,
-  g: self.f + 100,
+  foo: 2,
+  g: self.foo + 100,
 };
 
 local WrapperBase = {
@@ -10,7 +10,7 @@ local WrapperBase = {
 {
   Derived: Base + {
     f: 5,
-    old_f: super.f,
+    old_f: super.foo,
     old_g: super.g,
   },
   WrapperDerived: WrapperBase + {
