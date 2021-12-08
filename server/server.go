@@ -19,8 +19,6 @@ package server
 import (
 	"context"
 	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
@@ -134,83 +132,13 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 
 }
 
-func (s *server) publishDiagnostics(uri protocol.DocumentURI) {
-	diags := []protocol.Diagnostic{}
-	doc, err := s.cache.get(uri)
-	if err != nil {
-		log.Errorf("publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
-		return
-	}
-
-	diag := protocol.Diagnostic{Source: "jsonnet evaluation"}
-	// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
-	line, col, endLine, endCol := 1, 1, 1, 1
-	if doc.err != nil {
-		lines := strings.Split(doc.err.Error(), "\n")
-		if len(lines) == 0 {
-			log.Errorf("publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
-			return
-		}
-
-		var match []string
-		// TODO(#22): Runtime errors that come from imported files report an incorrect location
-		runtimeErr := strings.HasPrefix(lines[0], "RUNTIME ERROR:")
-		if runtimeErr {
-			match = errRegexp.FindStringSubmatch(lines[1])
-		} else {
-			match = errRegexp.FindStringSubmatch(lines[0])
-		}
-		if len(match) == 10 {
-			if match[1] != "" {
-				line, _ = strconv.Atoi(match[1])
-				endLine = line + 1
-			}
-			if match[2] != "" {
-				line, _ = strconv.Atoi(match[2])
-				col, _ = strconv.Atoi(match[3])
-				endLine = line
-				endCol, _ = strconv.Atoi(match[4])
-			}
-			if match[5] != "" {
-				line, _ = strconv.Atoi(match[5])
-				col, _ = strconv.Atoi(match[6])
-				endLine, _ = strconv.Atoi(match[7])
-				endCol, _ = strconv.Atoi(match[8])
-			}
-		}
-
-		if runtimeErr {
-			diag.Message = doc.err.Error()
-			diag.Severity = protocol.SeverityWarning
-		} else {
-			diag.Message = match[9]
-			diag.Severity = protocol.SeverityError
-		}
-
-		diag.Range = protocol.Range{
-			Start: protocol.Position{Line: uint32(line - 1), Character: uint32(col - 1)},
-			End:   protocol.Position{Line: uint32(endLine - 1), Character: uint32(endCol - 1)},
-		}
-		diags = append(diags, diag)
-	}
-
-	// TODO(#9): Replace empty context with appropriate context.
-	err = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
-		URI:         uri,
-		Diagnostics: diags,
-	})
-	if err != nil {
-		log.Errorf("publishDiagnostics: unable to publish diagnostics: %v\n", err)
-	}
-}
-
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
+	defer s.queueDiagnostics(params.TextDocument.URI)
+
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return utils.LogErrorf("DidChange: %s: %w", errorRetrievingDocument, err)
 	}
-
-	defer s.publishDiagnostics(params.TextDocument.URI)
 
 	if params.TextDocument.Version > doc.item.Version && len(params.ContentChanges) != 0 {
 		doc.item.Text = params.ContentChanges[len(params.ContentChanges)-1].Text
@@ -218,37 +146,37 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		if doc.err != nil {
 			return s.cache.put(doc)
 		}
-		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+		doc.vm, err = s.getVM(doc.item.URI.SpanURI().Filename())
 		if err != nil {
 			return err
 		}
-		// TODO(#11): Evaluate whether the raw AST is better for analysis than the desugared AST.
-		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 		return s.cache.put(doc)
 	}
 	return nil
 }
 
 func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
-	defer s.publishDiagnostics(params.TextDocument.URI)
-	doc := document{item: params.TextDocument}
+	defer s.queueDiagnostics(params.TextDocument.URI)
+
+	doc := &document{item: params.TextDocument}
 	if params.TextDocument.Text != "" {
 		doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 		if doc.err != nil {
 			return s.cache.put(doc)
 		}
-		vm, err := s.getVM(params.TextDocument.URI.SpanURI().Filename())
+		doc.vm, err = s.getVM(params.TextDocument.URI.SpanURI().Filename())
 		if err != nil {
 			log.Infof("DidOpen: %v", err)
 			return err
 		}
-		doc.val, doc.err = vm.EvaluateAnonymousSnippet(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	}
 	return s.cache.put(doc)
 }
 
 func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	log.Infof("Initializing %s version %s", s.name, s.version)
+
+	s.diagnosticsLoop()
 
 	var err error
 

@@ -8,11 +8,11 @@
 - [ ] Follow root elements ($.x)
 - [x] Tanka support (no need to specify jpaths)
 - [ ] Formatting settings
-- [ ] jsonnetlint support
+- [ ] jsonnetlint support (TODO: Publish intermediate diagnostics (eval then lint))
 - [ ] syntax coloring from the server
 - [ ] `self` support (autocomplete)
 - [ ] `super` support (autocomplete)
-- [ ] Errors on missing variables
+- [x] Errors on missing variables
 - [ ] Preview function
 - [ ] (Very nice-to-have) Caching mechanism/indexing the workspace
 - [ ] (Maybe vscode only) `jb update` button on out of date dependencies

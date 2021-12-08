@@ -21,35 +21,47 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
 type document struct {
 	item protocol.TextDocumentItem
-	val  string
-	ast  ast.Node
-	err  error
+
+	// From DidOpen and DidChange
+	ast ast.Node
+	vm  *jsonnet.VM
+
+	// From diagnostics
+	val         string
+	err         error
+	diagnostics []protocol.Diagnostic
 }
 
 // newCache returns a document cache.
 func newCache() *cache {
 	return &cache{
-		mu:   sync.RWMutex{},
-		docs: make(map[protocol.DocumentURI]document),
+		mu:        sync.RWMutex{},
+		docs:      make(map[protocol.DocumentURI]*document),
+		diagQueue: make(map[protocol.DocumentURI]struct{}),
 	}
 }
 
 // cache caches documents.
 type cache struct {
 	mu   sync.RWMutex
-	docs map[protocol.DocumentURI]document
+	docs map[protocol.DocumentURI]*document
+
+	diagMutex   sync.RWMutex
+	diagQueue   map[protocol.DocumentURI]struct{}
+	diagRunning sync.Map
 }
 
 // put adds or replaces a document in the cache.
 // Documents are only replaced if the new document version is greater than the currently
 // cached version.
-func (c *cache) put(new document) error {
+func (c *cache) put(new *document) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -65,13 +77,13 @@ func (c *cache) put(new document) error {
 }
 
 // get retrieves a document from the cache.
-func (c *cache) get(uri protocol.DocumentURI) (document, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+func (c *cache) get(uri protocol.DocumentURI) (*document, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	doc, ok := c.docs[uri]
 	if !ok {
-		return document{}, fmt.Errorf("document %s not found in cache", uri)
+		return nil, fmt.Errorf("document %s not found in cache", uri)
 	}
 
 	return doc, nil
