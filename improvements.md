@@ -4,7 +4,7 @@
 - [x] Fix formatting that throws a 400
 - [x] Hovering over standard functions
 - [x] Autocomplete standard functions
-- [ ] Follow sub-attributes into the imported file (e.g. configMap.new())
+- [x] Follow sub-attributes into the imported file (e.g. configMap.new())
 - [ ] Follow root elements ($.x)
 - [x] Tanka support (no need to specify jpaths)
 - [ ] Formatting settings
