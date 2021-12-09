@@ -94,43 +94,6 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 	return s
 }
 
-func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	definitionLink, err := s.DefinitionLink(ctx, params)
-	if err != nil {
-		return nil, nil
-	}
-	definition := protocol.Definition{
-		{
-			URI:   definitionLink.TargetURI,
-			Range: definitionLink.TargetRange,
-		},
-	}
-	return definition, nil
-}
-
-func (s *server) DefinitionLink(ctx context.Context, params *protocol.DefinitionParams) (*protocol.DefinitionLink, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
-	if err != nil {
-		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
-	}
-
-	if doc.ast == nil {
-		return nil, utils.LogErrorf("Definition: error parsing the document")
-	}
-
-	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-	if err != nil {
-		return nil, utils.LogErrorf("error creating the VM: %w", err)
-	}
-	definition, err := Definition(doc.ast, params, vm)
-	if err != nil {
-		log.Warn(err.Error())
-		return nil, err
-	}
-
-	return definition, nil
-}
-
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
