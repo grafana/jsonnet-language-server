@@ -381,7 +381,7 @@ func TestDefinition(t *testing.T) {
 					},
 					Position: protocol.Position{
 						Line:      9,
-						Character: 17,
+						Character: 18,
 					},
 				},
 			},
@@ -714,6 +714,45 @@ func TestDefinition(t *testing.T) {
 					},
 					Position: protocol.Position{
 						Line:      2,
+						Character: 15,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 7,
+					},
+				},
+			},
+		},
+		{
+			name: "goto self in import in binary",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-self-within-binary.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      4,
 						Character: 15,
 					},
 				},
