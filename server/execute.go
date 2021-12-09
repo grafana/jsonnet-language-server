@@ -58,7 +58,7 @@ func (s *server) evalItem(ctx context.Context, params *protocol.ExecuteCommandPa
 	log.Infof("fileName: %s", fileName)
 	log.Infof("position: %+v", position)
 
-	stack, node := stack.Pop()
+	_, node := stack.Pop()
 
 	return nil, fmt.Errorf("%v: %+v", reflect.TypeOf(node), node)
 }
