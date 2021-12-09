@@ -38,7 +38,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_goto_definition.jsonnet",
+						URI: "./testdata/test_goto_definition.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      5,
@@ -49,7 +49,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_goto_definition.jsonnet",
+				TargetURI: "./testdata/test_goto_definition.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      0,
@@ -77,7 +77,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_goto_definition.jsonnet",
+						URI: "./testdata/test_goto_definition.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      7,
@@ -88,7 +88,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_goto_definition.jsonnet",
+				TargetURI: "./testdata/test_goto_definition.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -116,7 +116,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_goto_definition_multi_locals.jsonnet",
+						URI: "./testdata/test_goto_definition_multi_locals.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      6,
@@ -127,7 +127,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_goto_definition_multi_locals.jsonnet",
+				TargetURI: "./testdata/test_goto_definition_multi_locals.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      4,
@@ -155,7 +155,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_combined_object.jsonnet",
+						URI: "./testdata/test_combined_object.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      5,
@@ -166,7 +166,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_combined_object.jsonnet",
+				TargetURI: "./testdata/test_combined_object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -194,7 +194,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_combined_object.jsonnet",
+						URI: "./testdata/test_combined_object.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      5,
@@ -205,7 +205,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_combined_object.jsonnet",
+				TargetURI: "./testdata/test_combined_object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      2,
@@ -233,7 +233,7 @@ func TestDefinition(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "../testdata/test_basic_lib.libsonnet",
+						URI: "./testdata/test_basic_lib.libsonnet",
 					},
 					Position: protocol.Position{
 						Line:      4,
@@ -244,7 +244,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "../testdata/test_basic_lib.libsonnet",
+				TargetURI: "./testdata/test_basic_lib.libsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
