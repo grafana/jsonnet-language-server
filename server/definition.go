@@ -3,7 +3,9 @@ package server
 import (
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"sort"
+	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
@@ -21,6 +23,9 @@ func (s *NodeStack) Push(n ast.Node) *NodeStack {
 
 func (s *NodeStack) Pop() (*NodeStack, ast.Node) {
 	l := len(s.stack)
+	if l == 0 {
+		return s, nil
+	}
 	n := s.stack[l-1]
 	s.stack = s.stack[:l-1]
 	return s, n
@@ -48,9 +53,12 @@ func (s *NodeStack) reorderDesugaredObjects() *NodeStack {
 	return s
 }
 
-func Definition(node ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (protocol.DefinitionLink, error) {
-	responseDefLink, _ := findDefinition(node, params, vm)
-	return *responseDefLink, nil
+func Definition(node ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
+	responseDefLink, err := findDefinition(node, params, vm)
+	if err != nil {
+		return nil, err
+	}
+	return responseDefLink, nil
 }
 
 func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
@@ -61,8 +69,11 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	var responseDefLink protocol.DefinitionLink
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:
-		var matchingBind *ast.LocalBind
-		matchingBind, _ = findBindByIdViaStack(searchStack, deepestNode.Id)
+		log.Debugf("Found Var node %s", deepestNode.Id)
+		matchingBind, err := findBindByIdViaStack(searchStack, deepestNode.Id)
+		if err != nil {
+			return nil, err
+		}
 		foundLocRange := &matchingBind.LocRange
 		if foundLocRange.Begin.Line == 0 {
 			foundLocRange = matchingBind.Body.Loc()
@@ -129,6 +140,10 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		responseDefLink = protocol.DefinitionLink{
 			TargetURI: protocol.DocumentURI(importedFile),
 		}
+	default:
+		log.Debugf("cannot find definition for node type %T", deepestNode)
+		return nil, fmt.Errorf("cannot find definition")
+
 	}
 	return &responseDefLink, nil
 }
@@ -150,6 +165,8 @@ func buildIndexList(stack *NodeStack) []string {
 			indexList = append(indexList, "self")
 		case *ast.Var:
 			indexList = append(indexList, string(curr.Id))
+		case *ast.Import:
+			indexList = append(indexList, curr.File.Value)
 		}
 	}
 	return indexList
@@ -162,13 +179,27 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 	start, indexList := indexList[0], indexList[1:]
 	if start == "super" {
 		// Find the LHS desugared object of a binary node
-		foundDesugaredObjects = append(foundDesugaredObjects, findLhsDesugaredObject(stack))
+		lhsObject, err := findLhsDesugaredObject(stack)
+		if err != nil {
+			return nil, err
+		}
+		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
 	} else if start == "self" {
 		// Get the most recent ast.DesugaredObject as that will be our self object
 		foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
+	} else if start == "std" {
+		return nil, fmt.Errorf("cannot get definition of std lib")
+	} else if strings.Contains(start, ".") {
+		rootNode, _, _ := vm.ImportAST("", start)
+		foundDesugaredObjects = findTopLevelObjects(&NodeStack{
+			stack: []ast.Node{rootNode},
+		})
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
-		bind, _ := findBindByIdViaStack(stack, ast.Identifier(start))
+		bind, err := findBindByIdViaStack(stack, ast.Identifier(start))
+		if err != nil {
+			return nil, err
+		}
 		switch bodyNode := bind.Body.(type) {
 		case *ast.DesugaredObject:
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
@@ -178,6 +209,8 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 			foundDesugaredObjects = findTopLevelObjects(&NodeStack{
 				stack: []ast.Node{rootNode},
 			})
+		default:
+			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
 	}
 	for len(indexList) > 0 {
@@ -255,7 +288,7 @@ func findTopLevelObjects(stack *NodeStack) []*ast.DesugaredObject {
 	return objects
 }
 
-func findLhsDesugaredObject(stack *NodeStack) *ast.DesugaredObject {
+func findLhsDesugaredObject(stack *NodeStack) (*ast.DesugaredObject, error) {
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
@@ -263,10 +296,10 @@ func findLhsDesugaredObject(stack *NodeStack) *ast.DesugaredObject {
 			lhsNode := curr.Left
 			switch lhsNode := lhsNode.(type) {
 			case *ast.DesugaredObject:
-				return lhsNode
+				return lhsNode, nil
 			case *ast.Var:
 				bind, _ := findBindByIdViaStack(stack, lhsNode.Id)
-				return bind.Body.(*ast.DesugaredObject)
+				return bind.Body.(*ast.DesugaredObject), nil
 			}
 		case *ast.Local:
 			for _, bind := range curr.Binds {
@@ -277,7 +310,7 @@ func findLhsDesugaredObject(stack *NodeStack) *ast.DesugaredObject {
 			}
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("could not find a lhs object")
 }
 
 func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
@@ -298,7 +331,7 @@ func findBindByIdViaStack(stack *NodeStack, id ast.Identifier) (*ast.LocalBind, 
 			}
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("unable to find matching bind for %s", id)
 }
 
 func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, error) {

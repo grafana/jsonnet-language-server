@@ -2,6 +2,7 @@ package server
 
 import (
 	_ "embed"
+	"fmt"
 	"os"
 	"testing"
 
@@ -30,7 +31,7 @@ func TestDefinition(t *testing.T) {
 	testCases := []struct {
 		name     string
 		params   protocol.DefinitionParams
-		expected protocol.DefinitionLink
+		expected *protocol.DefinitionLink
 	}{
 		{
 			name: "test goto definition for var myvar",
@@ -47,7 +48,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_goto_definition.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -86,7 +87,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_goto_definition.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -125,7 +126,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_goto_definition_multi_locals.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -164,7 +165,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_combined_object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -188,45 +189,6 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
-		//{
-		//	name: "test goto super index doesnt exist",
-		//	params: protocol.DefinitionParams{
-		//		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-		//			TextDocument: protocol.TextDocumentIdentifier{
-		//				URI: "../testdata/test_combined_object.jsonnet",
-		//			},
-		//			Position: protocol.Position{
-		//				Line:      5,
-		//				Character: 17,
-		//			},
-		//		},
-		//		WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-		//		PartialResultParams:    protocol.PartialResultParams{},
-		//	},
-		//	expected: protocol.DefinitionLink{
-		//		TargetURI: "../testdata/test_combined_object.jsonnet",
-		//		TargetRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      2,
-		//				Character: 8,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      2,
-		//				Character: 22,
-		//			},
-		//		},
-		//		TargetSelectionRange: protocol.Range{
-		//			Start: protocol.Position{
-		//				Line:      2,
-		//				Character: 8,
-		//			},
-		//			End: protocol.Position{
-		//				Line:      2,
-		//				Character: 9,
-		//			},
-		//		},
-		//	},
-		//},
 		{
 			name: "test goto super nested",
 			params: protocol.DefinitionParams{
@@ -242,7 +204,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_combined_object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -281,7 +243,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "../testdata/test_basic_lib.libsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -320,7 +282,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "./testdata/oo-contrived.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -359,7 +321,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "./testdata/oo-contrived.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -398,7 +360,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "./testdata/oo-contrived.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -437,7 +399,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "./testdata/goto-indexes.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -476,7 +438,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "./testdata/goto-indexes.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -515,7 +477,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -554,7 +516,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -593,7 +555,7 @@ func TestDefinition(t *testing.T) {
 				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
-			expected: protocol.DefinitionLink{
+			expected: &protocol.DefinitionLink{
 				TargetURI: "goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
@@ -617,6 +579,84 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "goto import index",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-import-attribute.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      0,
+						Character: 48,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      5,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      5,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      5,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      5,
+						Character: 7,
+					},
+				},
+			},
+		},
+		{
+			name: "goto attribute of nested import",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-nested-imported-file.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      2,
+						Character: 15,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 7,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -628,6 +668,147 @@ func TestDefinition(t *testing.T) {
 			got, err := Definition(ast, &tc.params, getVM())
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, got)
+		})
+	}
+}
+
+func TestDefinitionFail(t *testing.T) {
+	testCases := []struct {
+		name     string
+		params   protocol.DefinitionParams
+		expected error
+	}{
+		{
+			name: "goto local keyword fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-basic-object.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      0,
+						Character: 3,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("cannot find definition"),
+		},
+		{
+			name: "goto function argument from inside function fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-functions.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      7,
+						Character: 13,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("unable to find matching bind for arg1"),
+		},
+		{
+			name: "goto index of std fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-std.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      1,
+						Character: 20,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("cannot get definition of std lib"),
+		},
+		{
+			name: "goto comment fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-comment.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      0,
+						Character: 1,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("cannot find definition"),
+		},
+		{
+			name: "goto local func param fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-local-function.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      2,
+						Character: 25,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("unable to find matching bind for k"),
+		},
+		{
+			name: "goto range index fails",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-local-function.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      15,
+						Character: 57,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("unexpected node type when finding bind for 'ports'"),
+		},
+		{
+			name: "goto super fails as no LHS object exists",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-local-function.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      33,
+						Character: 23,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: fmt.Errorf("could not find a lhs object"),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			filename := string(tc.params.TextDocument.URI)
+			var content, err = os.ReadFile(filename)
+			require.NoError(t, err)
+			ast, err := jsonnet.SnippetToAST(filename, string(content))
+			require.NoError(t, err)
+			got, err := Definition(ast, &tc.params, getVM())
+			require.Error(t, err)
+			assert.Equal(t, tc.expected.Error(), err.Error())
+			assert.Nil(t, got)
 		})
 	}
 }
