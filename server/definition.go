@@ -3,9 +3,9 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/google/go-jsonnet"
 	"sort"
 
+	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )

@@ -175,6 +175,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 			HoverProvider:              true,
 			DefinitionProvider:         true,
 			DocumentFormattingProvider: true,
+			ExecuteCommandProvider:     protocol.ExecuteCommandOptions{Commands: []string{"jsonnet.evalItem", "jsonnet.evalExpression", "jsonnet.evalFile"}},
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,
 				OpenClose: true,
