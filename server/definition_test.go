@@ -15,13 +15,19 @@ import (
 var (
 	//go:embed testdata/goto-basic-object.jsonnet
 	basicJsonnetContent string
+	//go:embed testdata/goto-import-intermediary.libsonnet
+	importIntermediaryContent string
+	//go:embed testdata/goto-import-no-obj.libsonnet
+	importIntermediaryContentNoObj string
 )
 
 func getVM() (vm *jsonnet.VM) {
 	vm = jsonnet.MakeVM()
 	vm.Importer(&jsonnet.MemoryImporter{
 		Data: map[string]jsonnet.Contents{
-			"goto-basic-object.jsonnet": jsonnet.MakeContents(basicJsonnetContent),
+			"goto-basic-object.jsonnet":          jsonnet.MakeContents(basicJsonnetContent),
+			"goto-import-intermediary.libsonnet": jsonnet.MakeContents(importIntermediaryContent),
+			"goto-import-no-obj.libsonnet":       jsonnet.MakeContents(importIntermediaryContentNoObj),
 		},
 	})
 	return
@@ -694,6 +700,45 @@ func TestDefinition(t *testing.T) {
 					},
 					End: protocol.Position{
 						Line:      2,
+						Character: 7,
+					},
+				},
+			},
+		},
+		{
+			name: "goto attribute of nested import no object intermediary",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-nested-import-file-no-inter-obj.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      2,
+						Character: 15,
+					},
+				},
+				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
+				PartialResultParams:    protocol.PartialResultParams{},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "goto-basic-object.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      3,
 						Character: 7,
 					},
 				},

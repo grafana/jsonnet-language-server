@@ -237,9 +237,9 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
 		rootNode, _, _ := vm.ImportAST("", start)
-		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode))
+		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode), vm)
 	} else if start == "$" {
-		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(stack.from))
+		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(stack.from), vm)
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind, err := findBindByIdViaStack(stack, ast.Identifier(start))
@@ -252,7 +252,11 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			rootNode, _, _ := vm.ImportAST("", filename)
-			foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode))
+			foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode), vm)
+		case *ast.Index:
+			tempStack := NewNodeStack(bodyNode)
+			indexList = append(buildIndexList(tempStack), indexList...)
+			return findObjectFieldFromIndexList(stack, indexList, vm)
 		default:
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
@@ -277,6 +281,10 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 			additionalIndexList := buildIndexList(tempStack)
 			additionalIndexList = append(additionalIndexList, indexList...)
 			return findObjectFieldFromIndexList(stack, additionalIndexList, vm)
+		case *ast.Import:
+			filename := fieldNode.File.Value
+			rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
+			foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode), vm)
 		}
 	}
 	return foundField, nil
@@ -295,6 +303,7 @@ func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) 
 func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {
 	for _, field := range objectNode.Fields {
 		literalString := field.Name.(*ast.LiteralString)
+		log.Debugf("Checking index name %s against field name %s", index, literalString.Value)
 		if index == literalString.Value {
 			return &field
 		}
@@ -314,7 +323,7 @@ func findDesugaredObjectFromStack(stack *NodeStack) *ast.DesugaredObject {
 }
 
 // Find all ast.DesugaredObject's from NodeStack
-func findTopLevelObjects(stack *NodeStack) []*ast.DesugaredObject {
+func findTopLevelObjects(stack *NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
 	var objects []*ast.DesugaredObject
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
@@ -326,6 +335,10 @@ func findTopLevelObjects(stack *NodeStack) []*ast.DesugaredObject {
 			stack = stack.Push(curr.Right)
 		case *ast.Local:
 			stack = stack.Push(curr.Body)
+		case *ast.Import:
+			filename := curr.File.Value
+			rootNode, _, _ := vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
+			stack = stack.Push(rootNode)
 		}
 	}
 	return objects
