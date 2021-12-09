@@ -95,7 +95,10 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 }
 
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	definitionLink, _ := s.DefinitionLink(ctx, params)
+	definitionLink, err := s.DefinitionLink(ctx, params)
+	if err != nil {
+		return nil, nil
+	}
 	definition := protocol.Definition{
 		{
 			URI:   definitionLink.TargetURI,
@@ -121,10 +124,11 @@ func (s *server) DefinitionLink(ctx context.Context, params *protocol.Definition
 	}
 	definition, err := Definition(doc.ast, params, vm)
 	if err != nil {
+		log.Warn(err.Error())
 		return nil, err
 	}
 
-	return &definition, nil
+	return definition, nil
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
