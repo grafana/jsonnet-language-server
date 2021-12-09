@@ -52,7 +52,15 @@ func (s *server) DefinitionLink(ctx context.Context, params *protocol.Definition
 }
 
 type NodeStack struct {
+	from  ast.Node
 	stack []ast.Node
+}
+
+func NewNodeStack(from ast.Node) *NodeStack {
+	return &NodeStack{
+		from:  from,
+		stack: []ast.Node{from},
+	}
 }
 
 func (s *NodeStack) Push(n ast.Node) *NodeStack {
@@ -141,9 +149,8 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 			},
 		}
 	case *ast.SuperIndex, *ast.Index:
-		indexSearchStack := NodeStack{}
-		indexSearchStack.Push(deepestNode)
-		indexList := buildIndexList(&indexSearchStack)
+		indexSearchStack := NewNodeStack(deepestNode)
+		indexList := buildIndexList(indexSearchStack)
 		tempSearchStack := *searchStack
 		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
 		if err != nil {
@@ -230,9 +237,9 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
 		rootNode, _, _ := vm.ImportAST("", start)
-		foundDesugaredObjects = findTopLevelObjects(&NodeStack{
-			stack: []ast.Node{rootNode},
-		})
+		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode))
+	} else if start == "$" {
+		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(stack.from))
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind, err := findBindByIdViaStack(stack, ast.Identifier(start))
@@ -245,9 +252,7 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			rootNode, _, _ := vm.ImportAST("", filename)
-			foundDesugaredObjects = findTopLevelObjects(&NodeStack{
-				stack: []ast.Node{rootNode},
-			})
+			foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode))
 		default:
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
@@ -268,8 +273,7 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 			stack = stack.Push(fieldNode)
 			foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
 		case *ast.Index:
-			tempStack := &NodeStack{}
-			tempStack = tempStack.Push(fieldNode)
+			tempStack := NewNodeStack(fieldNode)
 			additionalIndexList := buildIndexList(tempStack)
 			additionalIndexList = append(additionalIndexList, indexList...)
 			return findObjectFieldFromIndexList(stack, additionalIndexList, vm)
@@ -378,11 +382,10 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*NodeStack, 
 		return nil, errors.New("node is nil")
 	}
 
-	stack := &NodeStack{}
-	stack.Push(node)
+	stack := NewNodeStack(node)
 	// keeps the history of the navigation path to the requested Node.
 	// used to backwards search Nodes from the found node to the root.
-	searchStack := &NodeStack{}
+	searchStack := &NodeStack{from: stack.from}
 	var curr ast.Node
 	for !stack.IsEmpty() {
 		stack, curr = stack.Pop()

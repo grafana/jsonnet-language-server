@@ -588,38 +588,112 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		// {
+		// 	name: "goto attribute of nested import",
+		// 	params: protocol.DefinitionParams{
+		// 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+		// 			TextDocument: protocol.TextDocumentIdentifier{
+		// 				URI: "testdata/goto-nested-imported-file.jsonnet",
+		// 			},
+		// 			Position: protocol.Position{
+		// 				Line:      2,
+		// 				Character: 15,
+		// 			},
+		// 		},
+		// 	},
+		// 	expected: &protocol.DefinitionLink{
+		// 		TargetURI: "goto-basic-object.jsonnet",
+		// 		TargetRange: protocol.Range{
+		// 			Start: protocol.Position{
+		// 				Line:      3,
+		// 				Character: 4,
+		// 			},
+		// 			End: protocol.Position{
+		// 				Line:      3,
+		// 				Character: 14,
+		// 			},
+		// 		},
+		// 		TargetSelectionRange: protocol.Range{
+		// 			Start: protocol.Position{
+		// 				Line:      3,
+		// 				Character: 4,
+		// 			},
+		// 			End: protocol.Position{
+		// 				Line:      3,
+		// 				Character: 7,
+		// 			},
+		// 		},
+		// 	},
+		// },
 		{
-			name: "goto attribute of nested import",
+			name: "goto dollar attribute",
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-nested-imported-file.jsonnet",
+						URI: "testdata/goto-dollar-simple.jsonnet",
 					},
 					Position: protocol.Position{
-						Line:      2,
-						Character: 15,
+						Line:      7,
+						Character: 17,
 					},
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-dollar-simple.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
+						Line:      1,
+						Character: 2,
 					},
 					End: protocol.Position{
 						Line:      3,
-						Character: 14,
+						Character: 3,
 					},
 				},
 				TargetSelectionRange: protocol.Range{
 					Start: protocol.Position{
-						Line:      3,
+						Line:      1,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      1,
+						Character: 11,
+					},
+				},
+			},
+		},
+		{
+			name: "goto dollar sub attribute",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-dollar-simple.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      8,
+						Character: 28,
+					},
+				},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "testdata/goto-dollar-simple.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
 						Character: 4,
 					},
 					End: protocol.Position{
-						Line:      3,
+						Line:      2,
+						Character: 15,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 4,
+					},
+					End: protocol.Position{
+						Line:      2,
 						Character: 7,
 					},
 				},
