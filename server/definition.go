@@ -231,8 +231,10 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		}
 		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
 	} else if start == "self" {
-		// Get the most recent ast.DesugaredObject as that will be our self object
-		foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
+		tmpStack := NewNodeStack(stack.from)
+		tmpStack.stack = make([]ast.Node, len(stack.stack))
+		copy(tmpStack.stack, stack.stack)
+		foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
 	} else if start == "std" {
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
@@ -267,7 +269,10 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		foundField = findObjectFieldInObjects(foundDesugaredObjects, index)
 		foundDesugaredObjects = foundDesugaredObjects[:0]
 		if foundField == nil {
-			return nil, fmt.Errorf("field was not found in ast.DesugaredObject")
+			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
+		}
+		if len(indexList) == 0 {
+			return foundField, nil
 		}
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Var:
