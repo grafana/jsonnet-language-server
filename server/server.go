@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"path/filepath"
 	"regexp"
 
 	"github.com/google/go-jsonnet"
@@ -70,6 +71,7 @@ type server struct {
 func (s *server) WithStaticVM(jpaths []string) *server {
 	log.Infof("Using the following jpaths: %v", jpaths)
 	s.getVM = func(path string) (*jsonnet.VM, error) {
+		jpaths = append(jpaths, filepath.Dir(path))
 		vm := jsonnet.MakeVM()
 		importer := &jsonnet.FileImporter{JPaths: jpaths}
 		vm.Importer(importer)
@@ -84,7 +86,7 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 		jpath, _, _, err := jpath.Resolve(path)
 		if err != nil {
 			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
-			jpath = fallbackJPath
+			jpath = append(fallbackJPath, filepath.Dir(path))
 		}
 		opts := tankaJsonnet.Opts{
 			ImportPaths: jpath,
