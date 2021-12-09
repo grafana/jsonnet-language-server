@@ -13,6 +13,6 @@
 - [ ] `self` support (autocomplete)
 - [ ] `super` support (autocomplete)
 - [x] Errors on missing variables
-- [ ] Preview function
+- [x] Preview function
 - [ ] (Very nice-to-have) Caching mechanism/indexing the workspace
 - [ ] (Maybe vscode only) `jb update` button on out of date dependencies

@@ -52,10 +52,6 @@ func (s *server) DocumentHighlight(context.Context, *protocol.DocumentHighlightP
 	return nil, notImplemented("DocumentHighlight")
 }
 
-func (s *server) ExecuteCommand(context.Context, *protocol.ExecuteCommandParams) (interface{}, error) {
-	return nil, notImplemented("ExecuteCommand")
-}
-
 func (s *server) Exit(context.Context) error {
 	return notImplemented("Exit")
 }

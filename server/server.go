@@ -116,6 +116,9 @@ func (s *server) DefinitionLink(ctx context.Context, params *protocol.Definition
 	}
 
 	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
+	if err != nil {
+		return nil, utils.LogErrorf("error creating the VM: %w", err)
+	}
 	definition, err := Definition(doc.ast, params, vm)
 	if err != nil {
 		return nil, err
@@ -175,6 +178,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 			HoverProvider:              true,
 			DefinitionProvider:         true,
 			DocumentFormattingProvider: true,
+			ExecuteCommandProvider:     protocol.ExecuteCommandOptions{Commands: []string{}},
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,
 				OpenClose: true,
