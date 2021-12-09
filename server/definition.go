@@ -301,6 +301,9 @@ func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) 
 }
 
 func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {
+	if objectNode == nil {
+		return nil
+	}
 	for _, field := range objectNode.Fields {
 		literalString := field.Name.(*ast.LiteralString)
 		log.Debugf("Checking index name %s against field name %s", index, literalString.Value)
