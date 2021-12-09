@@ -342,7 +342,9 @@ func findLhsDesugaredObject(stack *NodeStack) (*ast.DesugaredObject, error) {
 				return lhsNode, nil
 			case *ast.Var:
 				bind, _ := findBindByIdViaStack(stack, lhsNode.Id)
-				return bind.Body.(*ast.DesugaredObject), nil
+				if bind != nil {
+					return bind.Body.(*ast.DesugaredObject), nil
+				}
 			}
 		case *ast.Local:
 			for _, bind := range curr.Binds {
