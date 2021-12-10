@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -191,6 +192,16 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		return nil, fmt.Errorf("cannot find definition")
 
 	}
+
+	link := string(responseDefLink.TargetURI)
+	if !strings.HasPrefix(link, "file://") {
+		targetFile, err := filepath.Abs(link)
+		if err != nil {
+			return nil, err
+		}
+		responseDefLink.TargetURI = protocol.URIFromPath(targetFile)
+	}
+
 	return &responseDefLink, nil
 }
 

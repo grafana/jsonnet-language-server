@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-jsonnet"
@@ -38,7 +39,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_goto_definition.jsonnet",
+				TargetURI: absUri(t, "./testdata/test_goto_definition.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      0,
@@ -75,7 +76,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_goto_definition.jsonnet",
+				TargetURI: absUri(t, "./testdata/test_goto_definition.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -112,7 +113,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_goto_definition_multi_locals.jsonnet",
+				TargetURI: absUri(t, "./testdata/test_goto_definition_multi_locals.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      4,
@@ -149,7 +150,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_combined_object.jsonnet",
+				TargetURI: absUri(t, "./testdata/test_combined_object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -186,7 +187,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_combined_object.jsonnet",
+				TargetURI: absUri(t, "./testdata/test_combined_object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      2,
@@ -223,7 +224,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/test_basic_lib.libsonnet",
+				TargetURI: absUri(t, "./testdata/test_basic_lib.libsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -260,7 +261,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -297,7 +298,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      2,
@@ -334,7 +335,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/oo-contrived.jsonnet",
+				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      0,
@@ -371,7 +372,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/goto-indexes.jsonnet",
+				TargetURI: absUri(t, "./testdata/goto-indexes.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      2,
@@ -408,7 +409,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "./testdata/goto-indexes.jsonnet",
+				TargetURI: absUri(t, "./testdata/goto-indexes.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -445,7 +446,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      0,
@@ -482,7 +483,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -519,7 +520,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      5,
@@ -556,7 +557,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      5,
@@ -593,7 +594,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -630,7 +631,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-dollar-simple.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-dollar-simple.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      1,
@@ -667,7 +668,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-dollar-simple.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-dollar-simple.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      2,
@@ -704,7 +705,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-dollar-no-follow.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-dollar-no-follow.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -743,7 +744,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -782,7 +783,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "testdata/goto-basic-object.jsonnet",
+				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -945,4 +946,12 @@ func TestDefinitionFail(t *testing.T) {
 			assert.Nil(t, got)
 		})
 	}
+}
+
+func absUri(t *testing.T, path string) protocol.DocumentURI {
+	t.Helper()
+
+	abs, err := filepath.Abs(path)
+	require.NoError(t, err)
+	return protocol.URIFromPath(abs)
 }
