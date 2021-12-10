@@ -54,6 +54,7 @@ Options:
                      (right-most wins).
   -t / --tanka       Create the jsonnet VM with Tanka (finds jpath automatically).
   -l / --log-level   Set the log level (default: info).
+  --eval-diags       Try to evaluate files to find errors and warnings.
   --lint             Enable linting.
   -v / --version     Print version.
 
@@ -71,6 +72,7 @@ func main() {
 	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
 	tankaMode := false
 	lint := false
+	evalDiags := false
 	log.SetLevel(log.InfoLevel)
 
 	for i, arg := range os.Args {
@@ -92,7 +94,10 @@ func main() {
 			log.SetLevel(logLevel)
 		} else if arg == "--lint" {
 			lint = true
+		} else if arg == "--eval-diags" {
+			evalDiags = true
 		}
+
 	}
 
 	log.Infoln("Starting the language server")
@@ -108,7 +113,8 @@ func main() {
 	} else {
 		s = s.WithStaticVM(jpaths)
 	}
-	s.Lint = lint
+	s.LintDiags = lint
+	s.EvalDiags = evalDiags
 
 	conn.Go(ctx, protocol.Handlers(
 		protocol.ServerHandler(s, jsonrpc2.MethodNotFound)))

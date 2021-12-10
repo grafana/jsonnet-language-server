@@ -65,7 +65,8 @@ type server struct {
 	getVM  func(path string) (*jsonnet.VM, error)
 
 	// Feature flags
-	Lint bool
+	EvalDiags bool
+	LintDiags bool
 }
 
 func (s *server) WithStaticVM(jpaths []string) *server {
