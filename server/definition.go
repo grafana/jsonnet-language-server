@@ -223,6 +223,7 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
+	sameFileOnly := false
 	if start == "super" {
 		// Find the LHS desugared object of a binary node
 		lhsObject, err := findLhsDesugaredObject(stack)
@@ -241,6 +242,7 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		rootNode, _, _ := vm.ImportAST("", start)
 		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(rootNode), vm)
 	} else if start == "$" {
+		sameFileOnly = true
 		foundDesugaredObjects = findTopLevelObjects(NewNodeStack(stack.from), vm)
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
@@ -285,7 +287,11 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 			tempStack := NewNodeStack(fieldNode)
 			additionalIndexList := buildIndexList(tempStack)
 			additionalIndexList = append(additionalIndexList, indexList...)
-			return findObjectFieldFromIndexList(stack, additionalIndexList, vm)
+			result, err := findObjectFieldFromIndexList(stack, additionalIndexList, vm)
+			if sameFileOnly && result.LocRange.FileName != stack.from.Loc().FileName {
+				continue
+			}
+			return result, err
 		case *ast.Import:
 			filename := fieldNode.File.Value
 			rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)

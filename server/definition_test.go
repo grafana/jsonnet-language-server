@@ -12,24 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	//go:embed testdata/goto-basic-object.jsonnet
-	basicJsonnetContent string
-	//go:embed testdata/goto-import-intermediary.libsonnet
-	importIntermediaryContent string
-	//go:embed testdata/goto-import-no-obj.libsonnet
-	importIntermediaryContentNoObj string
-)
-
 func getVM() (vm *jsonnet.VM) {
 	vm = jsonnet.MakeVM()
-	vm.Importer(&jsonnet.MemoryImporter{
-		Data: map[string]jsonnet.Contents{
-			"goto-basic-object.jsonnet":          jsonnet.MakeContents(basicJsonnetContent),
-			"goto-import-intermediary.libsonnet": jsonnet.MakeContents(importIntermediaryContent),
-			"goto-import-no-obj.libsonnet":       jsonnet.MakeContents(importIntermediaryContentNoObj),
-		},
-	})
+	vm.Importer(&jsonnet.FileImporter{JPaths: []string{"testdata"}})
 	return
 }
 
@@ -460,7 +445,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      0,
@@ -497,7 +482,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -534,7 +519,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      5,
@@ -571,7 +556,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      5,
@@ -608,7 +593,7 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -706,6 +691,43 @@ func TestDefinition(t *testing.T) {
 			},
 		},
 		{
+			name: "goto dollar doesn't follow to imports",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-dollar-no-follow.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      7,
+						Character: 13,
+					},
+				},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: "testdata/goto-dollar-no-follow.jsonnet",
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 30,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      3,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      3,
+						Character: 6,
+					},
+				},
+			},
+		},
+		{
 			name: "goto attribute of nested import no object intermediary",
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -721,7 +743,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
@@ -760,7 +782,7 @@ func TestDefinition(t *testing.T) {
 				PartialResultParams:    protocol.PartialResultParams{},
 			},
 			expected: &protocol.DefinitionLink{
-				TargetURI: "goto-basic-object.jsonnet",
+				TargetURI: "testdata/goto-basic-object.jsonnet",
 				TargetRange: protocol.Range{
 					Start: protocol.Position{
 						Line:      3,
