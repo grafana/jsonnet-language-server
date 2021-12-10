@@ -806,6 +806,43 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "goto self attribute from local",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-self-in-local.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      3,
+						Character: 23,
+					},
+				},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: absUri(t, "testdata/goto-self-in-local.jsonnet"),
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 21,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      2,
+						Character: 2,
+					},
+					End: protocol.Position{
+						Line:      2,
+						Character: 12,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

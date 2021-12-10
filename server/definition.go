@@ -264,6 +264,9 @@ func findObjectFieldFromIndexList(stack *NodeStack, indexList []string, vm *json
 		switch bodyNode := bind.Body.(type) {
 		case *ast.DesugaredObject:
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
+		case *ast.Self:
+			tmpStack := NewNodeStack(stack.from)
+			foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			rootNode, _, _ := vm.ImportAST("", filename)
