@@ -6,20 +6,21 @@ A **[Language Server Protocol (LSP)](https://langserver.org)** server for [Jsonn
 
 ### Jump to definition
 
-![self Support Demo](./examples/self-support.mp4)
-![dollar Support Demo](./examples/dollar-support.mp4)
+https://user-images.githubusercontent.com/29210090/145594957-efc01d97-d4c1-4fad-85cb-f5cb4a5f0e97.mp4
+
+https://user-images.githubusercontent.com/29210090/145594976-670fff41-55e9-4ff9-b104-b5ac1cf77b42.mp4
 
 ### Error/Warning Diagnostics
 
-![Error Support Demo](./examples/error-support.mp4)
+https://user-images.githubusercontent.com/29210090/145595007-59dd4276-e8c2-451e-a1d9-bfc7fd83923f.mp4
 
 ### Linting Diagnostics
 
-![Linting Support Demo](./examples/linting-support.mp4)
+https://user-images.githubusercontent.com/29210090/145595044-ca3f09cf-5806-4586-8aa8-720b6927bc6d.mp4
 
 ### Standard Library Hover and Autocomplete
 
-![stdlib Support Demo](./examples/stdlib-support.mp4)
+https://user-images.githubusercontent.com/29210090/145595059-e34c6d25-eff3-41df-ae4a-d3713ee35360.mp4
 
 ### Formatting
 
