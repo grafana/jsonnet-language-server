@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/google/go-jsonnet"
@@ -52,55 +51,6 @@ func (s *server) DefinitionLink(ctx context.Context, params *protocol.Definition
 	return definition, nil
 }
 
-type NodeStack struct {
-	from  ast.Node
-	stack []ast.Node
-}
-
-func NewNodeStack(from ast.Node) *NodeStack {
-	return &NodeStack{
-		from:  from,
-		stack: []ast.Node{from},
-	}
-}
-
-func (s *NodeStack) Push(n ast.Node) *NodeStack {
-	s.stack = append(s.stack, n)
-	return s
-}
-
-func (s *NodeStack) Pop() (*NodeStack, ast.Node) {
-	l := len(s.stack)
-	if l == 0 {
-		return s, nil
-	}
-	n := s.stack[l-1]
-	s.stack = s.stack[:l-1]
-	return s, n
-}
-
-func (s *NodeStack) IsEmpty() bool {
-	return len(s.stack) == 0
-}
-
-func (s *NodeStack) reorderDesugaredObjects() *NodeStack {
-	sort.SliceStable(s.stack, func(i, j int) bool {
-		_, iIsDesugared := s.stack[i].(*ast.DesugaredObject)
-		_, jIsDesugared := s.stack[j].(*ast.DesugaredObject)
-		if !iIsDesugared && !jIsDesugared {
-			return false
-		}
-
-		iLoc, jLoc := s.stack[i].Loc(), s.stack[j].Loc()
-		if iLoc.Begin.Line < jLoc.Begin.Line && iLoc.End.Line > jLoc.End.Line {
-			return true
-		}
-
-		return false
-	})
-	return s
-}
-
 func Definition(node ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
 	responseDefLink, err := findDefinition(node, params, vm)
 	if err != nil {
@@ -127,27 +77,14 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 			foundLocRange = matchingBind.Body.Loc()
 		}
 		responseDefLink = protocol.DefinitionLink{
-			TargetURI: protocol.DocumentURI(foundLocRange.FileName),
-			TargetRange: protocol.Range{
-				Start: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1),
-				},
-				End: protocol.Position{
-					Line:      uint32(foundLocRange.End.Line - 1),
-					Character: uint32(foundLocRange.End.Column - 1),
-				},
-			},
-			TargetSelectionRange: protocol.Range{
-				Start: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1),
-				},
-				End: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1 + len(matchingBind.Variable)),
-				},
-			},
+			TargetURI:   protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange: ASTRangeToProtocolRange(*foundLocRange),
+			TargetSelectionRange: NewProtocolRange(
+				foundLocRange.Begin.Line-1,
+				foundLocRange.Begin.Column-1,
+				foundLocRange.Begin.Line-1,
+				foundLocRange.Begin.Column-1+len(matchingBind.Variable),
+			),
 		}
 	case *ast.SuperIndex, *ast.Index:
 		indexSearchStack := NewNodeStack(deepestNode)
@@ -159,27 +96,14 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		}
 		foundLocRange := &matchingField.LocRange
 		responseDefLink = protocol.DefinitionLink{
-			TargetURI: protocol.DocumentURI(foundLocRange.FileName),
-			TargetRange: protocol.Range{
-				Start: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1),
-				},
-				End: protocol.Position{
-					Line:      uint32(foundLocRange.End.Line - 1),
-					Character: uint32(foundLocRange.End.Column - 1),
-				},
-			},
-			TargetSelectionRange: protocol.Range{
-				Start: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1),
-				},
-				End: protocol.Position{
-					Line:      uint32(foundLocRange.Begin.Line - 1),
-					Character: uint32(foundLocRange.Begin.Column - 1 + len(matchingField.Name.(*ast.LiteralString).Value)),
-				},
-			},
+			TargetURI:   protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange: ASTRangeToProtocolRange(*foundLocRange),
+			TargetSelectionRange: NewProtocolRange(
+				foundLocRange.Begin.Line-1,
+				foundLocRange.Begin.Column-1,
+				foundLocRange.Begin.Line-1,
+				foundLocRange.Begin.Column-1+len(matchingField.Name.(*ast.LiteralString).Value),
+			),
 		}
 	case *ast.Import:
 		filename := deepestNode.File.Value
