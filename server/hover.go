@@ -60,7 +60,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	lineIndex := uint32(node.Loc().Begin.Line) - 1
 	startIndex := uint32(node.Loc().Begin.Column) - 1
 	line := strings.Split(doc.item.Text, "\n")[lineIndex]
-	if isIndex || isVar && strings.HasPrefix(line[startIndex:], "std") {
+	if (isIndex || isVar) && strings.HasPrefix(line[startIndex:], "std") {
 		functionNameIndex := startIndex + 4
 		if functionNameIndex < uint32(len(line)) {
 			functionName := utils.FirstWord(line[functionNameIndex:])

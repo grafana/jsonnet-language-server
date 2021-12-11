@@ -199,6 +199,12 @@ func TestHover(t *testing.T) {
 			position: protocol.Position{Line: 0, Character: 0},
 			expected: nil,
 		},
+		{
+			name:     "no match on non-std",
+			document: "./testdata/hover-std.jsonnet",
+			position: protocol.Position{Line: 19, Character: 18},
+			expected: nil,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

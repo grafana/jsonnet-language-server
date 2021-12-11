@@ -15,4 +15,7 @@
     in std.objectFields({ test: 'test' })
     if std.map({ test: 'test' }, item)
   ],
+
+  local util = {},
+  no_match: util.map(),
 }
