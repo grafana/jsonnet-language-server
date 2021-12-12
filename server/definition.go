@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/grafana/jsonnet-language-server/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
-	"github.com/jdbaldry/jsonnet-language-server/utils"
 	log "github.com/sirupsen/logrus"
 )
 

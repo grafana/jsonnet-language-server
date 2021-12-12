@@ -1,4 +1,4 @@
-module github.com/jdbaldry/jsonnet-language-server
+module github.com/grafana/jsonnet-language-server
 
 go 1.16
 

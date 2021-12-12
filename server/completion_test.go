@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/grafana/jsonnet-language-server/stdlib"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
-	"github.com/jdbaldry/jsonnet-language-server/stdlib"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -22,11 +22,11 @@ import (
 	"regexp"
 
 	"github.com/google/go-jsonnet"
+	"github.com/grafana/jsonnet-language-server/stdlib"
+	"github.com/grafana/jsonnet-language-server/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
-	"github.com/jdbaldry/jsonnet-language-server/stdlib"
-	"github.com/jdbaldry/jsonnet-language-server/utils"
 	log "github.com/sirupsen/logrus"
 )
 

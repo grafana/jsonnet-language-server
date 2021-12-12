@@ -24,20 +24,18 @@ https://user-images.githubusercontent.com/29210090/145595059-e34c6d25-eff3-41df-
 
 ### Formatting
 
-TODO
-
 ## Installation
 
 To install the LSP server with Go into \"\${GOPATH}\"/bin:
 
 ```console
-go get -u github.com/jdbaldry/jsonnet-language-server
+go get -u github.com/grafana/jsonnet-language-server
 ```
 
 To download the latest release binary from GitHub:
 
 ``` {#Download from GitHub .shell}
-curl -Lo jsonnet-language-server https://github.com/jdbaldry/jsonnet-language-server/releases/latest/download/jsonnet-language-server
+curl -Lo jsonnet-language-server https://github.com/grafana/jsonnet-language-server/releases/latest/download/jsonnet-language-server
 ```
 
 ## Contributing

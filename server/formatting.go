@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/google/go-jsonnet/formatter"
+	"github.com/grafana/jsonnet-language-server/utils"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
-	"github.com/jdbaldry/jsonnet-language-server/utils"
 	log "github.com/sirupsen/logrus"
 )
 
