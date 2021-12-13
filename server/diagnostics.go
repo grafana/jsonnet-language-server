@@ -153,7 +153,7 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 			diag.Severity = protocol.SeverityError
 		}
 
-		diag.Range = NewProtocolRange(line, col, endLine, endCol)
+		diag.Range = NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
 		diags = append(diags, diag)
 	}
 
@@ -190,7 +190,7 @@ func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 
 			diag.Message = match[9]
 
-			diag.Range = NewProtocolRange(line, col, endLine, endCol)
+			diag.Range = NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
 			diags = append(diags, diag)
 		}
 	}
