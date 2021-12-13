@@ -61,13 +61,7 @@ Go code should be formatted with `gofmt` and linted with
 
 ## Editor integration
 
-### Emacs
-
-Refer to
-[editor/jsonnet-language-server.el](editor/jsonnet-language-server.el)
-for an example of enabling the LSP server with lsp-mode.
-
-### [VSCodium](https://github.com/VSCodium/vscodium) / VSCode
-
-Use the [vscode-jsonnet
-extension](https://github.com/julienduchesne/vscode-jsonnet)
+* Emacs: Refer to [editor/jsonnet-language-server.el](editor/jsonnet-language-server.el)
+* Vim: Refer to [editor/jsonnet-language-server.vim](editor/jsonnet-language-server.vim)
+* VSCod(e|ium): Use the [vscode-jsonnet-extension](https://github.com/julienduchesne/vscode-jsonnet)
+* Jetbrains: Use the [lsp support plugin](https://plugins.jetbrains.com/plugin/10209-lsp-support)
