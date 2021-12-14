@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
-	"github.com/grafana/jsonnet-language-server/pkg/parsing"
+	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
@@ -88,7 +88,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 			),
 		}
 	case *ast.SuperIndex, *ast.Index:
-		indexSearchStack := parsing.NewNodeStack(deepestNode)
+		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
 		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
@@ -130,7 +130,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	return &responseDefLink, nil
 }
 
-func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, error) {
+func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, error) {
 	var foundField *ast.DesugaredObjectField
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
@@ -144,7 +144,7 @@ func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, 
 		}
 		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
 	} else if start == "self" {
-		tmpStack := parsing.NewNodeStack(stack.From)
+		tmpStack := nodestack.NewNodeStack(stack.From)
 		tmpStack.Stack = make([]ast.Node, len(stack.Stack))
 		copy(tmpStack.Stack, stack.Stack)
 		foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
@@ -152,10 +152,10 @@ func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, 
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
 		rootNode, _, _ := vm.ImportAST("", start)
-		foundDesugaredObjects = findTopLevelObjects(parsing.NewNodeStack(rootNode), vm)
+		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 	} else if start == "$" {
 		sameFileOnly = true
-		foundDesugaredObjects = findTopLevelObjects(parsing.NewNodeStack(stack.From), vm)
+		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind, err := findBindByIdViaStack(stack, ast.Identifier(start))
@@ -166,14 +166,14 @@ func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, 
 		case *ast.DesugaredObject:
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
 		case *ast.Self:
-			tmpStack := parsing.NewNodeStack(stack.From)
+			tmpStack := nodestack.NewNodeStack(stack.From)
 			foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			rootNode, _, _ := vm.ImportAST("", filename)
-			foundDesugaredObjects = findTopLevelObjects(parsing.NewNodeStack(rootNode), vm)
+			foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 		case *ast.Index:
-			tempStack := parsing.NewNodeStack(bodyNode)
+			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
 			return findObjectFieldFromIndexList(stack, indexList, vm)
 		default:
@@ -199,7 +199,7 @@ func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, 
 			stack = stack.Push(fieldNode)
 			foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
 		case *ast.Index:
-			tempStack := parsing.NewNodeStack(fieldNode)
+			tempStack := nodestack.NewNodeStack(fieldNode)
 			additionalIndexList := tempStack.BuildIndexList()
 			additionalIndexList = append(additionalIndexList, indexList...)
 			result, err := findObjectFieldFromIndexList(stack, additionalIndexList, vm)
@@ -210,7 +210,7 @@ func findObjectFieldFromIndexList(stack *parsing.NodeStack, indexList []string, 
 		case *ast.Import:
 			filename := fieldNode.File.Value
 			rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
-			foundDesugaredObjects = findTopLevelObjects(parsing.NewNodeStack(rootNode), vm)
+			foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 		}
 	}
 	return foundField, nil
@@ -243,7 +243,7 @@ func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast
 	return nil
 }
 
-func findDesugaredObjectFromStack(stack *parsing.NodeStack) *ast.DesugaredObject {
+func findDesugaredObjectFromStack(stack *nodestack.NodeStack) *ast.DesugaredObject {
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
@@ -255,7 +255,7 @@ func findDesugaredObjectFromStack(stack *parsing.NodeStack) *ast.DesugaredObject
 }
 
 // Find all ast.DesugaredObject's from NodeStack
-func findTopLevelObjects(stack *parsing.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
+func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
 	var objects []*ast.DesugaredObject
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
@@ -276,7 +276,7 @@ func findTopLevelObjects(stack *parsing.NodeStack, vm *jsonnet.VM) []*ast.Desuga
 	return objects
 }
 
-func findLhsDesugaredObject(stack *parsing.NodeStack) (*ast.DesugaredObject, error) {
+func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, error) {
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
@@ -303,7 +303,7 @@ func findLhsDesugaredObject(stack *parsing.NodeStack) (*ast.DesugaredObject, err
 	return nil, fmt.Errorf("could not find a lhs object")
 }
 
-func findBindByIdViaStack(stack *parsing.NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
+func findBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
@@ -324,15 +324,15 @@ func findBindByIdViaStack(stack *parsing.NodeStack, id ast.Identifier) (*ast.Loc
 	return nil, fmt.Errorf("unable to find matching bind for %s", id)
 }
 
-func findNodeByPosition(node ast.Node, position protocol.Position) (*parsing.NodeStack, error) {
+func findNodeByPosition(node ast.Node, position protocol.Position) (*nodestack.NodeStack, error) {
 	if node == nil {
 		return nil, errors.New("node is nil")
 	}
 
-	stack := parsing.NewNodeStack(node)
+	stack := nodestack.NewNodeStack(node)
 	// keeps the history of the navigation path to the requested Node.
 	// used to backwards search Nodes from the found node to the root.
-	searchStack := &parsing.NodeStack{From: stack.From}
+	searchStack := &nodestack.NodeStack{From: stack.From}
 	var curr ast.Node
 	for !stack.IsEmpty() {
 		stack, curr = stack.Pop()
