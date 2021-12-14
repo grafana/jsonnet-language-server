@@ -22,8 +22,8 @@ import (
 	"regexp"
 
 	"github.com/google/go-jsonnet"
-	"github.com/grafana/jsonnet-language-server/stdlib"
-	"github.com/grafana/jsonnet-language-server/utils"
+	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
+	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
