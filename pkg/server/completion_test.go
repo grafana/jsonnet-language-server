@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
@@ -54,61 +53,71 @@ var (
 func TestCompletion(t *testing.T) {
 	var testCases = []struct {
 		name        string
-		line        string
+		document    string
+		position    protocol.Position
 		expected    protocol.CompletionList
 		expectedErr error
 	}{
 		{
-			name: "std: no suggestion 1",
-			line: "no_std1: d",
+			name:     "std: no suggestion 1",
+			position: protocol.Position{Line: 0, Character: 12},
+			document: "{ no_std1: d }",
 		},
 		{
-			name: "std: no suggestion 2",
-			line: "no_std2: s",
+			name:     "std: no suggestion 2",
+			position: protocol.Position{Line: 0, Character: 12},
+			document: "{ no_std2: s }",
 		},
 		{
-			name: "std: no suggestion 3",
-			line: "no_std3: d.",
+			name:     "std: no suggestion 3",
+			position: protocol.Position{Line: 0, Character: 13},
+			document: "{ no_std3: d. }",
 		},
 		{
-			name: "std: no suggestion 4",
-			line: "no_std4: s.",
+			name:     "std: no suggestion 4",
+			position: protocol.Position{Line: 0, Character: 13},
+			document: "{ no_std4: s. }",
 		},
 		{
-			name: "std: all functions",
-			line: "all_std_funcs: std.",
+			name:     "std: all functions",
+			document: "{ all_std_funcs: std. }",
+			position: protocol.Position{Line: 0, Character: 21},
 			expected: protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem, maxItem, minItem},
 				IsIncomplete: false,
 			},
 		},
 		{
-			name: "std: starting with aaa",
-			line: "std_funcs_starting_with: std.aaa",
+			name:     "std: starting with aaa",
+			document: "{ std_funcs_starting_with: std.aaa }",
+			position: protocol.Position{Line: 0, Character: 34},
 			expected: protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem},
 				IsIncomplete: false,
 			},
 		},
 		{
-			name: "std: partial match",
-			line: "partial_match: std.ther",
+			name:     "std: partial match",
+			document: "{ partial_match: std.ther }",
+			position: protocol.Position{Line: 0, Character: 25},
 			expected: protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem},
 				IsIncomplete: false,
 			},
 		},
 		{
-			name: "std: case insensitive",
-			line: "case_insensitive: std.MAX",
+			name:     "std: case insensitive",
+			document: "{ case_insensitive: std.MAX }",
+			position: protocol.Position{Line: 0, Character: 27},
 			expected: protocol.CompletionList{
 				Items:        []protocol.CompletionItem{maxItem},
 				IsIncomplete: false,
 			},
 		},
 		{
-			name: "std: submatch + startswith",
-			line: "submatch_and_startwith: std.Min",
+			name:     "std: submatch + startswith",
+			document: "{ submatch_and_startwith: std.Min }",
+			position: protocol.Position{Line: 0, Character: 33},
 			expected: protocol.CompletionList{
 				Items:        []protocol.CompletionItem{minItem, otherMinItem},
 				IsIncomplete: false,
@@ -117,8 +126,6 @@ func TestCompletion(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			document := fmt.Sprintf("{ %s }", tc.line)
-
 			if tc.expected.Items == nil {
 				tc.expected = protocol.CompletionList{
 					IsIncomplete: false,
@@ -126,12 +133,12 @@ func TestCompletion(t *testing.T) {
 				}
 			}
 
-			server, fileURI := testServerWithFile(t, completionTestStdlib, document)
+			server, fileURI := testServerWithFile(t, completionTestStdlib, tc.document)
 
 			result, err := server.Completion(context.TODO(), &protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{URI: fileURI},
-					Position:     protocol.Position{Line: 0, Character: uint32(len(tc.line) + 2)},
+					Position:     tc.position,
 				},
 			})
 			if tc.expectedErr != nil {
