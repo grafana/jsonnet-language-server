@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/grafana/jsonnet-language-server/stdlib"
-	"github.com/grafana/jsonnet-language-server/utils"
+	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
+	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/stretchr/testify/require"

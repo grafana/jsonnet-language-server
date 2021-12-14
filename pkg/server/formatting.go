@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/go-jsonnet/formatter"
-	"github.com/grafana/jsonnet-language-server/utils"
+	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"

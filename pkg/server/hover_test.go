@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/grafana/jsonnet-language-server/stdlib"
+	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
