@@ -130,6 +130,63 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	return &responseDefLink, nil
 }
 
+func findObjectFields(stack *nodestack.NodeStack, indexer string, vm *jsonnet.VM) (map[string]*ast.DesugaredObjectField, error) {
+	var foundDesugaredObjects []*ast.DesugaredObject
+	// First element will be super, self, or var name
+	if indexer == "super" {
+		// Find the LHS desugared object of a binary node
+		lhsObject, err := findLhsDesugaredObject(stack)
+		if err != nil {
+			return nil, err
+		}
+		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
+	} else if indexer == "self" {
+		tmpStack := nodestack.NewNodeStack(stack.From)
+		tmpStack.Stack = make([]ast.Node, len(stack.Stack))
+		copy(tmpStack.Stack, stack.Stack)
+		foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
+	} else if indexer == "std" {
+		return nil, fmt.Errorf("cannot get definition of std lib")
+	} else if strings.Contains(indexer, ".") {
+		rootNode, _, _ := vm.ImportAST("", indexer)
+		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+	} else if indexer == "$" {
+		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
+	} else {
+		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
+		bind, err := findBindByIdViaStack(stack, ast.Identifier(indexer))
+		if err != nil {
+			return nil, err
+		}
+		switch bodyNode := bind.Body.(type) {
+		case *ast.DesugaredObject:
+			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
+		case *ast.Self:
+			tmpStack := nodestack.NewNodeStack(stack.From)
+			foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
+		case *ast.Import:
+			filename := bodyNode.File.Value
+			rootNode, _, _ := vm.ImportAST("", filename)
+			foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+		default:
+			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", indexer)
+		}
+	}
+
+	fields := make(map[string]*ast.DesugaredObjectField)
+	for _, object := range foundDesugaredObjects {
+
+		for _, field := range object.Fields {
+			literalString, isString := field.Name.(*ast.LiteralString)
+			if !isString {
+				continue
+			}
+			fields[literalString.Value] = &field
+		}
+	}
+	return fields, nil
+}
+
 func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, error) {
 	var foundField *ast.DesugaredObjectField
 	var foundDesugaredObjects []*ast.DesugaredObject
