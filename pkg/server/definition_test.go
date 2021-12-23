@@ -843,6 +843,80 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "goto function parameter from inside function",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-functions.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      7,
+						Character: 10,
+					},
+				},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: absUri(t, "testdata/goto-functions.libsonnet"),
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      6,
+						Character: 10,
+					},
+					End: protocol.Position{
+						Line:      6,
+						Character: 14,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      6,
+						Character: 10,
+					},
+					End: protocol.Position{
+						Line:      6,
+						Character: 14,
+					},
+				},
+			},
+		},
+		{
+			name: "goto local func param",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-local-function.libsonnet",
+					},
+					Position: protocol.Position{
+						Line:      2,
+						Character: 25,
+					},
+				},
+			},
+			expected: &protocol.DefinitionLink{
+				TargetURI: absUri(t, "testdata/goto-local-function.libsonnet"),
+				TargetRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 11,
+					},
+					End: protocol.Position{
+						Line:      0,
+						Character: 12,
+					},
+				},
+				TargetSelectionRange: protocol.Range{
+					Start: protocol.Position{
+						Line:      0,
+						Character: 11,
+					},
+					End: protocol.Position{
+						Line:      0,
+						Character: 12,
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -879,21 +953,7 @@ func TestDefinitionFail(t *testing.T) {
 			},
 			expected: fmt.Errorf("cannot find definition"),
 		},
-		{
-			name: "goto function argument from inside function fails",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-functions.libsonnet",
-					},
-					Position: protocol.Position{
-						Line:      7,
-						Character: 13,
-					},
-				},
-			},
-			expected: fmt.Errorf("unable to find matching bind for arg1"),
-		},
+
 		{
 			name: "goto index of std fails",
 			params: protocol.DefinitionParams{
@@ -924,21 +984,7 @@ func TestDefinitionFail(t *testing.T) {
 			},
 			expected: fmt.Errorf("cannot find definition"),
 		},
-		{
-			name: "goto local func param fails",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-local-function.libsonnet",
-					},
-					Position: protocol.Position{
-						Line:      2,
-						Character: 25,
-					},
-				},
-			},
-			expected: fmt.Errorf("unable to find matching bind for k"),
-		},
+
 		{
 			name: "goto range index fails",
 			params: protocol.DefinitionParams{
