@@ -69,26 +69,35 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:
 		log.Debugf("Found Var node %s", deepestNode.Id)
-		matchingBind, foundLocRange, err := processing.FindBindByIdViaStack(searchStack, deepestNode.Id)
-		if err != nil {
-			return nil, err
-		}
-		if foundLocRange.Begin.Line == 0 {
-			foundLocRange = *matchingBind.Body.Loc()
-		}
-		resultRange := position.RangeASTToProtocol(foundLocRange)
-		resultSelectionRange := resultRange
-		if matchingBind != nil {
+
+		var (
+			filename                          string
+			resultRange, resultSelectionRange protocol.Range
+		)
+
+		if bind := processing.FindBindByIdViaStack(searchStack, deepestNode.Id); bind != nil {
+			locRange := bind.LocRange
+			if !locRange.Begin.IsSet() {
+				locRange = *bind.Body.Loc()
+			}
+			filename = locRange.FileName
+			resultRange = position.RangeASTToProtocol(locRange)
 			resultSelectionRange = position.NewProtocolRange(
-				foundLocRange.Begin.Line-1,
-				foundLocRange.Begin.Column-1,
-				foundLocRange.Begin.Line-1,
-				foundLocRange.Begin.Column-1+len(matchingBind.Variable),
+				locRange.Begin.Line-1,
+				locRange.Begin.Column-1,
+				locRange.Begin.Line-1,
+				locRange.Begin.Column-1+len(bind.Variable),
 			)
+		} else if param := processing.FindParameterByIdViaStack(searchStack, deepestNode.Id); param != nil {
+			filename = param.LocRange.FileName
+			resultRange = position.RangeASTToProtocol(param.LocRange)
+			resultSelectionRange = position.RangeASTToProtocol(param.LocRange)
+		} else {
+			return nil, fmt.Errorf("no matching bind found for %s", deepestNode.Id)
 		}
 
 		responseDefLink = protocol.DefinitionLink{
-			TargetURI:            protocol.DocumentURI(foundLocRange.FileName),
+			TargetURI:            protocol.DocumentURI(filename),
 			TargetRange:          resultRange,
 			TargetSelectionRange: resultSelectionRange,
 		}
@@ -96,25 +105,15 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
-		matchingField, locRange, err := processing.FindObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
+		objectRanges, err := processing.FindRangesFromIndexList(&tempSearchStack, indexList, vm)
 		if err != nil {
 			return nil, err
 		}
-		foundLocRange := locRange
-		resultRange := position.RangeASTToProtocol(foundLocRange)
-		resultSelectionRange := resultRange
-		if matchingField != nil {
-			resultSelectionRange = position.NewProtocolRange(
-				foundLocRange.Begin.Line-1,
-				foundLocRange.Begin.Column-1,
-				foundLocRange.Begin.Line-1,
-				foundLocRange.Begin.Column-1+len(matchingField.Name.(*ast.LiteralString).Value),
-			)
-		}
+		objectRange := objectRanges[0] // TODO: Handle multiple positions
 		responseDefLink = protocol.DefinitionLink{
-			TargetURI:            protocol.DocumentURI(foundLocRange.FileName),
-			TargetRange:          resultRange,
-			TargetSelectionRange: resultSelectionRange,
+			TargetURI:            protocol.DocumentURI(objectRange.Filename),
+			TargetRange:          position.RangeASTToProtocol(objectRange.FullRange),
+			TargetSelectionRange: position.RangeASTToProtocol(objectRange.SelectionRange),
 		}
 	case *ast.Import:
 		filename := deepestNode.File.Value

@@ -18,6 +18,13 @@ func NewNodeStack(from ast.Node) *NodeStack {
 	}
 }
 
+func (s *NodeStack) Clone() *NodeStack {
+	return &NodeStack{
+		From:  s.From,
+		Stack: append([]ast.Node{}, s.Stack...),
+	}
+}
+
 func (s *NodeStack) Push(n ast.Node) *NodeStack {
 	s.Stack = append(s.Stack, n)
 	return s
