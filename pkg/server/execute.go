@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/grafana/jsonnet-language-server/pkg/position"
+	"github.com/grafana/jsonnet-language-server/pkg/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
@@ -36,8 +38,8 @@ func (s *server) evalItem(ctx context.Context, params *protocol.ExecuteCommandPa
 	if err := json.Unmarshal(args[0], &fileName); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal file name: %v", err)
 	}
-	var position protocol.Position
-	if err := json.Unmarshal(args[1], &position); err != nil {
+	var p protocol.Position
+	if err := json.Unmarshal(args[1], &p); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal position: %v", err)
 	}
 
@@ -46,17 +48,17 @@ func (s *server) evalItem(ctx context.Context, params *protocol.ExecuteCommandPa
 		return nil, utils.LogErrorf("evalItem: %s: %w", errorRetrievingDocument, err)
 	}
 
-	stack, err := findNodeByPosition(doc.ast, position)
+	stack, err := processing.FindNodeByPosition(doc.ast, position.PositionProtocolToAST(p))
 	if err != nil {
 		return nil, err
 	}
 
 	if stack.IsEmpty() {
-		return nil, fmt.Errorf("no node found at position %v", position)
+		return nil, fmt.Errorf("no node found at position %v", p)
 	}
 
 	log.Infof("fileName: %s", fileName)
-	log.Infof("position: %+v", position)
+	log.Infof("position: %+v", p)
 
 	_, node := stack.Pop()
 

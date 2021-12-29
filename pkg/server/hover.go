@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
+	"github.com/grafana/jsonnet-language-server/pkg/position"
+	"github.com/grafana/jsonnet-language-server/pkg/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
@@ -23,7 +25,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, nil
 	}
 
-	stack, err := findNodeByPosition(doc.ast, params.Position)
+	stack, err := processing.FindNodeByPosition(doc.ast, position.PositionProtocolToAST(params.Position))
 	if err != nil {
 		return nil, err
 	}
