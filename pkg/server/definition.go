@@ -69,42 +69,52 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:
 		log.Debugf("Found Var node %s", deepestNode.Id)
-		matchingBind, err := findBindByIdViaStack(searchStack, deepestNode.Id)
+		matchingBind, foundLocRange, err := findBindByIdViaStack(searchStack, deepestNode.Id)
 		if err != nil {
 			return nil, err
 		}
-		foundLocRange := &matchingBind.LocRange
 		if foundLocRange.Begin.Line == 0 {
-			foundLocRange = matchingBind.Body.Loc()
+			foundLocRange = *matchingBind.Body.Loc()
 		}
-		responseDefLink = protocol.DefinitionLink{
-			TargetURI:   protocol.DocumentURI(foundLocRange.FileName),
-			TargetRange: ASTRangeToProtocolRange(*foundLocRange),
-			TargetSelectionRange: NewProtocolRange(
+		resultRange := ASTRangeToProtocolRange(foundLocRange)
+		resultSelectionRange := resultRange
+		if matchingBind != nil {
+			resultSelectionRange = NewProtocolRange(
 				foundLocRange.Begin.Line-1,
 				foundLocRange.Begin.Column-1,
 				foundLocRange.Begin.Line-1,
 				foundLocRange.Begin.Column-1+len(matchingBind.Variable),
-			),
+			)
+		}
+
+		responseDefLink = protocol.DefinitionLink{
+			TargetURI:            protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange:          resultRange,
+			TargetSelectionRange: resultSelectionRange,
 		}
 	case *ast.SuperIndex, *ast.Index:
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
-		matchingField, err := findObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
+		matchingField, locRange, err := findObjectFieldFromIndexList(&tempSearchStack, indexList, vm)
 		if err != nil {
 			return nil, err
 		}
-		foundLocRange := &matchingField.LocRange
-		responseDefLink = protocol.DefinitionLink{
-			TargetURI:   protocol.DocumentURI(foundLocRange.FileName),
-			TargetRange: ASTRangeToProtocolRange(*foundLocRange),
-			TargetSelectionRange: NewProtocolRange(
+		foundLocRange := locRange
+		resultRange := ASTRangeToProtocolRange(foundLocRange)
+		resultSelectionRange := resultRange
+		if matchingField != nil {
+			resultSelectionRange = NewProtocolRange(
 				foundLocRange.Begin.Line-1,
 				foundLocRange.Begin.Column-1,
 				foundLocRange.Begin.Line-1,
 				foundLocRange.Begin.Column-1+len(matchingField.Name.(*ast.LiteralString).Value),
-			),
+			)
+		}
+		responseDefLink = protocol.DefinitionLink{
+			TargetURI:            protocol.DocumentURI(foundLocRange.FileName),
+			TargetRange:          resultRange,
+			TargetSelectionRange: resultSelectionRange,
 		}
 	case *ast.Import:
 		filename := deepestNode.File.Value
@@ -130,7 +140,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	return &responseDefLink, nil
 }
 
-func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, error) {
+func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) (*ast.DesugaredObjectField, ast.LocationRange, error) {
 	var foundField *ast.DesugaredObjectField
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
@@ -140,7 +150,7 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 		// Find the LHS desugared object of a binary node
 		lhsObject, err := findLhsDesugaredObject(stack)
 		if err != nil {
-			return nil, err
+			return nil, ast.LocationRange{}, err
 		}
 		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
 	} else if start == "self" {
@@ -149,7 +159,7 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 		copy(tmpStack.Stack, stack.Stack)
 		foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
 	} else if start == "std" {
-		return nil, fmt.Errorf("cannot get definition of std lib")
+		return nil, ast.LocationRange{}, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
 		rootNode, _, _ := vm.ImportAST("", start)
 		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
@@ -158,9 +168,12 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 	} else {
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
-		bind, err := findBindByIdViaStack(stack, ast.Identifier(start))
+		bind, locRange, err := findBindByIdViaStack(stack, ast.Identifier(start))
 		if err != nil {
-			return nil, err
+			return nil, ast.LocationRange{}, err
+		}
+		if bind == nil {
+			return nil, locRange, nil
 		}
 		switch bodyNode := bind.Body.(type) {
 		case *ast.DesugaredObject:
@@ -177,7 +190,7 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 			indexList = append(tempStack.BuildIndexList(), indexList...)
 			return findObjectFieldFromIndexList(stack, indexList, vm)
 		default:
-			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
+			return nil, ast.LocationRange{}, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
 	}
 	for len(indexList) > 0 {
@@ -186,14 +199,14 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 		foundField = findObjectFieldInObjects(foundDesugaredObjects, index)
 		foundDesugaredObjects = foundDesugaredObjects[:0]
 		if foundField == nil {
-			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
+			return nil, ast.LocationRange{}, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
 		}
 		if len(indexList) == 0 {
-			return foundField, nil
+			return foundField, foundField.LocRange, nil
 		}
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Var:
-			bind, _ := findBindByIdViaStack(stack, fieldNode.Id)
+			bind, _, _ := findBindByIdViaStack(stack, fieldNode.Id)
 			foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
 		case *ast.DesugaredObject:
 			stack = stack.Push(fieldNode)
@@ -202,18 +215,18 @@ func findObjectFieldFromIndexList(stack *nodestack.NodeStack, indexList []string
 			tempStack := nodestack.NewNodeStack(fieldNode)
 			additionalIndexList := tempStack.BuildIndexList()
 			additionalIndexList = append(additionalIndexList, indexList...)
-			result, err := findObjectFieldFromIndexList(stack, additionalIndexList, vm)
+			result, locRange, err := findObjectFieldFromIndexList(stack, additionalIndexList, vm)
 			if sameFileOnly && result.LocRange.FileName != stack.From.Loc().FileName {
 				continue
 			}
-			return result, err
+			return result, locRange, err
 		case *ast.Import:
 			filename := fieldNode.File.Value
 			rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
 			foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 		}
 	}
-	return foundField, nil
+	return foundField, foundField.LocRange, nil
 }
 
 func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) *ast.DesugaredObjectField {
@@ -286,7 +299,7 @@ func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, e
 			case *ast.DesugaredObject:
 				return lhsNode, nil
 			case *ast.Var:
-				bind, _ := findBindByIdViaStack(stack, lhsNode.Id)
+				bind, _, _ := findBindByIdViaStack(stack, lhsNode.Id)
 				if bind != nil {
 					return bind.Body.(*ast.DesugaredObject), nil
 				}
@@ -303,25 +316,32 @@ func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, e
 	return nil, fmt.Errorf("could not find a lhs object")
 }
 
-func findBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) (*ast.LocalBind, error) {
+func findBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) (*ast.LocalBind, ast.LocationRange, error) {
 	for !stack.IsEmpty() {
 		_, curr := stack.Pop()
 		switch curr := curr.(type) {
 		case *ast.Local:
 			for _, bind := range curr.Binds {
 				if bind.Variable == id {
-					return &bind, nil
+					return &bind, bind.LocRange, nil
 				}
 			}
 		case *ast.DesugaredObject:
 			for _, bind := range curr.Locals {
 				if bind.Variable == id {
-					return &bind, nil
+					return &bind, bind.LocRange, nil
+				}
+			}
+		case *ast.Function:
+			for _, param := range curr.Parameters {
+				if param.Name == id {
+					return nil, param.LocRange, nil
 				}
 			}
 		}
+
 	}
-	return nil, fmt.Errorf("unable to find matching bind for %s", id)
+	return nil, ast.LocationRange{}, fmt.Errorf("unable to find matching bind for %s", id)
 }
 
 func findNodeByPosition(node ast.Node, position protocol.Position) (*nodestack.NodeStack, error) {
@@ -357,7 +377,14 @@ func findNodeByPosition(node ast.Node, position protocol.Position) (*nodestack.N
 			}
 		case *ast.DesugaredObject:
 			for _, field := range curr.Fields {
-				stack = stack.Push(field.Body)
+				body := field.Body
+				// Functions do not have a LocRange, so we use the one from the field's body
+				if funcBody, isFunc := body.(*ast.Function); isFunc {
+					funcBody.LocRange = field.LocRange
+					stack = stack.Push(funcBody)
+				} else {
+					stack = stack.Push(body)
+				}
 			}
 			for _, local := range curr.Locals {
 				stack = stack.Push(local.Body)
