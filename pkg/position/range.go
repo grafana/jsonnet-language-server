@@ -1,4 +1,4 @@
-package server
+package position
 
 import (
 	"github.com/google/go-jsonnet/ast"
@@ -18,9 +18,9 @@ func NewProtocolRange(startLine, startCharacter, endLine, endCharacter int) prot
 	}
 }
 
-// ASTRangeToProtocolRange translates a ast.LocationRange to a protocol.Range.
+// RangeASTToProtocol translates a ast.LocationRange to a protocol.Range.
 // The former is one indexed and the latter is zero indexed.
-func ASTRangeToProtocolRange(lr ast.LocationRange) protocol.Range {
+func RangeASTToProtocol(lr ast.LocationRange) protocol.Range {
 	return protocol.Range{
 		Start: protocol.Position{
 			Line:      uint32(lr.Begin.Line - 1),
@@ -31,4 +31,20 @@ func ASTRangeToProtocolRange(lr ast.LocationRange) protocol.Range {
 			Character: uint32(lr.End.Column - 1),
 		},
 	}
+}
+
+func InRange(point ast.Location, theRange ast.LocationRange) bool {
+	if point.Line == theRange.Begin.Line && point.Column < theRange.Begin.Column {
+		return false
+	}
+
+	if point.Line == theRange.End.Line && point.Column >= theRange.End.Column {
+		return false
+	}
+
+	if point.Line != theRange.Begin.Line || point.Line != theRange.End.Line {
+		return theRange.Begin.Line <= point.Line && point.Line <= theRange.End.Line
+	}
+
+	return true
 }

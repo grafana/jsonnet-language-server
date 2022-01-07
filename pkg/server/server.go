@@ -19,7 +19,6 @@ package server
 import (
 	"context"
 	"path/filepath"
-	"regexp"
 
 	"github.com/google/go-jsonnet"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
@@ -32,15 +31,6 @@ import (
 
 const (
 	errorRetrievingDocument = "unable to retrieve document from the cache"
-)
-
-var (
-	// errRegexp matches the various Jsonnet location formats in errors.
-	// file:line msg
-	// file:line:col-endCol msg
-	// file:(line:endLine)-(col:endCol) msg
-	// Has 10 matching groups.
-	errRegexp = regexp.MustCompile(`/.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\))\s(.*)`)
 )
 
 // New returns a new language server.

@@ -4,13 +4,24 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/go-jsonnet/linter"
+	"github.com/grafana/jsonnet-language-server/pkg/position"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	// errRegexp matches the various Jsonnet location formats in errors.
+	// file:line msg
+	// file:line:col-endCol msg
+	// file:(line:endLine)-(col:endCol) msg
+	// Has 10 matching groups.
+	errRegexp = regexp.MustCompile(`/.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\))\s(.*)`)
 )
 
 func (s *server) queueDiagnostics(uri protocol.DocumentURI) {
@@ -153,7 +164,7 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 			diag.Severity = protocol.SeverityError
 		}
 
-		diag.Range = NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
+		diag.Range = position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
 		diags = append(diags, diag)
 	}
 
@@ -190,7 +201,7 @@ func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 
 			diag.Message = match[9]
 
-			diag.Range = NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
+			diag.Range = position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
 			diags = append(diags, diag)
 		}
 	}
