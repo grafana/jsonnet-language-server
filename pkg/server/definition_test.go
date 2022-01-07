@@ -21,913 +21,364 @@ func getVM() (vm *jsonnet.VM) {
 
 func TestDefinition(t *testing.T) {
 	testCases := []struct {
-		name     string
-		params   protocol.DefinitionParams
-		expected *protocol.DefinitionLink
+		name        string
+		filename    string
+		position    protocol.Position
+		targetRange protocol.Range
+
+		// Defaults to filename
+		targetFilename string
+
+		// Default to targetRange
+		targetSelectionRange protocol.Range
 	}{
 		{
-			name: "test goto definition for var myvar",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_goto_definition.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      5,
-						Character: 19,
-					},
-				},
+			name:     "test goto definition for var myvar",
+			filename: "./testdata/test_goto_definition.jsonnet",
+			position: protocol.Position{Line: 5, Character: 19},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 6},
+				End:   protocol.Position{Line: 0, Character: 15},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_goto_definition.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 15,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 11,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 6},
+				End:   protocol.Position{Line: 0, Character: 11},
 			},
 		},
 		{
-			name: "test goto definition on function helper",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_goto_definition.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      7,
-						Character: 8,
-					},
-				},
+			name:     "test goto definition on function helper",
+			filename: "./testdata/test_goto_definition.jsonnet",
+			position: protocol.Position{Line: 7, Character: 8},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 6},
+				End:   protocol.Position{Line: 1, Character: 23},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_goto_definition.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 23,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 12,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 6},
+				End:   protocol.Position{Line: 1, Character: 12},
 			},
 		},
 		{
-			name: "test goto inner definition",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_goto_definition_multi_locals.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      6,
-						Character: 11,
-					},
-				},
+			name:     "test goto inner definition",
+			filename: "./testdata/test_goto_definition_multi_locals.jsonnet",
+			position: protocol.Position{Line: 6, Character: 11},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 10},
+				End:   protocol.Position{Line: 4, Character: 28},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_goto_definition_multi_locals.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      4,
-						Character: 10,
-					},
-					End: protocol.Position{
-						Line:      4,
-						Character: 28,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      4,
-						Character: 10,
-					},
-					End: protocol.Position{
-						Line:      4,
-						Character: 18,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 10},
+				End:   protocol.Position{Line: 4, Character: 18},
 			},
 		},
 		{
-			name: "test goto super index",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_combined_object.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      5,
-						Character: 13,
-					},
-				},
+			name:     "test goto super index",
+			filename: "./testdata/test_combined_object.jsonnet",
+			position: protocol.Position{Line: 5, Character: 13},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_combined_object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 5,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 5,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 1, Character: 5},
 			},
 		},
 		{
-			name: "test goto super nested",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_combined_object.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      5,
-						Character: 15,
-					},
-				},
+			name:     "test goto super nested",
+			filename: "./testdata/test_combined_object.jsonnet",
+			position: protocol.Position{Line: 5, Character: 15},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 8},
+				End:   protocol.Position{Line: 2, Character: 22},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_combined_object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 8,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 22,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 8,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 9,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 8},
+				End:   protocol.Position{Line: 2, Character: 9},
 			},
 		},
 		{
-			name: "test goto self object field function",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/test_basic_lib.libsonnet",
-					},
-					Position: protocol.Position{
-						Line:      4,
-						Character: 19,
-					},
-				},
+			name:     "test goto self object field function",
+			filename: "./testdata/test_basic_lib.libsonnet",
+			position: protocol.Position{Line: 4, Character: 19},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 20},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/test_basic_lib.libsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 20,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 9,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 1, Character: 9},
 			},
 		},
 		{
-			name: "test goto super object field local defined obj 'foo'",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/oo-contrived.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      12,
-						Character: 17,
-					},
-				},
+			name:     "test goto super object field local defined obj 'foo'",
+			filename: "./testdata/oo-contrived.jsonnet",
+			position: protocol.Position{Line: 12, Character: 17},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 8},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 8,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 5,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 5},
 			},
 		},
 		{
-			name: "test goto super object field local defined obj 'g'",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/oo-contrived.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      13,
-						Character: 17,
-					},
-				},
+			name:     "test goto super object field local defined obj 'g'",
+			filename: "./testdata/oo-contrived.jsonnet",
+			position: protocol.Position{Line: 13, Character: 17},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 19},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 19,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 3,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 3},
 			},
 		},
 		{
-			name: "test goto local var from other local var",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/oo-contrived.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      6,
-						Character: 9,
-					},
-				},
+			name:     "test goto local var from other local var",
+			filename: "./testdata/oo-contrived.jsonnet",
+			position: protocol.Position{Line: 6, Character: 9},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 6},
+				End:   protocol.Position{Line: 3, Character: 1},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/oo-contrived.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 1,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 6,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 10,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 6},
+				End:   protocol.Position{Line: 0, Character: 10},
 			},
 		},
 		{
-			name: "test goto local obj field from 'self.attr' from other obj",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/goto-indexes.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      9,
-						Character: 18,
-					},
-				},
+			name:     "test goto local obj field from 'self.attr' from other obj",
+			filename: "./testdata/goto-indexes.jsonnet",
+			position: protocol.Position{Line: 9, Character: 18},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 8},
+				End:   protocol.Position{Line: 2, Character: 23},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/goto-indexes.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 8,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 23,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 8,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 11,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 8},
+				End:   protocol.Position{Line: 2, Character: 11},
 			},
 		},
 		{
-			name: "test goto local object 'obj' via obj index 'obj.foo'",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/goto-indexes.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      8,
-						Character: 15,
-					},
-				},
+			name:     "test goto local object 'obj' via obj index 'obj.foo'",
+			filename: "./testdata/goto-indexes.jsonnet",
+			position: protocol.Position{Line: 8, Character: 15},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "./testdata/goto-indexes.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 5,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 4},
+				End:   protocol.Position{Line: 1, Character: 7},
 			},
 		},
 		{
-			name: "test goto imported file",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/goto-imported-file.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      0,
-						Character: 22,
-					},
-				},
+			name:           "test goto imported file",
+			filename:       "./testdata/goto-imported-file.jsonnet",
+			position:       protocol.Position{Line: 0, Character: 22},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 0},
+				End:   protocol.Position{Line: 0, Character: 0},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 0,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 0,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 0,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 0,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 0},
+				End:   protocol.Position{Line: 0, Character: 0},
 			},
 		},
 		{
-			name: "test goto imported file at lhs index",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/goto-imported-file.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      3,
-						Character: 18,
-					},
-				},
+			name:           "test goto imported file at lhs index",
+			filename:       "./testdata/goto-imported-file.jsonnet",
+			position:       protocol.Position{Line: 3, Character: 18},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 7},
 			},
 		},
 		{
-			name: "test goto imported file at rhs index",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "./testdata/goto-imported-file.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      4,
-						Character: 18,
-					},
-				},
+			name:           "test goto imported file at rhs index",
+			filename:       "./testdata/goto-imported-file.jsonnet",
+			position:       protocol.Position{Line: 4, Character: 18},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      5,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      5,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      5,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      5,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 7},
 			},
 		},
 		{
-			name: "goto import index",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-import-attribute.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      0,
-						Character: 48,
-					},
-				},
+			name:           "goto import index",
+			filename:       "testdata/goto-import-attribute.jsonnet",
+			position:       protocol.Position{Line: 0, Character: 48},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      5,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      5,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      5,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      5,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 7},
 			},
 		},
 		{
-			name: "goto attribute of nested import",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-nested-imported-file.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      2,
-						Character: 15,
-					},
-				},
+			name:           "goto attribute of nested import",
+			filename:       "testdata/goto-nested-imported-file.jsonnet",
+			position:       protocol.Position{Line: 2, Character: 15},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 7},
 			},
 		},
 		{
-			name: "goto dollar attribute",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-dollar-simple.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      7,
-						Character: 17,
-					},
-				},
+			name:     "goto dollar attribute",
+			filename: "testdata/goto-dollar-simple.jsonnet",
+			position: protocol.Position{Line: 7, Character: 17},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 3},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-dollar-simple.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 3,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      1,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      1,
-						Character: 11,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 11},
 			},
 		},
 		{
-			name: "goto dollar sub attribute",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-dollar-simple.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      8,
-						Character: 28,
-					},
-				},
+			name:     "goto dollar sub attribute",
+			filename: "testdata/goto-dollar-simple.jsonnet",
+			position: protocol.Position{Line: 8, Character: 28},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 15},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-dollar-simple.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 15,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 7},
 			},
 		},
 		{
-			name: "goto dollar doesn't follow to imports",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-dollar-no-follow.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      7,
-						Character: 13,
-					},
-				},
+			name:     "goto dollar doesn't follow to imports",
+			filename: "testdata/goto-dollar-no-follow.jsonnet",
+			position: protocol.Position{Line: 7, Character: 13},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 30},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-dollar-no-follow.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 30,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 6,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 6},
 			},
 		},
 		{
-			name: "goto attribute of nested import no object intermediary",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-nested-import-file-no-inter-obj.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      2,
-						Character: 15,
-					},
-				},
-				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-				PartialResultParams:    protocol.PartialResultParams{},
+			name:           "goto attribute of nested import no object intermediary",
+			filename:       "testdata/goto-nested-import-file-no-inter-obj.jsonnet",
+			position:       protocol.Position{Line: 2, Character: 15},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 7},
 			},
 		},
 		{
-			name: "goto self in import in binary",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-self-within-binary.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      4,
-						Character: 15,
-					},
-				},
-				WorkDoneProgressParams: protocol.WorkDoneProgressParams{},
-				PartialResultParams:    protocol.PartialResultParams{},
+			name:           "goto self in import in binary",
+			filename:       "testdata/goto-self-within-binary.jsonnet",
+			position:       protocol.Position{Line: 4, Character: 15},
+			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 14},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-basic-object.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      3,
-						Character: 4,
-					},
-					End: protocol.Position{
-						Line:      3,
-						Character: 7,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 3, Character: 4},
+				End:   protocol.Position{Line: 3, Character: 7},
 			},
 		},
 		{
-			name: "goto self attribute from local",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-self-in-local.jsonnet",
-					},
-					Position: protocol.Position{
-						Line:      3,
-						Character: 23,
-					},
-				},
+			name:     "goto self attribute from local",
+			filename: "testdata/goto-self-in-local.jsonnet",
+			position: protocol.Position{Line: 3, Character: 23},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 21},
 			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-self-in-local.jsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 21,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      2,
-						Character: 2,
-					},
-					End: protocol.Position{
-						Line:      2,
-						Character: 12,
-					},
-				},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 12},
 			},
 		},
 		{
-			name: "goto function parameter from inside function",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-functions.libsonnet",
-					},
-					Position: protocol.Position{
-						Line:      7,
-						Character: 10,
-					},
-				},
-			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-functions.libsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      6,
-						Character: 10,
-					},
-					End: protocol.Position{
-						Line:      6,
-						Character: 14,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      6,
-						Character: 10,
-					},
-					End: protocol.Position{
-						Line:      6,
-						Character: 14,
-					},
-				},
+			name:     "goto function parameter from inside function",
+			filename: "testdata/goto-functions.libsonnet",
+			position: protocol.Position{Line: 7, Character: 10},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 6, Character: 10},
+				End:   protocol.Position{Line: 6, Character: 14},
 			},
 		},
 		{
-			name: "goto local func param",
-			params: protocol.DefinitionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-local-function.libsonnet",
-					},
-					Position: protocol.Position{
-						Line:      2,
-						Character: 25,
-					},
-				},
-			},
-			expected: &protocol.DefinitionLink{
-				TargetURI: absUri(t, "testdata/goto-local-function.libsonnet"),
-				TargetRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 11,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 12,
-					},
-				},
-				TargetSelectionRange: protocol.Range{
-					Start: protocol.Position{
-						Line:      0,
-						Character: 11,
-					},
-					End: protocol.Position{
-						Line:      0,
-						Character: 12,
-					},
-				},
+			name:     "goto local func param",
+			filename: "testdata/goto-local-function.libsonnet",
+			position: protocol.Position{Line: 2, Character: 25},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 11},
+				End:   protocol.Position{Line: 0, Character: 12},
 			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			filename := string(tc.params.TextDocument.URI)
-			var content, err = os.ReadFile(filename)
+			var content, err = os.ReadFile(tc.filename)
 			require.NoError(t, err)
-			ast, err := jsonnet.SnippetToAST(filename, string(content))
+			ast, err := jsonnet.SnippetToAST(tc.filename, string(content))
 			require.NoError(t, err)
-			got, err := Definition(ast, &tc.params, getVM())
-			require.NoError(t, err)
-			assert.Equal(t, tc.expected, got)
+
+			params := &protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: protocol.URIFromPath(tc.filename),
+					},
+					Position: tc.position,
+				},
+			}
+
+			got, err := Definition(ast, params, getVM())
+			assert.NoError(t, err)
+
+			// Defaults
+			if tc.targetSelectionRange.End.Character == 0 {
+				tc.targetSelectionRange = tc.targetRange
+			}
+			if tc.targetFilename == "" {
+				tc.targetFilename = tc.filename
+			}
+
+			// Check results
+			expected := &protocol.LocationLink{
+				TargetURI:            absUri(t, tc.targetFilename),
+				TargetRange:          tc.targetRange,
+				TargetSelectionRange: tc.targetSelectionRange,
+			}
+
+			assert.Equal(t, expected, got)
 		})
 	}
 }
