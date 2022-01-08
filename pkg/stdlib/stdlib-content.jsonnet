@@ -66,7 +66,7 @@ local html = import 'html.libsonnet';
         {
           name: 'get',
           params: ['o', 'f', 'default=null', 'inc_hidden=true'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
             Returns the object's field if it exists or default value otherwise.
             <code>inc_hidden</code> controls whether to include hidden fields.
@@ -339,36 +339,46 @@ local html = import 'html.libsonnet';
         {
           name: 'split',
           params: ['str', 'c'],
-          description: |||
-            Split the string <code>str</code> into an array of strings, divided by the single character
-            <code>c</code>.
-          |||,
+          description: [
+            html.p({}, |||
+              Split the string <code>str</code> into an array of strings, divided by the string
+              <code>c</code>.
+            |||),
+            html.p({}, |||
+              Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
+            |||),
+          ],
           examples: [
             {
-              input: @'std.split("foo/bar", "/")',
-              output: std.split('foo/bar', '/'),
+              input: @'std.split("foo/_bar", "/_")',
+              output: std.split('foo/_bar', '/_'),
             },
             {
-              input: @'std.split("/foo/", "/")',
-              output: std.split('/foo/', '/'),
+              input: @'std.split("/_foo/_bar", "/_")',
+              output: std.split('/_foo/_bar', '/_'),
             },
           ],
         },
         {
           name: 'splitLimit',
           params: ['str', 'c', 'maxsplits'],
-          description: |||
-            As std.split(str, c) but will stop after <code>maxsplits</code> splits, thereby the largest
-            array it will return has length <code>maxsplits + 1</code>.  A limit of -1 means unlimited.
-          |||,
+          description: [
+            html.p({}, |||
+              As <code>std.split(str, c)</code> but will stop after <code>maxsplits</code> splits, thereby the largest
+              array it will return has length <code>maxsplits + 1</code>. A limit of <code>-1</code> means unlimited.
+            |||),
+            html.p({}, |||
+              Note: Versions up to and including 0.18.0 require <code>c</code> to be a single character.
+            |||),
+          ],
           examples: [
             {
-              input: @'std.splitLimit("foo/bar", "/", 1)',
-              output: std.splitLimit('foo/bar', '/', 1),
+              input: @'std.splitLimit("foo/_bar", "/_", 1)',
+              output: std.splitLimit('foo/_bar', '/_', 1),
             },
             {
-              input: @'std.splitLimit("/foo/bar", "/", 1)',
-              output: std.splitLimit('/foo/bar', '/', 1),
+              input: @'std.splitLimit("/_foo/_bar", "/_", 1)',
+              output: std.splitLimit('/_foo/_bar', '/_', 1),
             },
           ],
         },
@@ -759,7 +769,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestJsonMinified',
           params: ['value'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
                 Convert the given object to a minified JSON form. Under the covers,
                 it calls <code>std.manifestJsonEx:')</code>:
@@ -943,7 +953,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestTomlEx',
           params: ['toml', 'indent'],
-          availableSince: 'upcoming',
+          availableSince: '0.18.0',
           description: |||
             Convert the given object to a TOML form. <code>indent</code> is a string containing
             one or more whitespaces that are used for indentation:
@@ -1241,6 +1251,32 @@ local html = import 'html.libsonnet';
             |||
               Optional argument <code>keyF</code> is a single argument function used to extract comparison key from each array element.
               Default value is identity function <code>keyF=function(x) x</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'all',
+          params: ['arr'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
+            |||,
+            |||
+              It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
+            |||,
+          ]),
+        },
+        {
+          name: 'any',
+          params: ['arr'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
+            |||,
+            |||
+              It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
             |||,
           ]),
         },

@@ -222,7 +222,9 @@ func (s *server) lintWithRecover(doc *document) (result string, err error) {
 	}
 
 	buf := &bytes.Buffer{}
-	linter.LintSnippet(vm, buf, doc.item.URI.SpanURI().Filename(), doc.item.Text)
+	linter.LintSnippet(vm, buf, []linter.Snippet{
+		{FileName: doc.item.URI.SpanURI().Filename(), Code: doc.item.Text},
+	})
 	result = buf.String()
 
 	return
