@@ -8,7 +8,4 @@ mkShell {
     gopls
     snitch
   ];
-  shellHook = ''
-    export PATH="$(pwd)":"$PATH"
-  '';
 }
