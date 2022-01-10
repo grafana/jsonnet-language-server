@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+function show_help {
+  cat <<EOF
+Update the jsonnet-language-server Nix derivation.
+
+Usage:
+  $0 <major>.<minor>.<patch>
+
+Examples:
+  $0 0.6.4
+EOF
+}
+
+if [[ $# -ne 1 ]]; then
+  show_help && exit 1
+fi
+
+vendorSha256="$(NIX_PATH="nixpkgs=https://github.com/nixos/nixpkgs/archive/nixos-unstable.tar.gz" \
+  nix-prefetch '{ sha256 }: (callPackage (import ./default.nix) { }).go-modules.overrideAttrs (_: { modSha256 = sha256; })')"
+
+sed -i \
+  -e "s/version =.*;/version = \"${1}\";/" \
+  -e "s/vendorSha256 =.*;/vendorSha256 = \"${vendorSha256}\";/" \
+  default.nix
