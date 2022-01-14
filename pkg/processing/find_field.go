@@ -51,7 +51,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		tmpStack := nodestack.NewNodeStack(stack.From)
 		tmpStack.Stack = make([]ast.Node, len(stack.Stack))
 		copy(tmpStack.Stack, stack.Stack)
-		foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
+		foundDesugaredObjects = filterSelfScope(findTopLevelObjects(tmpStack, vm))
 	} else if start == "std" {
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {

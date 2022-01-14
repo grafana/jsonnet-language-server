@@ -466,6 +466,21 @@ func TestDefinitionFail(t *testing.T) {
 			},
 			expected: fmt.Errorf("could not find a lhs object"),
 		},
+		{
+			name: "goto self fails when out of scope",
+			params: protocol.DefinitionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: "testdata/goto-self-out-of-scope.jsonnet",
+					},
+					Position: protocol.Position{
+						Line:      3,
+						Character: 18,
+					},
+				},
+			},
+			expected: fmt.Errorf("field test was not found in ast.DesugaredObject"),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
