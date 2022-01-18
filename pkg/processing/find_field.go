@@ -108,6 +108,9 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Var:
 			bind := FindBindByIdViaStack(stack, fieldNode.Id)
+			if bind == nil {
+				return nil, fmt.Errorf("could not find bind for %s", fieldNode.Id)
+			}
 			foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
 		case *ast.DesugaredObject:
 			stack = stack.Push(fieldNode)
