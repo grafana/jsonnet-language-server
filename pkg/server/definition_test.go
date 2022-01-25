@@ -343,6 +343,32 @@ func TestDefinition(t *testing.T) {
 				End:   protocol.Position{Line: 0, Character: 12},
 			},
 		},
+		{
+			name:     "goto self complex scope 1",
+			filename: "testdata/goto-self-complex-scoping.jsonnet",
+			position: protocol.Position{Line: 10, Character: 15},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 8, Character: 3},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 6, Character: 6},
+			},
+		},
+		{
+			name:     "goto self complex scope 2",
+			filename: "testdata/goto-self-complex-scoping.jsonnet",
+			position: protocol.Position{Line: 11, Character: 19},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 7, Character: 4},
+				End:   protocol.Position{Line: 7, Character: 18},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 7, Character: 4},
+				End:   protocol.Position{Line: 7, Character: 9},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -471,7 +497,7 @@ func TestDefinitionFail(t *testing.T) {
 			params: protocol.DefinitionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
-						URI: "testdata/goto-self-out-of-scope.jsonnet",
+						URI: "testdata/goto-self-complex-scoping.jsonnet",
 					},
 					Position: protocol.Position{
 						Line:      3,

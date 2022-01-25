@@ -51,6 +51,13 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		tmpStack := nodestack.NewNodeStack(stack.From)
 		tmpStack.Stack = make([]ast.Node, len(stack.Stack))
 		copy(tmpStack.Stack, stack.Stack)
+
+		// Special case. If the index was part of a binary node (ex: self.foo + {...}),
+		//   then the second element's content should not be considered to find the index's reference
+		if _, ok := tmpStack.Peek().(*ast.Binary); ok {
+			tmpStack.Pop()
+		}
+
 		foundDesugaredObjects = filterSelfScope(findTopLevelObjects(tmpStack, vm))
 	} else if start == "std" {
 		return nil, fmt.Errorf("cannot get definition of std lib")
@@ -189,6 +196,18 @@ func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			filename := curr.File.Value
 			rootNode, _, _ := vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
 			stack = stack.Push(rootNode)
+		case *ast.Index:
+			container := stack.Peek()
+			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
+				indexValue, indexIsString := curr.Index.(*ast.LiteralString)
+				if !indexIsString {
+					continue
+				}
+				obj := findObjectFieldInObject(containerObj, indexValue.Value)
+				if obj != nil {
+					stack.Push(obj.Body)
+				}
+			}
 		}
 	}
 	return objects
