@@ -8,7 +8,7 @@ import (
 // filterSelfScope takes in an array of objects (blocks delimited by curly braces) and
 //   returns a new array of objects, where only objects in scope of the first one are kept
 // This is done by comparing the location ranges. If the range of the first object is
-//   contained within the range of another object, that object is removed because
+//   contained within the range of another object, the latter object is removed because
 //   it is a parent of the first object.
 func filterSelfScope(objs []*ast.DesugaredObject) (result []*ast.DesugaredObject) {
 	if len(objs) == 0 {

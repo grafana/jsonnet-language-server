@@ -49,7 +49,7 @@ func InRange(point ast.Location, theRange ast.LocationRange) bool {
 	return true
 }
 
-// RangeGreaterThan returns true if the first range is greater than the second.
+// RangeGreaterOrEqual returns true if the first range is greater than the second.
 func RangeGreaterOrEqual(a ast.LocationRange, b ast.LocationRange) bool {
 	if a.Begin.Line > b.Begin.Line {
 		return false
