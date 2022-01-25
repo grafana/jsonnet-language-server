@@ -48,9 +48,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
 	} else if start == "self" {
-		tmpStack := nodestack.NewNodeStack(stack.From)
-		tmpStack.Stack = make([]ast.Node, len(stack.Stack))
-		copy(tmpStack.Stack, stack.Stack)
+		tmpStack := stack.Clone()
 
 		// Special case. If the index was part of a binary node (ex: self.foo + {...}),
 		//   then the second element's content should not be considered to find the index's reference
