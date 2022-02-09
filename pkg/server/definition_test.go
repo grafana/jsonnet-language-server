@@ -61,53 +61,53 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "test goto inner definition",
 			filename: "./testdata/test_goto_definition_multi_locals.jsonnet",
-			position: protocol.Position{Line: 6, Character: 11},
+			position: protocol.Position{Line: 6, Character: 9},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 4, Character: 10},
-				End:   protocol.Position{Line: 4, Character: 28},
+				Start: protocol.Position{Line: 4, Character: 8},
+				End:   protocol.Position{Line: 4, Character: 26},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 4, Character: 10},
-				End:   protocol.Position{Line: 4, Character: 18},
+				Start: protocol.Position{Line: 4, Character: 8},
+				End:   protocol.Position{Line: 4, Character: 16},
 			},
 		},
 		{
 			name:     "test goto super index",
 			filename: "./testdata/test_combined_object.jsonnet",
-			position: protocol.Position{Line: 5, Character: 13},
+			position: protocol.Position{Line: 5, Character: 11},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 5},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 3},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 1, Character: 5},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 3},
 			},
 		},
 		{
 			name:     "test goto super nested",
 			filename: "./testdata/test_combined_object.jsonnet",
-			position: protocol.Position{Line: 5, Character: 15},
+			position: protocol.Position{Line: 5, Character: 13},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 8},
-				End:   protocol.Position{Line: 2, Character: 22},
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 18},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 8},
-				End:   protocol.Position{Line: 2, Character: 9},
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 5},
 			},
 		},
 		{
 			name:     "test goto self object field function",
 			filename: "./testdata/test_basic_lib.libsonnet",
-			position: protocol.Position{Line: 4, Character: 19},
+			position: protocol.Position{Line: 4, Character: 17},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 20},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 16},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 1, Character: 9},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 7},
 			},
 		},
 		{
@@ -152,27 +152,27 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "test goto local obj field from 'self.attr' from other obj",
 			filename: "./testdata/goto-indexes.jsonnet",
-			position: protocol.Position{Line: 9, Character: 18},
+			position: protocol.Position{Line: 9, Character: 16},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 8},
-				End:   protocol.Position{Line: 2, Character: 23},
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 19},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 8},
-				End:   protocol.Position{Line: 2, Character: 11},
+				Start: protocol.Position{Line: 2, Character: 4},
+				End:   protocol.Position{Line: 2, Character: 7},
 			},
 		},
 		{
 			name:     "test goto local object 'obj' via obj index 'obj.foo'",
 			filename: "./testdata/goto-indexes.jsonnet",
-			position: protocol.Position{Line: 8, Character: 15},
+			position: protocol.Position{Line: 8, Character: 13},
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 5},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 3},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 1, Character: 4},
-				End:   protocol.Position{Line: 1, Character: 7},
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 5},
 			},
 		},
 		{
@@ -192,29 +192,29 @@ func TestDefinition(t *testing.T) {
 		{
 			name:           "test goto imported file at lhs index",
 			filename:       "./testdata/goto-imported-file.jsonnet",
-			position:       protocol.Position{Line: 3, Character: 18},
+			position:       protocol.Position{Line: 3, Character: 16},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 14},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 7},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
 		},
 		{
 			name:           "test goto imported file at rhs index",
 			filename:       "./testdata/goto-imported-file.jsonnet",
-			position:       protocol.Position{Line: 4, Character: 18},
+			position:       protocol.Position{Line: 4, Character: 16},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 4},
-				End:   protocol.Position{Line: 5, Character: 14},
+				Start: protocol.Position{Line: 5, Character: 2},
+				End:   protocol.Position{Line: 5, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 4},
-				End:   protocol.Position{Line: 5, Character: 7},
+				Start: protocol.Position{Line: 5, Character: 2},
+				End:   protocol.Position{Line: 5, Character: 5},
 			},
 		},
 		{
@@ -223,26 +223,26 @@ func TestDefinition(t *testing.T) {
 			position:       protocol.Position{Line: 0, Character: 48},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 4},
-				End:   protocol.Position{Line: 5, Character: 14},
+				Start: protocol.Position{Line: 5, Character: 2},
+				End:   protocol.Position{Line: 5, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 4},
-				End:   protocol.Position{Line: 5, Character: 7},
+				Start: protocol.Position{Line: 5, Character: 2},
+				End:   protocol.Position{Line: 5, Character: 5},
 			},
 		},
 		{
 			name:           "goto attribute of nested import",
 			filename:       "testdata/goto-nested-imported-file.jsonnet",
-			position:       protocol.Position{Line: 2, Character: 15},
+			position:       protocol.Position{Line: 2, Character: 13},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 14},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 7},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
 		},
 		{
@@ -287,29 +287,29 @@ func TestDefinition(t *testing.T) {
 		{
 			name:           "goto attribute of nested import no object intermediary",
 			filename:       "testdata/goto-nested-import-file-no-inter-obj.jsonnet",
-			position:       protocol.Position{Line: 2, Character: 15},
+			position:       protocol.Position{Line: 2, Character: 13},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 14},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 7},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
 		},
 		{
 			name:           "goto self in import in binary",
 			filename:       "testdata/goto-self-within-binary.jsonnet",
-			position:       protocol.Position{Line: 4, Character: 15},
+			position:       protocol.Position{Line: 4, Character: 13},
 			targetFilename: "testdata/goto-basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 14},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 3, Character: 4},
-				End:   protocol.Position{Line: 3, Character: 7},
+				Start: protocol.Position{Line: 3, Character: 2},
+				End:   protocol.Position{Line: 3, Character: 5},
 			},
 		},
 		{
