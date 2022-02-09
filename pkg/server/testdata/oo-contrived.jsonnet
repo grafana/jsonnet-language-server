@@ -8,12 +8,12 @@ local WrapperBase = {
 };
 
 {
-  Derived: Base + {
+  Derived: Base {
     f: 5,
     old_f: super.foo,
     old_g: super.g,
   },
-  WrapperDerived: WrapperBase + {
+  WrapperDerived: WrapperBase {
     Base+: { f: 5 },
   },
 }

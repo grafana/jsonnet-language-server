@@ -1,11 +1,11 @@
 local obj = {
-    foo: {
-        bar: "innerfoo"
-    },
-    bar: "foo"
+  foo: {
+    bar: 'innerfoo',
+  },
+  bar: 'foo',
 };
 
 {
-    attr: obj.foo,
-    s: self.attr.bar
+  attr: obj.foo,
+  s: self.attr.bar,
 }

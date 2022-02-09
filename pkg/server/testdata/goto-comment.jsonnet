@@ -1,4 +1,4 @@
 // This is a comment
 {
-    foo: "bar"
+  foo: 'bar',
 }

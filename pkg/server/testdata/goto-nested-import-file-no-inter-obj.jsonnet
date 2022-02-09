@@ -1,4 +1,4 @@
-local file = (import "goto-import-no-obj.libsonnet");
+local file = (import 'goto-import-no-obj.libsonnet');
 {
-    foo: file.foo
+  foo: file.foo,
 }

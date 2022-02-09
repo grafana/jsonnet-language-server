@@ -1,8 +1,8 @@
-local var = "hello";
+local var = 'hello';
 
 {
-    local var = "goodbye",
-    local innervar = "inner",
-    a: var,
-    b: innervar
+  local var = 'goodbye',
+  local innervar = 'inner',
+  a: var,
+  b: innervar,
 }

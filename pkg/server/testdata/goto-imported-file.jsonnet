@@ -1,6 +1,6 @@
-local otherfile = import "goto-basic-object.jsonnet";
+local otherfile = import 'goto-basic-object.jsonnet';
 
 {
-    a: otherfile.foo,
-    b: otherfile.bar
+  a: otherfile.foo,
+  b: otherfile.bar,
 }

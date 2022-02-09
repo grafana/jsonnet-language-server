@@ -1,3 +1,3 @@
 {
-    foo: std.objectFields({test: "test"})[0]
+  foo: std.objectFields({ test: 'test' })[0],
 }
