@@ -40,6 +40,13 @@ func (s *NodeStack) Pop() (*NodeStack, ast.Node) {
 	return s, n
 }
 
+func (s *NodeStack) Peek() ast.Node {
+	if len(s.Stack) == 0 {
+		return nil
+	}
+	return s.Stack[len(s.Stack)-1]
+}
+
 func (s *NodeStack) IsEmpty() bool {
 	return len(s.Stack) == 0
 }
