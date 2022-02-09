@@ -383,6 +383,18 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'splitLimitR',
+          params: ['str', 'c', 'maxsplits'],
+          availableSince: 'upcoming',
+          description: 'As <code>std.splitLimit(str, c, maxsplits)</code> but will split from right to left.',
+          examples: [
+            {
+              input: @'std.splitLimitR("/_foo/_bar", "/_", 1)',
+              output: std.splitLimitR('/_foo/_bar', '/_', 1),
+            },
+          ],
+        },
+        {
           name: 'strReplace',
           params: ['str', 'from', 'to'],
           description: |||
@@ -586,7 +598,7 @@ local html = import 'html.libsonnet';
           |||,
           examples: [
             {
-              input: 'std.parseYaml(\'foo: bar\')',
+              input: "std.parseYaml('foo: bar')",
               output: std.parseYaml('foo: bar'),
             },
           ],
@@ -621,11 +633,11 @@ local html = import 'html.libsonnet';
           params: ['ini'],
           description: [
             html.p({}, |||
-                Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
-                allows using Jsonnet's
-                object model to build a configuration to be consumed by an application expecting an INI
-                file. The data is in the form of a set of sections, each containing a key/value mapping.
-                These examples should make it clear:
+              Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
+              allows using Jsonnet's
+              object model to build a configuration to be consumed by an application expecting an INI
+              file. The data is in the form of a set of sections, each containing a key/value mapping.
+              These examples should make it clear:
             |||),
             html.pre({}, |||
               {
@@ -654,7 +666,7 @@ local html = import 'html.libsonnet';
               p = yes
               q =
             |||),
-          ]
+          ],
         },
         {
           name: 'manifestPython',
@@ -675,7 +687,7 @@ local html = import 'html.libsonnet';
             |||),
 
             html.p({}, |||
-                Yields a string containing Python code like:
+              Yields a string containing Python code like:
             |||),
 
             html.pre({}, |||
@@ -686,16 +698,16 @@ local html = import 'html.libsonnet';
                   "e": {"f1": False, "f2": 42}
               }
             |||),
-          ]
+          ],
         },
         {
           name: 'manifestPythonVars',
           params: ['conf'],
           description: [
             html.p({}, |||
-                Convert the given object to a JSON-like form that is compatible with Python. The key
-                difference to <code>std.manifestPython</code> is that the top level is represented as a list
-                of Python global variables.
+              Convert the given object to a JSON-like form that is compatible with Python. The key
+              difference to <code>std.manifestPython</code> is that the top level is represented as a list
+              of Python global variables.
             |||),
 
             html.pre({}, |||
@@ -708,7 +720,7 @@ local html = import 'html.libsonnet';
             |||),
 
             html.p({}, |||
-                Yields a string containing this Python code:
+              Yields a string containing this Python code:
             |||),
 
             html.pre({}, |||
@@ -724,11 +736,11 @@ local html = import 'html.libsonnet';
           params: ['value', 'indent', 'newline', 'key_val_sep'],
           description: [
             html.p({}, |||
-                Convert the given object to a JSON form. <code>indent</code> is a string containing
-                one or more whitespaces that are used for indentation. <code>newline</code> is
-                by default <code>\n</code> and is inserted where a newline would normally be used
-                to break long lines. <code>key_val_sep</code> is used to separate the key and value
-                of an object field:
+              Convert the given object to a JSON form. <code>indent</code> is a string containing
+              one or more whitespaces that are used for indentation. <code>newline</code> is
+              by default <code>\n</code> and is inserted where a newline would normally be used
+              to break long lines. <code>key_val_sep</code> is used to separate the key and value
+              of an object field:
             |||),
           ],
           examples: [
@@ -743,11 +755,19 @@ local html = import 'html.libsonnet';
               |||,
               output:
                 std.manifestJsonEx(
-                {
-                    x: [1, 2, 3, true, false, null,
-                        "string\nstring"],
+                  {
+                    x: [
+                      1,
+                      2,
+                      3,
+                      true,
+                      false,
+                      null,
+                      'string\nstring',
+                    ],
                     y: { a: 1, b: 2, c: [1, 2] },
-                }, "    "),
+                  }, '    '
+                ),
             },
             {
               input: |||
@@ -759,21 +779,22 @@ local html = import 'html.libsonnet';
               |||,
               output:
                 std.manifestJsonEx(
-                {
-                  x: [1, 2, "string\nstring"],
-                  y: { a: 1, b: [1, 2] },
-                }, "", " ", " : "),
+                  {
+                    x: [1, 2, 'string\nstring'],
+                    y: { a: 1, b: [1, 2] },
+                  }, '', ' ', ' : '
+                ),
             },
-          ]
+          ],
         },
         {
           name: 'manifestJsonMinified',
           params: ['value'],
           availableSince: '0.18.0',
           description: |||
-                Convert the given object to a minified JSON form. Under the covers,
-                it calls <code>std.manifestJsonEx:')</code>:
-            |||,
+            Convert the given object to a minified JSON form. Under the covers,
+            it calls <code>std.manifestJsonEx:')</code>:
+          |||,
           examples: [
             {
               input: |||
@@ -786,61 +807,69 @@ local html = import 'html.libsonnet';
               |||,
               output:
                 std.manifestJsonMinified(
-                {
-                    x: [1, 2, 3, true, false, null,
-                        "string\nstring"],
+                  {
+                    x: [
+                      1,
+                      2,
+                      3,
+                      true,
+                      false,
+                      null,
+                      'string\nstring',
+                    ],
                     y: { a: 1, b: 2, c: [1, 2] },
-                }),
-            }
-          ]
+                  }
+                ),
+            },
+          ],
         },
         {
           name: 'manifestYamlDoc',
           params: ['value', 'indent_array_in_object=false', 'quote_keys=true'],
           description: [
-              html.p({}, |||
-                  Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
-                  be used for this purpose, because any JSON is also valid YAML. But this function will
-                  produce more canonical-looking YAML.
-              |||),
-              html.pre({}, |||
-                std.manifestYamlDoc(
-                  {
-                      x: [1, 2, 3, true, false, null,
-                          "string\nstring\n"],
-                      y: { a: 1, b: 2, c: [1, 2] },
-                  },
-                  indent_array_in_object=false)
-              |||),
-              html.p({}, |||
-                Yields a string containing this YAML:
-              |||),
-              html.pre({}, |||
-                  "x":
+            html.p({}, |||
+              Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
+              be used for this purpose, because any JSON is also valid YAML. But this function will
+              produce more canonical-looking YAML.
+            |||),
+            html.pre({}, |||
+              std.manifestYamlDoc(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring\n"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                },
+                indent_array_in_object=false)
+            |||),
+            html.p({}, |||
+              Yields a string containing this YAML:
+            |||),
+            html.pre({}, |||
+              "x":
+                - 1
+                - 2
+                - 3
+                - true
+                - false
+                - null
+                - |
+                    string
+                    string
+              "y":
+                "a": 1
+                "b": 2
+                "c":
                     - 1
                     - 2
-                    - 3
-                    - true
-                    - false
-                    - null
-                    - |
-                        string
-                        string
-                  "y":
-                    "a": 1
-                    "b": 2
-                    "c":
-                        - 1
-                        - 2
-              |||),
-              html.p({}, |||
-                The <code>indent_array_in_object</code> param adds additional indentation which some people
-                may find easier to read.
-              |||),
-              html.p({}, |||
-                The <code>quote_keys</code> parameter controls whether YAML identifiers are always quoted
-                or only when necessary.
-              |||),
+            |||),
+            html.p({}, |||
+              The <code>indent_array_in_object</code> param adds additional indentation which some people
+              may find easier to read.
+            |||),
+            html.p({}, |||
+              The <code>quote_keys</code> parameter controls whether YAML identifiers are always quoted
+              or only when necessary.
+            |||),
           ],
         },
         {
@@ -848,8 +877,8 @@ local html = import 'html.libsonnet';
           params: ['value', 'indent_array_in_object=false', 'c_document_end=false', 'quote_keys=true'],
           description: [
             html.p({}, |||
-                Given an array of values, emit a YAML "stream", which is a sequence of documents separated
-                by <code>---</code> and ending with <code>...</code>.
+              Given an array of values, emit a YAML "stream", which is a sequence of documents separated
+              by <code>---</code> and ending with <code>...</code>.
             |||),
 
             html.pre({}, |||
@@ -887,8 +916,8 @@ local html = import 'html.libsonnet';
           params: ['value'],
           description: [
             html.p({}, |||
-                Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
-                containing the XML.
+              Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
+              containing the XML.
             |||),
 
             html.pre({}, |||
@@ -905,7 +934,7 @@ local html = import 'html.libsonnet';
             |||),
 
             html.p({}, |||
-                Yields a string containing this XML (all on one line):
+              Yields a string containing this XML (all on one line):
             |||),
 
             html.pre({}, html.escape(|||
@@ -916,7 +945,7 @@ local html = import 'html.libsonnet';
             |||)),
 
             html.p({}, |||
-                Which represents the following image:
+              Which represents the following image:
             |||),
 
             |||
@@ -927,10 +956,10 @@ local html = import 'html.libsonnet';
             |||,
 
             html.p({}, |||
-                JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next
-                to elements). This includes the whitespace needed to avoid having all the XML on one line,
-                which is meaningful in XML. In order to have whitespace in the XML output, it must be
-                present in the JsonML input:
+              JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next
+              to elements). This includes the whitespace needed to avoid having all the XML on one line,
+              which is meaningful in XML. In order to have whitespace in the XML output, it must be
+              present in the JsonML input:
             |||),
 
             html.pre({}, |||
@@ -981,26 +1010,26 @@ local html = import 'html.libsonnet';
               |||,
               output: (
                 std.manifestTomlEx({
-                  key1: "value",
+                  key1: 'value',
                   key2: 1,
                   section: {
                     a: 1,
-                    b: "str",
+                    b: 'str',
                     c: false,
-                    d: [1, "s", [2, 3]],
+                    d: [1, 's', [2, 3]],
                     subsection: {
-                      k: "v",
+                      k: 'v',
                     },
                   },
                   sectionArray: [
-                    { k: "v1", v: 123 },
-                    { k: "v2", c: "value2" },
+                    { k: 'v1', v: 123 },
+                    { k: 'v2', c: 'value2' },
                   ],
-                }, "  ")
-              )
+                }, '  ')
+              ),
             },
-          ]
-        }
+          ],
+        },
       ],
     },
     {
@@ -1081,7 +1110,7 @@ local html = import 'html.libsonnet';
             |||
               The <code>std.flatMap</code> function can be thought of as a generalized <code>std.map</code>,
               with each element mapped to 0, 1 or more elements.
-            |||
+            |||,
           ]),
           examples: [
             {
@@ -1098,7 +1127,7 @@ local html = import 'html.libsonnet';
             },
             {
               input: 'std.flatMap(function(x) x+x, "foo")',
-              output: std.flatMap(function(x) x+x, "foo")
+              output: std.flatMap(function(x) x + x, 'foo'),
             },
           ],
         },
@@ -1420,13 +1449,14 @@ local html = import 'html.libsonnet';
           availableSince: '0.11.0',
           description: [
             html.p({}, |||
-                Outputs the given string <code>str</code> to stderr and
-                returns <code>rest</code> as the result.
+              Outputs the given string <code>str</code> to stderr and
+              returns <code>rest</code> as the result.
             |||),
             html.p({}, |||
               Example:
             |||),
-            html.p({},
+            html.p(
+              {},
               html.pre({}, |||
                 local conditionalReturn(cond, in1, in2) =
                   if (cond) then
@@ -1444,7 +1474,8 @@ local html = import 'html.libsonnet';
             html.p({}, |||
               Prints:
             |||),
-            html.p({},
+            html.p(
+              {},
               html.pre({}, |||
                 TRACE: test.jsonnet:3 cond is true returning {"b": true}
                 {

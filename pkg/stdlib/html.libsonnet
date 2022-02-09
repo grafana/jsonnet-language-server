@@ -105,7 +105,7 @@ local
           else if content.bodyFormatting == 'unindented' then
             renderAux(content.body, indent, '')
           else
-            error ("Invalid bodyFormatting: " + content.bodyFormatting)
+            error ('Invalid bodyFormatting: ' + content.bodyFormatting)
         ) +
         renderClosingTag(content.elementType)
       else if content.type == 'comment' then
@@ -129,9 +129,13 @@ local
 local escape(str) =
   std.strReplace(
     std.strReplace(
-      std.strReplace(str, "&", "&amp;"),
-      "<", "&lt;"),
-    ">", "&gt;");
+      std.strReplace(str, '&', '&amp;'),
+      '<',
+      '&lt;'
+    ),
+    '>',
+    '&gt;'
+  );
 
 {
   // Basics:

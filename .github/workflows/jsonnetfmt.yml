@@ -1,0 +1,22 @@
+name: jsonnetfmt
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+jobs:
+  jsonnetfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Format
+        uses: docker://bitnami/jsonnet:latest
+        with:
+          entrypoint: ./scripts/jsonnetfmt.sh
+      - run: |
+          STATUS="$(git status --porcelain)"
+          test -z "${STATUS}" || {
+            echo "Found changes after formatting. Run jsonnetfmt on the following files:"
+            echo "${STATUS}"
+            exit 1
+          }
