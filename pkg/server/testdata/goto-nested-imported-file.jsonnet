@@ -1,4 +1,4 @@
-local file = (import "goto-import-intermediary.libsonnet").otherFile;
+local file = (import 'goto-import-intermediary.libsonnet').otherFile;
 {
-    foo: file.foo
+  foo: file.foo,
 }

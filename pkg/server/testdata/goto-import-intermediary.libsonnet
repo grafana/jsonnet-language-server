@@ -1,3 +1,3 @@
 {
-    otherFile: (import 'goto-basic-object.jsonnet')
+  otherFile: (import 'goto-basic-object.jsonnet'),
 }

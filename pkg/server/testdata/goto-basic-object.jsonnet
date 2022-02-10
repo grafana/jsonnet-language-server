@@ -1,7 +1,7 @@
-local somevar = "hello";
+local somevar = 'hello';
 
 {
-    foo: "bar"
+  foo: 'bar',
 } + {
-    bar: "foo"
+  bar: 'foo',
 }

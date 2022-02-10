@@ -1,7 +1,7 @@
 {
-    a: {
-        b: "something",
-    }
+  a: {
+    b: 'something',
+  },
 } + {
-    b: super.a.b.s.x
+  b: super.a.b.s.x,
 }

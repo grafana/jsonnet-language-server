@@ -1,6 +1,6 @@
-(import "goto-basic-object.jsonnet") +
+(import 'goto-basic-object.jsonnet') +
 {
-    aaa: "hello"
+  aaa: 'hello',
 } + {
-    bar: self.foo
+  bar: self.foo,
 }
