@@ -17,20 +17,25 @@ import (
 )
 
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	definitionLink, err := s.DefinitionLink(ctx, params)
+	responseDefLinks, err := s.definitionLink(ctx, params, true)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-	definition := protocol.Definition{
-		{
-			URI:   definitionLink.TargetURI,
-			Range: definitionLink.TargetRange,
-		},
+
+	// TODO: Support LocationLink instead of Location (this needs to be changed in the upstream protocol lib)
+	// When that's done, we can get rid of the intermediary `definitionLink` function which is used for testing
+	var response protocol.Definition
+	for _, item := range responseDefLinks {
+		response = append(response, protocol.Location{
+			URI:   item.TargetURI,
+			Range: item.TargetRange,
+		})
 	}
-	return definition, nil
+
+	return response, nil
 }
 
-func (s *server) DefinitionLink(ctx context.Context, params *protocol.DefinitionParams) (*protocol.DefinitionLink, error) {
+func (s *server) definitionLink(ctx context.Context, params *protocol.DefinitionParams, warnIfNotFound bool) ([]protocol.DefinitionLink, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
@@ -44,28 +49,24 @@ func (s *server) DefinitionLink(ctx context.Context, params *protocol.Definition
 	if err != nil {
 		return nil, utils.LogErrorf("error creating the VM: %w", err)
 	}
-	definition, err := Definition(doc.ast, params, vm)
+	responseDefLinks, err := findDefinition(doc.ast, params, vm)
 	if err != nil {
-		log.Warn(err.Error())
+		if warnIfNotFound {
+			log.Warn(err.Error())
+			return nil, nil
+		}
 		return nil, err
 	}
 
-	return definition, nil
+	return responseDefLinks, nil
 }
 
-func Definition(node ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
-	responseDefLink, err := findDefinition(node, params, vm)
-	if err != nil {
-		return nil, err
-	}
-	return responseDefLink, nil
-}
+func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) ([]protocol.DefinitionLink, error) {
+	var response []protocol.DefinitionLink
 
-func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) (*protocol.DefinitionLink, error) {
 	searchStack, _ := processing.FindNodeByPosition(root, position.PositionProtocolToAST(params.Position))
 	var deepestNode ast.Node
 	searchStack, deepestNode = searchStack.Pop()
-	var responseDefLink protocol.DefinitionLink
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:
 		log.Debugf("Found Var node %s", deepestNode.Id)
@@ -96,11 +97,11 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 			return nil, fmt.Errorf("no matching bind found for %s", deepestNode.Id)
 		}
 
-		responseDefLink = protocol.DefinitionLink{
+		response = append(response, protocol.DefinitionLink{
 			TargetURI:            protocol.DocumentURI(filename),
 			TargetRange:          resultRange,
 			TargetSelectionRange: resultSelectionRange,
-		}
+		})
 	case *ast.SuperIndex, *ast.Index:
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
@@ -109,32 +110,35 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		if err != nil {
 			return nil, err
 		}
-		objectRange := objectRanges[0] // TODO: Handle multiple positions
-		responseDefLink = protocol.DefinitionLink{
-			TargetURI:            protocol.DocumentURI(objectRange.Filename),
-			TargetRange:          position.RangeASTToProtocol(objectRange.FullRange),
-			TargetSelectionRange: position.RangeASTToProtocol(objectRange.SelectionRange),
+		for _, o := range objectRanges {
+			response = append(response, protocol.DefinitionLink{
+				TargetURI:            protocol.DocumentURI(o.Filename),
+				TargetRange:          position.RangeASTToProtocol(o.FullRange),
+				TargetSelectionRange: position.RangeASTToProtocol(o.SelectionRange),
+			})
 		}
 	case *ast.Import:
 		filename := deepestNode.File.Value
 		importedFile, _ := vm.ResolveImport(string(params.TextDocument.URI), filename)
-		responseDefLink = protocol.DefinitionLink{
+		response = append(response, protocol.DefinitionLink{
 			TargetURI: protocol.DocumentURI(importedFile),
-		}
+		})
 	default:
 		log.Debugf("cannot find definition for node type %T", deepestNode)
 		return nil, fmt.Errorf("cannot find definition")
 
 	}
 
-	link := string(responseDefLink.TargetURI)
-	if !strings.HasPrefix(link, "file://") {
-		targetFile, err := filepath.Abs(link)
-		if err != nil {
-			return nil, err
+	for i, item := range response {
+		link := string(item.TargetURI)
+		if !strings.HasPrefix(link, "file://") {
+			targetFile, err := filepath.Abs(link)
+			if err != nil {
+				return nil, err
+			}
+			response[i].TargetURI = protocol.URIFromPath(targetFile)
 		}
-		responseDefLink.TargetURI = protocol.URIFromPath(targetFile)
 	}
 
-	return &responseDefLink, nil
+	return response, nil
 }
