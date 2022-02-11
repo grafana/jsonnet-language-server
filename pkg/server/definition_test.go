@@ -369,6 +369,45 @@ func TestDefinition(t *testing.T) {
 				End:   protocol.Position{Line: 7, Character: 9},
 			},
 		},
+		{
+			name:     "goto with overrides: clobber string",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 38, Character: 30},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 24, Character: 4},
+				End:   protocol.Position{Line: 24, Character: 23},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 24, Character: 4},
+				End:   protocol.Position{Line: 24, Character: 10},
+			},
+		},
+		{
+			name:     "goto with overrides: clobber nested string",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 39, Character: 44},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 26, Character: 6},
+				End:   protocol.Position{Line: 26, Character: 24},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 26, Character: 6},
+				End:   protocol.Position{Line: 26, Character: 11},
+			},
+		},
+		{
+			name:     "goto with overrides: clobber map",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 40, Character: 28},
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 28, Character: 4},
+				End:   protocol.Position{Line: 28, Character: 15},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 28, Character: 4},
+				End:   protocol.Position{Line: 28, Character: 11},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
