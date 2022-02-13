@@ -35,7 +35,6 @@ func fieldToRange(field *ast.DesugaredObjectField) objectRange {
 }
 
 func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) ([]objectRange, error) {
-	var foundField *ast.DesugaredObjectField
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
@@ -99,18 +98,26 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
 	}
+	var ranges []objectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		foundField = findObjectFieldInObjects(foundDesugaredObjects, index)
+		foundFields := findObjectFieldInObjects(foundDesugaredObjects, index)
 		foundDesugaredObjects = foundDesugaredObjects[:0]
-		if foundField == nil {
+		if len(foundFields) == 0 {
 			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
 		}
 		if len(indexList) == 0 {
-			return []objectRange{fieldToRange(foundField)}, nil
+			for i, found := range foundFields {
+				if i == 0 || foundFields[i-1].PlusSuper {
+					ranges = append(ranges, fieldToRange(found))
+				}
+			}
+			return ranges, nil
 		}
-		switch fieldNode := foundField.Body.(type) {
+
+		// TODO: Multiple levels
+		switch fieldNode := foundFields[0].Body.(type) {
 		case *ast.Var:
 			bind := FindBindByIdViaStack(stack, fieldNode.Id)
 			if bind == nil {
@@ -136,17 +143,18 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 	}
 
-	return []objectRange{fieldToRange(foundField)}, nil
+	return ranges, nil
 }
 
-func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) *ast.DesugaredObjectField {
+func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) []*ast.DesugaredObjectField {
+	var matchingFields []*ast.DesugaredObjectField
 	for _, object := range objectNodes {
 		field := findObjectFieldInObject(object, index)
 		if field != nil {
-			return field
+			matchingFields = append(matchingFields, field)
 		}
 	}
-	return nil
+	return matchingFields
 }
 
 func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {

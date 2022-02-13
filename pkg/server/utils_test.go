@@ -11,8 +11,13 @@ import (
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	logrus.SetLevel(logrus.WarnLevel)
+}
 
 func absUri(t *testing.T, path string) protocol.DocumentURI {
 	t.Helper()
