@@ -498,6 +498,43 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "goto with overrides: overridden nested map",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 33, Character: 34},
+			results: []definitionResult{
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 25, Character: 4},
+						End:   protocol.Position{Line: 27, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 25, Character: 4},
+						End:   protocol.Position{Line: 25, Character: 11},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 16, Character: 4},
+						End:   protocol.Position{Line: 18, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 16, Character: 4},
+						End:   protocol.Position{Line: 16, Character: 11},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 4},
+						End:   protocol.Position{Line: 6, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 4},
+						End:   protocol.Position{Line: 4, Character: 11},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

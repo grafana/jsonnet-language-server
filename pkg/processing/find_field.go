@@ -116,30 +116,31 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return ranges, nil
 		}
 
-		// TODO: Multiple levels
-		switch fieldNode := foundFields[0].Body.(type) {
-		case *ast.Var:
-			bind := FindBindByIdViaStack(stack, fieldNode.Id)
-			if bind == nil {
-				return nil, fmt.Errorf("could not find bind for %s", fieldNode.Id)
+		for _, foundField := range foundFields {
+			switch fieldNode := foundField.Body.(type) {
+			case *ast.Var:
+				bind := FindBindByIdViaStack(stack, fieldNode.Id)
+				if bind == nil {
+					return nil, fmt.Errorf("could not find bind for %s", fieldNode.Id)
+				}
+				foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
+			case *ast.DesugaredObject:
+				stack = stack.Push(fieldNode)
+				foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
+			case *ast.Index:
+				tempStack := nodestack.NewNodeStack(fieldNode)
+				additionalIndexList := tempStack.BuildIndexList()
+				additionalIndexList = append(additionalIndexList, indexList...)
+				result, err := FindRangesFromIndexList(stack, additionalIndexList, vm)
+				if sameFileOnly && len(result) > 0 && result[0].Filename != stack.From.Loc().FileName {
+					continue
+				}
+				return result, err
+			case *ast.Import:
+				filename := fieldNode.File.Value
+				rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
+				foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 			}
-			foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
-		case *ast.DesugaredObject:
-			stack = stack.Push(fieldNode)
-			foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
-		case *ast.Index:
-			tempStack := nodestack.NewNodeStack(fieldNode)
-			additionalIndexList := tempStack.BuildIndexList()
-			additionalIndexList = append(additionalIndexList, indexList...)
-			result, err := FindRangesFromIndexList(stack, additionalIndexList, vm)
-			if sameFileOnly && len(result) > 0 && result[0].Filename != stack.From.Loc().FileName {
-				continue
-			}
-			return result, err
-		case *ast.Import:
-			filename := fieldNode.File.Value
-			rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
-			foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 		}
 	}
 
