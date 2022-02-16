@@ -461,6 +461,110 @@ func TestDefinition(t *testing.T) {
 				},
 			}},
 		},
+		{
+			name:     "goto with overrides: map (multiple definitions)",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 32, Character: 22},
+			results: []definitionResult{
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 23, Character: 2},
+						End:   protocol.Position{Line: 29, Character: 3},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 23, Character: 2},
+						End:   protocol.Position{Line: 23, Character: 3},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 14, Character: 2},
+						End:   protocol.Position{Line: 19, Character: 3},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 14, Character: 2},
+						End:   protocol.Position{Line: 14, Character: 3},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 2},
+						End:   protocol.Position{Line: 10, Character: 3},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 2, Character: 2},
+						End:   protocol.Position{Line: 2, Character: 3},
+					},
+				},
+			},
+		},
+		{
+			name:     "goto with overrides: nested map (multiple definitions)",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 33, Character: 34},
+			results: []definitionResult{
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 25, Character: 4},
+						End:   protocol.Position{Line: 27, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 25, Character: 4},
+						End:   protocol.Position{Line: 25, Character: 11},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 16, Character: 4},
+						End:   protocol.Position{Line: 18, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 16, Character: 4},
+						End:   protocol.Position{Line: 16, Character: 11},
+					},
+				},
+				{
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 4},
+						End:   protocol.Position{Line: 6, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 4, Character: 4},
+						End:   protocol.Position{Line: 4, Character: 11},
+					},
+				},
+			},
+		},
+		{
+			name:     "goto with overrides: string carried from super",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 35, Character: 27},
+			results: []definitionResult{{
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 3, Character: 4},
+					End:   protocol.Position{Line: 3, Character: 18},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 3, Character: 4},
+					End:   protocol.Position{Line: 3, Character: 9},
+				},
+			}},
+		},
+		{
+			name:     "goto with overrides: nested string carried from super",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 36, Character: 44},
+			results: []definitionResult{{
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 17, Character: 6},
+					End:   protocol.Position{Line: 17, Character: 22},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 17, Character: 6},
+					End:   protocol.Position{Line: 17, Character: 12},
+				},
+			}},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
