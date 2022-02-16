@@ -1,19 +1,17 @@
 {
   a: {
-    hello: 'this',
+    hello: 'this will be clobbered',
     nested1: {
-      hello: 'will be',
+      hello: 'this will be clobbered',
     },
-    nested2: {
-      hello: 'clobbered',
-    },
+    nested2: {},
   },
 
 }
 + {
   local extensionFromLocal = {
-    nested1: {
-      this: 'will also be clobbered',
+    nested1+: {
+      from_local: 'hey!',
     },
   },
   a+: extensionFromLocal,

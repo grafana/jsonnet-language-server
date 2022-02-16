@@ -419,7 +419,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber string",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 38, Character: 30},
+			position: protocol.Position{Line: 39, Character: 30},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 24, Character: 4},
@@ -434,7 +434,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber nested string",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 39, Character: 44},
+			position: protocol.Position{Line: 40, Character: 44},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 26, Character: 6},
@@ -449,7 +449,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber map",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 40, Character: 28},
+			position: protocol.Position{Line: 41, Character: 28},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 28, Character: 4},
@@ -499,19 +499,19 @@ func TestDefinition(t *testing.T) {
 				{
 					targetFilename: "testdata/goto-overrides-base.jsonnet",
 					targetRange: protocol.Range{
-						Start: protocol.Position{Line: 18, Character: 2},
-						End:   protocol.Position{Line: 18, Character: 24},
+						Start: protocol.Position{Line: 16, Character: 2},
+						End:   protocol.Position{Line: 16, Character: 24},
 					},
 					targetSelectionRange: protocol.Range{
-						Start: protocol.Position{Line: 18, Character: 2},
-						End:   protocol.Position{Line: 18, Character: 3},
+						Start: protocol.Position{Line: 16, Character: 2},
+						End:   protocol.Position{Line: 16, Character: 3},
 					},
 				},
 				{
 					targetFilename: "testdata/goto-overrides-base.jsonnet",
 					targetRange: protocol.Range{
 						Start: protocol.Position{Line: 1, Character: 2},
-						End:   protocol.Position{Line: 9, Character: 3},
+						End:   protocol.Position{Line: 7, Character: 3},
 					},
 					targetSelectionRange: protocol.Range{
 						Start: protocol.Position{Line: 1, Character: 2},
@@ -553,6 +553,28 @@ func TestDefinition(t *testing.T) {
 					targetSelectionRange: protocol.Range{
 						Start: protocol.Position{Line: 4, Character: 4},
 						End:   protocol.Position{Line: 4, Character: 11},
+					},
+				},
+				{
+					targetFilename: "testdata/goto-overrides-base.jsonnet",
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 12, Character: 4},
+						End:   protocol.Position{Line: 14, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 12, Character: 4},
+						End:   protocol.Position{Line: 12, Character: 11},
+					},
+				},
+				{
+					targetFilename: "testdata/goto-overrides-base.jsonnet",
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 3, Character: 4},
+						End:   protocol.Position{Line: 5, Character: 5},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 3, Character: 4},
+						End:   protocol.Position{Line: 3, Character: 11},
 					},
 				},
 			},
