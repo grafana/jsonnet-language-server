@@ -102,15 +102,18 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		foundFields := findObjectFieldInObjects(foundDesugaredObjects, index)
+		foundFields := findObjectFieldsInObjects(foundDesugaredObjects, index)
 		foundDesugaredObjects = foundDesugaredObjects[:0]
 		if len(foundFields) == 0 {
 			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
 		}
 		if len(indexList) == 0 {
-			for i, found := range foundFields {
-				if i == 0 || foundFields[i-1].PlusSuper {
-					ranges = append(ranges, fieldToRange(found))
+			for _, found := range foundFields {
+				ranges = append(ranges, fieldToRange(found))
+
+				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
+				if !found.PlusSuper {
+					break
 				}
 			}
 			return ranges, nil
@@ -147,7 +150,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	return ranges, nil
 }
 
-func findObjectFieldInObjects(objectNodes []*ast.DesugaredObject, index string) []*ast.DesugaredObjectField {
+func findObjectFieldsInObjects(objectNodes []*ast.DesugaredObject, index string) []*ast.DesugaredObjectField {
 	var matchingFields []*ast.DesugaredObjectField
 	for _, object := range objectNodes {
 		field := findObjectFieldInObject(object, index)
