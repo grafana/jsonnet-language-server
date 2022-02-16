@@ -1,6 +1,6 @@
-{
-  // 1. Initial definition
-  a: {
+(import 'goto-overrides-base.jsonnet') {
+  // 1. Initial definition (overrides everything in the base, except the "a" map)
+  a+: {
     hello: 'world',
     nested1: {
       hello: 'world',

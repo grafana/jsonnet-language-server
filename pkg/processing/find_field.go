@@ -122,7 +122,14 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		for _, foundField := range foundFields {
 			switch fieldNode := foundField.Body.(type) {
 			case *ast.Var:
-				bind := FindBindByIdViaStack(stack, fieldNode.Id)
+				// If the field is a var, we need to find the value of the var
+				// To do so, we get the stack where the var is used and search that stack for the var's definition
+				varFileNode, _, _ := vm.ImportAST("", fieldNode.LocRange.FileName)
+				varStack, err := FindNodeByPosition(varFileNode, fieldNode.Loc().Begin)
+				if err != nil {
+					return nil, fmt.Errorf("got the following error when finding the bind for %s: %w", fieldNode.Id, err)
+				}
+				bind := FindBindByIdViaStack(varStack, fieldNode.Id)
 				if bind == nil {
 					return nil, fmt.Errorf("could not find bind for %s", fieldNode.Id)
 				}
