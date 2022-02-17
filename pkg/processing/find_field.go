@@ -149,7 +149,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			case *ast.Import:
 				filename := fieldNode.File.Value
 				rootNode, _, _ := vm.ImportAST(string(fieldNode.Loc().File.DiagnosticFileName), filename)
-				foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+				foundDesugaredObjects = append(foundDesugaredObjects, findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)...)
 			}
 		}
 	}

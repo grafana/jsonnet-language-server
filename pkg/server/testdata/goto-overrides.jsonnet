@@ -36,6 +36,7 @@
   carried_string: self.a.hello,  // This should refer to the initial definition (map 2)
   carried_nested_string: self.a.nested1.hello2,  // This should refer to the initial definition (map 3)
   carried_nested_string_from_local: self.a.nested1.from_local,  // This should refer to the definition specified in a local in the base file
+  carried_nested_string_from_import: self.a.nested1.from_import,  // This should refer to the definition specified in an import in the base file
 
   clobbered_string: self.a.hello2,  // This should refer to the override only (map 4)
   clobbered_nested_string: self.a.nested1.hello,  // This should refer to the override only (map 4)

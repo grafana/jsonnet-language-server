@@ -16,3 +16,6 @@
   },
   a+: extensionFromLocal,
 }
++ {
+  a+: (import 'goto-overrides-imported.jsonnet'),
+}

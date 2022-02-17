@@ -419,7 +419,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber string",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 39, Character: 30},
+			position: protocol.Position{Line: 40, Character: 30},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 24, Character: 4},
@@ -434,7 +434,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber nested string",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 40, Character: 44},
+			position: protocol.Position{Line: 41, Character: 44},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 26, Character: 6},
@@ -449,7 +449,7 @@ func TestDefinition(t *testing.T) {
 		{
 			name:     "goto with overrides: clobber map",
 			filename: "testdata/goto-overrides.jsonnet",
-			position: protocol.Position{Line: 41, Character: 28},
+			position: protocol.Position{Line: 42, Character: 28},
 			results: []definitionResult{{
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 28, Character: 4},
@@ -494,6 +494,17 @@ func TestDefinition(t *testing.T) {
 					targetSelectionRange: protocol.Range{
 						Start: protocol.Position{Line: 2, Character: 2},
 						End:   protocol.Position{Line: 2, Character: 3},
+					},
+				},
+				{
+					targetFilename: "testdata/goto-overrides-base.jsonnet",
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 19, Character: 2},
+						End:   protocol.Position{Line: 19, Character: 48},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 19, Character: 2},
+						End:   protocol.Position{Line: 19, Character: 3},
 					},
 				},
 				{
@@ -556,6 +567,17 @@ func TestDefinition(t *testing.T) {
 					},
 				},
 				{
+					targetFilename: "testdata/goto-overrides-imported.jsonnet",
+					targetRange: protocol.Range{
+						Start: protocol.Position{Line: 1, Character: 2},
+						End:   protocol.Position{Line: 3, Character: 3},
+					},
+					targetSelectionRange: protocol.Range{
+						Start: protocol.Position{Line: 1, Character: 2},
+						End:   protocol.Position{Line: 1, Character: 9},
+					},
+				},
+				{
 					targetFilename: "testdata/goto-overrides-base.jsonnet",
 					targetRange: protocol.Range{
 						Start: protocol.Position{Line: 12, Character: 4},
@@ -609,6 +631,38 @@ func TestDefinition(t *testing.T) {
 				},
 			}},
 		},
+		{
+			name:     "goto with overrides: string carried from local",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 37, Character: 57},
+			results: []definitionResult{{
+				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 13, Character: 6},
+					End:   protocol.Position{Line: 13, Character: 24},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 13, Character: 6},
+					End:   protocol.Position{Line: 13, Character: 16},
+				},
+			}},
+		},
+		{
+			name:     "goto with overrides: string carried from import",
+			filename: "testdata/goto-overrides.jsonnet",
+			position: protocol.Position{Line: 38, Character: 57},
+			results: []definitionResult{{
+				targetFilename: "testdata/goto-overrides-imported.jsonnet",
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 4},
+					End:   protocol.Position{Line: 2, Character: 23},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 4},
+					End:   protocol.Position{Line: 2, Character: 15},
+				},
+			}},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -625,7 +679,7 @@ func TestDefinition(t *testing.T) {
 			server.getVM = testGetVM
 			serverOpenTestFile(t, server, string(tc.filename))
 			response, err := server.definitionLink(context.Background(), params, false)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var expected []protocol.DefinitionLink
 			for _, r := range tc.results {
