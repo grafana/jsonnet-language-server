@@ -119,8 +119,20 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return ranges, nil
 		}
 
+		// Unpack binary nodes. A field could be either in the left or right side of the binary
+		var fieldNodes []ast.Node
 		for _, foundField := range foundFields {
 			switch fieldNode := foundField.Body.(type) {
+			case *ast.Binary:
+				fieldNodes = append(fieldNodes, fieldNode.Right)
+				fieldNodes = append(fieldNodes, fieldNode.Left)
+			default:
+				fieldNodes = append(fieldNodes, fieldNode)
+			}
+		}
+
+		for _, fieldNode := range fieldNodes {
+			switch fieldNode := fieldNode.(type) {
 			case *ast.Var:
 				// If the field is a var, we need to find the value of the var
 				// To do so, we get the stack where the var is used and search that stack for the var's definition
