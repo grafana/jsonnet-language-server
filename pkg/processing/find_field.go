@@ -257,9 +257,9 @@ func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 	return objects
 }
 
+// findVarReference finds the object that the variable is referencing
+// To do so, we get the stack where the var is used and search that stack for the var's definition
 func findVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
-	// If the field is a var, we need to find the value of the var
-	// To do so, we get the stack where the var is used and search that stack for the var's definition
 	varFileNode, _, _ := vm.ImportAST("", varNode.LocRange.FileName)
 	varStack, err := FindNodeByPosition(varFileNode, varNode.Loc().Begin)
 	if err != nil {
