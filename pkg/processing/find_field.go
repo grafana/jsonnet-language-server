@@ -119,10 +119,25 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return ranges, nil
 		}
 
-		// Unpack binary nodes. A field could be either in the left or right side of the binary
+		// Unpack:
+		// - Binary nodes. A field could be either in the left or right side of the binary
+		// - Self nodes. We want the object self refers to, not the self itself
 		var fieldNodes []ast.Node
 		for _, foundField := range foundFields {
 			switch fieldNode := foundField.Body.(type) {
+			case *ast.Self:
+				filename := fieldNode.LocRange.FileName
+				rootNode, _, _ := vm.ImportAST("", filename)
+				tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
+				if err != nil {
+					return nil, err
+				}
+				for !tmpStack.IsEmpty() {
+					_, node := tmpStack.Pop()
+					if _, ok := node.(*ast.DesugaredObject); ok {
+						fieldNodes = append(fieldNodes, node)
+					}
+				}
 			case *ast.Binary:
 				fieldNodes = append(fieldNodes, fieldNode.Right)
 				fieldNodes = append(fieldNodes, fieldNode.Left)
@@ -134,18 +149,11 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		for _, fieldNode := range fieldNodes {
 			switch fieldNode := fieldNode.(type) {
 			case *ast.Var:
-				// If the field is a var, we need to find the value of the var
-				// To do so, we get the stack where the var is used and search that stack for the var's definition
-				varFileNode, _, _ := vm.ImportAST("", fieldNode.LocRange.FileName)
-				varStack, err := FindNodeByPosition(varFileNode, fieldNode.Loc().Begin)
+				varReference, err := findVarReference(fieldNode, vm)
 				if err != nil {
-					return nil, fmt.Errorf("got the following error when finding the bind for %s: %w", fieldNode.Id, err)
+					return nil, err
 				}
-				bind := FindBindByIdViaStack(varStack, fieldNode.Id)
-				if bind == nil {
-					return nil, fmt.Errorf("could not find bind for %s", fieldNode.Id)
-				}
-				foundDesugaredObjects = append(foundDesugaredObjects, bind.Body.(*ast.DesugaredObject))
+				foundDesugaredObjects = append(foundDesugaredObjects, varReference.(*ast.DesugaredObject))
 			case *ast.DesugaredObject:
 				stack = stack.Push(fieldNode)
 				foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
@@ -237,9 +245,31 @@ func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 					stack.Push(obj.Body)
 				}
 			}
+		case *ast.Var:
+			varReference, err := findVarReference(curr, vm)
+			if err != nil {
+				log.WithError(err).Errorf("Error finding var reference, ignoring this node")
+				continue
+			}
+			stack.Push(varReference)
 		}
 	}
 	return objects
+}
+
+func findVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
+	// If the field is a var, we need to find the value of the var
+	// To do so, we get the stack where the var is used and search that stack for the var's definition
+	varFileNode, _, _ := vm.ImportAST("", varNode.LocRange.FileName)
+	varStack, err := FindNodeByPosition(varFileNode, varNode.Loc().Begin)
+	if err != nil {
+		return nil, fmt.Errorf("got the following error when finding the bind for %s: %w", varNode.Id, err)
+	}
+	bind := FindBindByIdViaStack(varStack, varNode.Id)
+	if bind == nil {
+		return nil, fmt.Errorf("could not find bind for %s", varNode.Id)
+	}
+	return bind.Body, nil
 }
 
 func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, error) {
