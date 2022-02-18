@@ -690,6 +690,38 @@ func TestDefinition(t *testing.T) {
 				},
 			}},
 		},
+		{
+			name:     "goto deeply nested imported attribute",
+			filename: "testdata/goto-import-nested-main.jsonnet",
+			position: protocol.Position{Line: 6, Character: 14},
+			results: []definitionResult{{
+				targetFilename: "testdata/goto-import-nested-obj.libsonnet",
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 2},
+					End:   protocol.Position{Line: 2, Character: 26},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 2},
+					End:   protocol.Position{Line: 2, Character: 15},
+				},
+			}},
+		},
+		{
+			name:     "goto deeply nested imported attribute through self",
+			filename: "testdata/goto-import-nested-main.jsonnet",
+			position: protocol.Position{Line: 7, Character: 27},
+			results: []definitionResult{{
+				targetFilename: "testdata/goto-import-nested-obj.libsonnet",
+				targetRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 2},
+					End:   protocol.Position{Line: 2, Character: 26},
+				},
+				targetSelectionRange: protocol.Range{
+					Start: protocol.Position{Line: 2, Character: 2},
+					End:   protocol.Position{Line: 2, Character: 15},
+				},
+			}},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
