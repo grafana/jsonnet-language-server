@@ -121,7 +121,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 
 		// Unpack:
 		// - Binary nodes. A field could be either in the left or right side of the binary
-		// - Self nodes. We want the object self refers to, not the self itself
+		// - Self nodes. We want the object self refers to, not the self node itself
 		var fieldNodes []ast.Node
 		for _, foundField := range foundFields {
 			switch fieldNode := foundField.Body.(type) {
