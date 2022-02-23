@@ -17,9 +17,12 @@ import (
 )
 
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	responseDefLinks, err := s.definitionLink(ctx, params, true)
+	responseDefLinks, err := s.definitionLink(ctx, params)
 	if err != nil {
-		return nil, err
+		// Returning an error too often can lead to the client killing the language server
+		// Logging the errors is sufficient
+		log.WithError(err).Error("Definition: error finding definition")
+		return nil, nil
 	}
 
 	// TODO: Support LocationLink instead of Location (this needs to be changed in the upstream protocol lib)
@@ -35,7 +38,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 	return response, nil
 }
 
-func (s *server) definitionLink(ctx context.Context, params *protocol.DefinitionParams, warnIfNotFound bool) ([]protocol.DefinitionLink, error) {
+func (s *server) definitionLink(ctx context.Context, params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
@@ -51,10 +54,6 @@ func (s *server) definitionLink(ctx context.Context, params *protocol.Definition
 	}
 	responseDefLinks, err := findDefinition(doc.ast, params, vm)
 	if err != nil {
-		if warnIfNotFound {
-			log.Warn(err.Error())
-			return nil, nil
-		}
 		return nil, err
 	}
 
