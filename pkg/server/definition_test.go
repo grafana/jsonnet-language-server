@@ -781,6 +781,7 @@ func BenchmarkDefinition(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				// We don't care about the response for the benchmark
+				// nolint:errcheck
 				server.definitionLink(context.Background(), params, false)
 			}
 		})
