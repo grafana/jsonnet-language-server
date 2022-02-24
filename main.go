@@ -103,7 +103,7 @@ func main() {
 	log.Infoln("Starting the language server")
 
 	ctx := context.Background()
-	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
+	stream := jsonrpc2.NewHeaderStream(utils.NewDefaultStdio())
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 

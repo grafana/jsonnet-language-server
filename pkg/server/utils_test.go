@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,6 +15,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
+
+type fakeWriterCloser struct {
+	io.Writer
+}
+
+func (fakeWriterCloser) Close() error {
+	return nil
+}
 
 func init() {
 	logrus.SetLevel(logrus.WarnLevel)
@@ -30,7 +39,7 @@ func absUri(t *testing.T, path string) protocol.DocumentURI {
 func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
 	t.Helper()
 
-	stream := jsonrpc2.NewHeaderStream(utils.Stdio{})
+	stream := jsonrpc2.NewHeaderStream(utils.NewStdio(nil, fakeWriterCloser{io.Discard}))
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 	server = NewServer("jsonnet-language-server", "dev", client).WithStaticVM([]string{})
@@ -41,7 +50,7 @@ func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
 	return server
 }
 
-func serverOpenTestFile(t *testing.T, server *server, filename string) protocol.DocumentURI {
+func serverOpenTestFile(t require.TestingT, server *server, filename string) protocol.DocumentURI {
 	fileContent, err := os.ReadFile(filename)
 	require.NoError(t, err)
 

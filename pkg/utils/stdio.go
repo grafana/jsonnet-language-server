@@ -1,25 +1,40 @@
 package utils
 
 import (
+	"io"
 	"net"
 	"os"
 	"time"
 )
 
-type Stdio struct{}
+type Stdio struct {
+	in  io.ReadCloser
+	out io.WriteCloser
+}
+
+func NewDefaultStdio() *Stdio {
+	return NewStdio(os.Stdin, os.Stdout)
+}
+
+func NewStdio(in io.ReadCloser, out io.WriteCloser) *Stdio {
+	return &Stdio{
+		in:  in,
+		out: out,
+	}
+}
 
 // Read implements io.Reader interface.
-func (Stdio) Read(b []byte) (int, error) { return os.Stdin.Read(b) }
+func (s *Stdio) Read(b []byte) (int, error) { return s.in.Read(b) }
 
 // Write implements io.Writer interface.
-func (Stdio) Write(b []byte) (int, error) { return os.Stdout.Write(b) }
+func (s *Stdio) Write(b []byte) (int, error) { return s.out.Write(b) }
 
 // Close implements io.Closer interface.
-func (Stdio) Close() error {
-	if err := os.Stdin.Close(); err != nil {
+func (s *Stdio) Close() error {
+	if err := s.in.Close(); err != nil {
 		return err
 	}
-	return os.Stdout.Close()
+	return s.out.Close()
 }
 
 // LocalAddr implements net.Conn interface.
