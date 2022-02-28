@@ -737,7 +737,7 @@ func TestDefinition(t *testing.T) {
 			server := NewServer("any", "test version", nil)
 			server.getVM = testGetVM
 			serverOpenTestFile(t, server, string(tc.filename))
-			response, err := server.definitionLink(context.Background(), params, false)
+			response, err := server.definitionLink(context.Background(), params)
 			require.NoError(t, err)
 
 			var expected []protocol.DefinitionLink
@@ -821,7 +821,7 @@ func TestDefinitionFail(t *testing.T) {
 			server := NewServer("any", "test version", nil)
 			server.getVM = testGetVM
 			serverOpenTestFile(t, server, tc.filename)
-			got, err := server.definitionLink(context.Background(), params, false)
+			got, err := server.definitionLink(context.Background(), params)
 
 			require.Error(t, err)
 			assert.Equal(t, tc.expected.Error(), err.Error())
