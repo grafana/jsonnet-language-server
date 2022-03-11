@@ -64,8 +64,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	var response []protocol.DefinitionLink
 
 	searchStack, _ := processing.FindNodeByPosition(root, position.PositionProtocolToAST(params.Position))
-	var deepestNode ast.Node
-	searchStack, deepestNode = searchStack.Pop()
+	deepestNode := searchStack.Pop()
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:
 		log.Debugf("Found Var node %s", deepestNode.Id)
