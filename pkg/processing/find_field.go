@@ -59,7 +59,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	} else if start == "std" {
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	} else if strings.Contains(start, ".") {
-		foundDesugaredObjects = findTopLevelObjectsInFile(vm, start)
+		foundDesugaredObjects = findTopLevelObjectsInFile(vm, start, "")
 	} else if start == "$" {
 		sameFileOnly = true
 		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
@@ -87,7 +87,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
 		case *ast.Import:
 			filename := bodyNode.File.Value
-			foundDesugaredObjects = findTopLevelObjectsInFile(vm, filename)
+			foundDesugaredObjects = findTopLevelObjectsInFile(vm, filename, "")
 		case *ast.Index:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
@@ -144,7 +144,8 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 				return result, err
 			case *ast.Import:
 				filename := fieldNode.File.Value
-				foundDesugaredObjects = append(foundDesugaredObjects, findTopLevelObjectsInFile(vm, filename)...)
+				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
+				foundDesugaredObjects = append(foundDesugaredObjects, newObjs...)
 			}
 		}
 	}
