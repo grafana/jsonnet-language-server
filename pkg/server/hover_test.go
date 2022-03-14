@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,6 +67,8 @@ var (
 )
 
 func TestHover(t *testing.T) {
+	logrus.SetOutput(io.Discard)
+
 	var testCases = []struct {
 		name        string
 		document    string

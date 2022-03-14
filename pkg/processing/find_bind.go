@@ -6,10 +6,8 @@ import (
 )
 
 func FindBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.LocalBind {
-	stack = stack.Clone()
-	for !stack.IsEmpty() {
-		_, curr := stack.Pop()
-		switch curr := curr.(type) {
+	for _, node := range stack.Stack {
+		switch curr := node.(type) {
 		case *ast.Local:
 			for _, bind := range curr.Binds {
 				if bind.Variable == id {
@@ -23,7 +21,6 @@ func FindBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.Lo
 				}
 			}
 		}
-
 	}
 	return nil
 }

@@ -25,19 +25,18 @@ func (s *NodeStack) Clone() *NodeStack {
 	}
 }
 
-func (s *NodeStack) Push(n ast.Node) *NodeStack {
+func (s *NodeStack) Push(n ast.Node) {
 	s.Stack = append(s.Stack, n)
-	return s
 }
 
-func (s *NodeStack) Pop() (*NodeStack, ast.Node) {
+func (s *NodeStack) Pop() ast.Node {
 	l := len(s.Stack)
 	if l == 0 {
-		return s, nil
+		return nil
 	}
 	n := s.Stack[l-1]
 	s.Stack = s.Stack[:l-1]
-	return s, n
+	return n
 }
 
 func (s *NodeStack) Peek() ast.Node {
@@ -54,14 +53,14 @@ func (s *NodeStack) IsEmpty() bool {
 func (s *NodeStack) BuildIndexList() []string {
 	var indexList []string
 	for !s.IsEmpty() {
-		_, curr := s.Pop()
+		curr := s.Pop()
 		switch curr := curr.(type) {
 		case *ast.SuperIndex:
-			s = s.Push(curr.Index)
+			s.Push(curr.Index)
 			indexList = append(indexList, "super")
 		case *ast.Index:
-			s = s.Push(curr.Index)
-			s = s.Push(curr.Target)
+			s.Push(curr.Index)
+			s.Push(curr.Target)
 		case *ast.LiteralString:
 			indexList = append(indexList, curr.Value)
 		case *ast.Self:
