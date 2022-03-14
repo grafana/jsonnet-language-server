@@ -9,14 +9,14 @@ import (
 
 var fileTopLevelObjectsCache = make(map[string][]*ast.DesugaredObject)
 
-func findTopLevelObjectsInFile(vm *jsonnet.VM, filename, from string) []*ast.DesugaredObject {
-	key := from + ":" + filename
-	if _, ok := fileTopLevelObjectsCache[key]; !ok {
-		rootNode, _, _ := vm.ImportAST(from, filename)
-		fileTopLevelObjectsCache[key] = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+func findTopLevelObjectsInFile(vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
+	cacheKey := importedFrom + ":" + filename
+	if _, ok := fileTopLevelObjectsCache[cacheKey]; !ok {
+		rootNode, _, _ := vm.ImportAST(importedFrom, filename)
+		fileTopLevelObjectsCache[cacheKey] = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 	}
 
-	return fileTopLevelObjectsCache[key]
+	return fileTopLevelObjectsCache[cacheKey]
 }
 
 // Find all ast.DesugaredObject's from NodeStack
