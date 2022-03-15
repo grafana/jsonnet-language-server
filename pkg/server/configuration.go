@@ -20,7 +20,7 @@ func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.Di
 		case "ext_vars":
 			newVars, err := s.parseExtVars(sv)
 			if err != nil {
-				return fmt.Errorf("%w: ext_var parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
+				return fmt.Errorf("%w: ext_vars parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
 			}
 			s.extVars = newVars
 
