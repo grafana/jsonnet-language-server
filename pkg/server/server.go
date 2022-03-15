@@ -49,10 +49,11 @@ func NewServer(name, version string, client protocol.ClientCloser) *server {
 type server struct {
 	name, version string
 
-	stdlib []stdlib.Function
-	cache  *cache
-	client protocol.ClientCloser
-	getVM  func(path string) (*jsonnet.VM, error)
+	stdlib  []stdlib.Function
+	cache   *cache
+	client  protocol.ClientCloser
+	getVM   func(path string) (*jsonnet.VM, error)
+	extVars map[string]string
 
 	// Feature flags
 	EvalDiags bool
@@ -64,6 +65,7 @@ func (s *server) WithStaticVM(jpaths []string) *server {
 	s.getVM = func(path string) (*jsonnet.VM, error) {
 		jpaths = append(jpaths, filepath.Dir(path))
 		vm := jsonnet.MakeVM()
+		resetExtVars(vm, s.extVars)
 		importer := &jsonnet.FileImporter{JPaths: jpaths}
 		vm.Importer(importer)
 		return vm, nil
@@ -82,7 +84,9 @@ func (s *server) WithTankaVM(fallbackJPath []string) *server {
 		opts := tankaJsonnet.Opts{
 			ImportPaths: jpath,
 		}
-		return tankaJsonnet.MakeVM(opts), nil
+		vm := tankaJsonnet.MakeVM(opts)
+		resetExtVars(vm, s.extVars)
+		return vm, nil
 	}
 	return s
 }

@@ -216,10 +216,6 @@ func (s *server) DiagnosticWorkspace(context.Context, *protocol.WorkspaceDiagnos
 	return nil, notImplemented("DiagnosticWorkspace")
 }
 
-func (s *server) DidChangeConfiguration(context.Context, *protocol.DidChangeConfigurationParams) error {
-	return notImplemented("DidChangeConfiguration")
-}
-
 func (s *server) DidChangeWatchedFiles(context.Context, *protocol.DidChangeWatchedFilesParams) error {
 	return notImplemented("DidChangeWatchedFiles")
 }
