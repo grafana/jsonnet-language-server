@@ -55,5 +55,5 @@ Go code should be formatted with `gofmt` and linted with
 
 * Emacs: Refer to [editor/jsonnet-language-server.el](editor/jsonnet-language-server.el)
 * Vim: Refer to [editor/jsonnet-language-server.vim](editor/jsonnet-language-server.vim)
-* VSCod(e|ium): Use the [vscode-jsonnet-extension](https://github.com/julienduchesne/vscode-jsonnet)
-* Jetbrains: Use the [lsp support plugin](https://plugins.jetbrains.com/plugin/10209-lsp-support)
+* VSCod(e|ium): Use the [Jsonnet Language Server extension](https://marketplace.visualstudio.com/items?itemName=Grafana.vscode-jsonnet) ([source code](https://github.com/grafana/vscode-jsonnet))
+* Jetbrains: Use the [Jsonnet Language Server plugin](https://plugins.jetbrains.com/plugin/18752-jsonnet-language-server) ([source code](https://github.com/zzehring/intellij-jsonnet))
