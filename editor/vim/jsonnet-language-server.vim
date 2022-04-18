@@ -1,3 +1,5 @@
+" Using https://github.com/mattn/vim-lsp-settings, save it to
+"
 augroup vim_lsp_settings_jsonnet_language_server
   au!
   LspRegisterServer {
