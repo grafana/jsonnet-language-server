@@ -1,10 +1,10 @@
 {
-    "languageserver": {
-        "jsonnet": {
-        "command": "jsonnet-language-server",
-        "args": ["-t"],
-        "rootPatterns": [".git/"],
-        "filetypes": ["jsonnet"]
-        }
+  "languageserver": {
+    "jsonnet": {
+      "command": "jsonnet-language-server",
+      "args": ["-t"],
+      "rootPatterns": [".git/", "jsonnetfile.json"],
+      "filetypes": ["jsonnet","libsonnet"]
     }
+  }
 }
