@@ -76,16 +76,6 @@ func (s *server) diagnosticsLoop() {
 						diags = append(diags, <-lintChannel...)
 					}
 
-					if len(diags) == 0 {
-						diags = []protocol.Diagnostic{
-							{
-								Source:   "jsonnet",
-								Message:  "No errors or warnings",
-								Severity: protocol.SeverityInformation,
-							},
-						}
-					}
-
 					err = s.client.PublishDiagnostics(context.Background(), &protocol.PublishDiagnosticsParams{
 						URI:         uri,
 						Diagnostics: diags,
