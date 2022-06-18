@@ -6,18 +6,14 @@ import (
 )
 
 func FindParameterByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.Parameter {
-	stack = stack.Clone()
-	for !stack.IsEmpty() {
-		_, curr := stack.Pop()
-		switch curr := curr.(type) {
-		case *ast.Function:
-			for _, param := range curr.Parameters {
+	for _, node := range stack.Stack {
+		if f, ok := node.(*ast.Function); ok {
+			for _, param := range f.Parameters {
 				if param.Name == id {
 					return &param
 				}
 			}
 		}
-
 	}
 	return nil
 }

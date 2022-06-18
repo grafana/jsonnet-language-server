@@ -35,7 +35,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, nil
 	}
 
-	_, node := stack.Pop()
+	node := stack.Pop()
 
 	// // DEBUG
 	// var node2 ast.Node
