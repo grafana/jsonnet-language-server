@@ -65,29 +65,37 @@ func (s *server) parseFormattingOpts(unparsed interface{}) (formatter.Options, e
 	}
 
 	opts := formatter.DefaultOptions()
-	optsTyp, optsVal := reflect.TypeOf(opts), reflect.ValueOf(&opts).Elem()
+	var (
+		valOpts = reflect.ValueOf(&opts).Elem()
+		typOpts = valOpts.Type()
+
+		typBool         = reflect.TypeOf(false)
+		typInt          = reflect.TypeOf(int(0))
+		typStringStyle  = reflect.TypeOf(formatter.StringStyleDouble)
+		typCommentStyle = reflect.TypeOf(formatter.CommentStyleHash)
+	)
 	for optName, unparsedValue := range newOpts {
-		field, ok := optsTyp.FieldByName(optName)
+		field, ok := typOpts.FieldByName(optName)
 		if !ok {
 			return opts, fmt.Errorf("unknown option: %q", optName)
 		}
 
 		var err error
 		switch field.Type {
-		case reflect.TypeOf(int(0)):
-			dest := optsVal.FieldByIndex(field.Index).Addr().Interface().(*int)
+		case typInt:
+			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*int)
 			err = assignInt(dest, unparsedValue)
 
-		case reflect.TypeOf(false):
-			dest := optsVal.FieldByIndex(field.Index).Addr().Interface().(*bool)
+		case typBool:
+			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*bool)
 			err = assignBool(dest, unparsedValue)
 
-		case reflect.TypeOf(formatter.StringStyleDouble):
-			dest := optsVal.FieldByIndex(field.Index).Addr().Interface().(*formatter.StringStyle)
+		case typStringStyle:
+			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*formatter.StringStyle)
 			err = assignStringStyle(dest, unparsedValue)
 
-		case reflect.TypeOf(formatter.CommentStyleHash):
-			dest := optsVal.FieldByIndex(field.Index).Addr().Interface().(*formatter.CommentStyle)
+		case typCommentStyle:
+			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*formatter.CommentStyle)
 			err = assignCommentStyle(dest, unparsedValue)
 
 		default:
@@ -96,36 +104,6 @@ func (s *server) parseFormattingOpts(unparsed interface{}) (formatter.Options, e
 		if err != nil {
 			return opts, fmt.Errorf("%s: %v", optName, err)
 		}
-
-		// switch optName {
-		// case "indent":
-		// 	if err := assignInt(&opts.Indent, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("indent: %v", err)
-		// 	}
-		// case "max_blank_lines":
-		// 	if err := assignInt(&opts.MaxBlankLines, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("max_blank_lines: %v", err)
-		// 	}
-		// case "string_style":
-		// 	if err := assignStringStyle(&opts.StringStyle, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("string_style: %v", err)
-		// 	}
-		// case "comment_style":
-		// 	if err := assignCommentStyle(&opts.CommentStyle, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("comment_style: %v", err)
-		// 	}
-		// case "pretty_field_names":
-		// 	if err := assignBool(&opts.PrettyFieldNames, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("pretty_field_names: %v", err)
-		// 	}
-		// case "pad_arrays":
-		// 	if err := assignBool(&opts.PadArrays, unparsedValue); err != nil {
-		// 		return opts, fmt.Errorf("pad_arrays: %v", err)
-		// 	}
-
-		// default:
-		// 	return opts, fmt.Errorf("unknown option: %q", optName)
-		// }
 	}
 	return opts, nil
 }
