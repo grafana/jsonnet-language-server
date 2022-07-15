@@ -37,6 +37,7 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 				Label:         f.Name,
 				Kind:          protocol.FunctionCompletion,
 				Detail:        f.Signature(),
+				InsertText:    strings.ReplaceAll(f.Signature(), "std.", ""),
 				Documentation: f.MarkdownDescription,
 			}
 

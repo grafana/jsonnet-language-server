@@ -35,18 +35,21 @@ var (
 		Label:         "aaaotherMin",
 		Kind:          protocol.FunctionCompletion,
 		Detail:        "std.aaaotherMin(a)",
+		InsertText:    "aaaotherMin(a)",
 		Documentation: "blabla",
 	}
 	minItem = protocol.CompletionItem{
 		Label:         "min",
 		Kind:          protocol.FunctionCompletion,
 		Detail:        "std.min(a, b)",
+		InsertText:    "min(a, b)",
 		Documentation: "min gets the min",
 	}
 	maxItem = protocol.CompletionItem{
 		Label:         "max",
 		Kind:          protocol.FunctionCompletion,
 		Detail:        "std.max(a, b)",
+		InsertText:    "max(a, b)",
 		Documentation: "max gets the max",
 	}
 )
