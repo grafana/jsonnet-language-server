@@ -17,8 +17,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 		return nil, utils.LogErrorf("Formatting: %s: %w", errorRetrievingDocument, err)
 	}
 
-	// TODO(#14): Formatting options should be user configurable.
-	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, formatter.DefaultOptions())
+	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, s.fmtOpts)
 	if err != nil {
 		log.Errorf("error formatting document: %v", err)
 		return nil, nil
