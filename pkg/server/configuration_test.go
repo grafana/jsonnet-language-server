@@ -162,6 +162,31 @@ func TestConfiguration_Formatting(t *testing.T) {
 				return opts
 			}(),
 		},
+		{
+			name: "invalid string style",
+			settings: map[string]interface{}{
+				"formatting": map[string]interface{}{
+					"StringStyle": "invalid",
+				},
+			},
+			expectedErr: errors.New("JSON RPC invalid params: formatting options parsing failed: map decode failed: 1 error(s) decoding:\n\n* error decoding 'StringStyle': expected one of 'double', 'single', 'leave', got: \"invalid\""),
+		},
+		{
+			name: "invalid comment style",
+			settings: map[string]interface{}{
+				"formatting": map[string]interface{}{
+					"CommentStyle": "invalid",
+				},
+			},
+			expectedErr: errors.New("JSON RPC invalid params: formatting options parsing failed: map decode failed: 1 error(s) decoding:\n\n* error decoding 'CommentStyle': expected one of 'hash', 'slash', 'leave', got: \"invalid\""),
+		},
+		{
+			name: "does not override default values",
+			settings: map[string]interface{}{
+				"formatting": map[string]interface{}{},
+			},
+			expectedOptions: formatter.DefaultOptions(),
+		},
 	}
 
 	for _, tc := range testCases {

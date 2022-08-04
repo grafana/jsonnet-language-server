@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"math"
 	"reflect"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/formatter"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	"github.com/mitchellh/mapstructure"
 )
 
 func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
@@ -65,45 +65,20 @@ func (s *server) parseFormattingOpts(unparsed interface{}) (formatter.Options, e
 	}
 
 	opts := formatter.DefaultOptions()
-	var (
-		valOpts = reflect.ValueOf(&opts).Elem()
-		typOpts = valOpts.Type()
+	config := mapstructure.DecoderConfig{
+		Result: &opts,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			stringStyleDecodeFunc,
+			commentStyleDecodeFunc,
+		),
+	}
+	decoder, err := mapstructure.NewDecoder(&config)
+	if err != nil {
+		return formatter.Options{}, fmt.Errorf("decoder construction failed: %v", err)
+	}
 
-		typBool         = reflect.TypeOf(false)
-		typInt          = reflect.TypeOf(int(0))
-		typStringStyle  = reflect.TypeOf(formatter.StringStyleDouble)
-		typCommentStyle = reflect.TypeOf(formatter.CommentStyleHash)
-	)
-	for optName, unparsedValue := range newOpts {
-		field, ok := typOpts.FieldByName(optName)
-		if !ok {
-			return opts, fmt.Errorf("unknown option: %q", optName)
-		}
-
-		var err error
-		switch field.Type {
-		case typInt:
-			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*int)
-			err = assignInt(dest, unparsedValue)
-
-		case typBool:
-			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*bool)
-			err = assignBool(dest, unparsedValue)
-
-		case typStringStyle:
-			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*formatter.StringStyle)
-			err = assignStringStyle(dest, unparsedValue)
-
-		case typCommentStyle:
-			dest := valOpts.FieldByIndex(field.Index).Addr().Interface().(*formatter.CommentStyle)
-			err = assignCommentStyle(dest, unparsedValue)
-
-		default:
-			err = fmt.Errorf("unknown field type: %v", field.Type)
-		}
-		if err != nil {
-			return opts, fmt.Errorf("%s: %v", optName, err)
-		}
+	if err := decoder.Decode(newOpts); err != nil {
+		return formatter.Options{}, fmt.Errorf("map decode failed: %v", err)
 	}
 	return opts, nil
 }
@@ -113,30 +88,6 @@ func resetExtVars(vm *jsonnet.VM, vars map[string]string) {
 	for vk, vv := range vars {
 		vm.ExtVar(vk, vv)
 	}
-}
-
-func assignBool(dest *bool, unparsed interface{}) error {
-	switch unparsed {
-	case true:
-		*dest = true
-	case false:
-		*dest = false
-	default:
-		return fmt.Errorf("expected bool, got: %T", unparsed)
-	}
-	return nil
-}
-
-func assignInt(dest *int, unparsed interface{}) error {
-	switch v := unparsed.(type) {
-	case int:
-		*dest = v
-	case float64:
-		*dest = int(math.Floor(v))
-	default:
-		return fmt.Errorf("expected int or float, got: %T", unparsed)
-	}
-	return nil
 }
 
 func assignCommentStyle(dest *formatter.CommentStyle, unparsed interface{}) error {
@@ -157,20 +108,44 @@ func assignCommentStyle(dest *formatter.CommentStyle, unparsed interface{}) erro
 	return nil
 }
 
-func assignStringStyle(dest *formatter.StringStyle, unparsed interface{}) error {
-	str, ok := unparsed.(string)
-	if !ok {
-		return fmt.Errorf("expected string, got: %T", unparsed)
+func stringStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interface{}, error) {
+	if to != reflect.TypeOf(formatter.StringStyleDouble) {
+		return unparsed, nil
 	}
-	switch str {
+	if from.Kind() != reflect.String {
+		return nil, fmt.Errorf("expected string, got: %v", from.Kind())
+	}
+
+	// will not panic because of the kind == string check above
+	switch str := unparsed.(string); str {
 	case "double":
-		*dest = formatter.StringStyleDouble
+		return formatter.StringStyleDouble, nil
 	case "single":
-		*dest = formatter.StringStyleSingle
+		return formatter.StringStyleSingle, nil
 	case "leave":
-		*dest = formatter.StringStyleLeave
+		return formatter.StringStyleLeave, nil
 	default:
-		return fmt.Errorf("unknown string_style: expected one of 'double', 'single', 'leave', got: %q", str)
+		return nil, fmt.Errorf("expected one of 'double', 'single', 'leave', got: %q", str)
 	}
-	return nil
+}
+
+func commentStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interface{}, error) {
+	if to != reflect.TypeOf(formatter.CommentStyleHash) {
+		return unparsed, nil
+	}
+	if from.Kind() != reflect.String {
+		return nil, fmt.Errorf("expected string, got: %v", from.Kind())
+	}
+
+	// will not panic because of the kind == string check above
+	switch str := unparsed.(string); str {
+	case "hash":
+		return formatter.CommentStyleHash, nil
+	case "slash":
+		return formatter.CommentStyleSlash, nil
+	case "leave":
+		return formatter.CommentStyleLeave, nil
+	default:
+		return nil, fmt.Errorf("expected one of 'hash', 'slash', 'leave', got: %q", str)
+	}
 }
