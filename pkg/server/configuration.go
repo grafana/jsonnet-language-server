@@ -90,24 +90,6 @@ func resetExtVars(vm *jsonnet.VM, vars map[string]string) {
 	}
 }
 
-func assignCommentStyle(dest *formatter.CommentStyle, unparsed interface{}) error {
-	str, ok := unparsed.(string)
-	if !ok {
-		return fmt.Errorf("expected string, got: %T", unparsed)
-	}
-	switch str {
-	case "hash":
-		*dest = formatter.CommentStyleHash
-	case "slash":
-		*dest = formatter.CommentStyleSlash
-	case "leave":
-		*dest = formatter.CommentStyleLeave
-	default:
-		return fmt.Errorf("expected one of 'hash', 'slash', 'leave', got: %q", str)
-	}
-	return nil
-}
-
 func stringStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interface{}, error) {
 	if to != reflect.TypeOf(formatter.StringStyleDouble) {
 		return unparsed, nil
