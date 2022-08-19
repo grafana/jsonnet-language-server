@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
@@ -40,6 +41,7 @@ func NewServer(name, version string, client protocol.ClientCloser) *server {
 		version: version,
 		cache:   newCache(),
 		client:  client,
+		fmtOpts: formatter.DefaultOptions(),
 	}
 
 	return server
@@ -54,6 +56,7 @@ type server struct {
 	client  protocol.ClientCloser
 	getVM   func(path string) (*jsonnet.VM, error)
 	extVars map[string]string
+	fmtOpts formatter.Options
 
 	// Feature flags
 	EvalDiags bool
