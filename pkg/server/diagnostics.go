@@ -17,12 +17,61 @@ import (
 
 var (
 	// errRegexp matches the various Jsonnet location formats in errors.
-	// file:line msg
-	// file:line:col-endCol msg
-	// file:(line:endLine)-(col:endCol) msg
-	// Has 10 matching groups.
-	errRegexp = regexp.MustCompile(`/.*:(?:(\d+)|(?:(\d+):(\d+)-(\d+))|(?:\((\d+):(\d+)\)-\((\d+):(\d+))\))\s(.*)`)
+	// 1. file:line msg
+	// 2. file:line:col msg
+	// 3. file:line:col-endCol msg
+	// 4. file:(line:col)-(endLine:endCol) msg
+	// https://regex101.com/r/tL5VWi/2
+	errRegexp = regexp.MustCompile(`/[^:]*:` +
+		`(?:(?P<startLine1>\d+)` +
+		`|(?P<startLine2>\d+):(?P<startCol2>\d+)` +
+		`|(?:(?P<startLine3>\d+):(?P<startCol3>\d+)-(?P<endCol3>\d+))` +
+		`|(?:\((?P<startLine4>\d+):(?P<startCol4>\d+)\)-\((?P<endLine4>\d+):(?P<endCol4>\d+))\))` +
+		`\s(?P<message>.*)`)
 )
+
+func parseErrRegexpMatch(match []string) (string, protocol.Range) {
+	get := func(name string) string {
+		idx := errRegexp.SubexpIndex(name)
+		if len(match) <= idx {
+			return ""
+		}
+		return match[idx]
+	}
+
+	message, line, col, endLine, endCol := "", 1, 1, 1, 1
+	if len(match) > 1 {
+		if lineStr := get("startLine1"); lineStr != "" {
+			line, _ = strconv.Atoi(lineStr)
+			endLine = line
+		}
+
+		if lineStr := get("startLine2"); lineStr != "" {
+			line, _ = strconv.Atoi(lineStr)
+			endLine = line
+			col, _ = strconv.Atoi(get("startCol2"))
+			endCol = col
+		}
+
+		if lineStr := get("startLine3"); lineStr != "" {
+			line, _ = strconv.Atoi(lineStr)
+			endLine = line
+			col, _ = strconv.Atoi(get("startCol3"))
+			endCol, _ = strconv.Atoi(get("endCol3"))
+		}
+
+		if lineStr := get("startLine4"); lineStr != "" {
+			line, _ = strconv.Atoi(lineStr)
+			endLine, _ = strconv.Atoi(get("endLine4"))
+			col, _ = strconv.Atoi(get("startCol4"))
+			endCol, _ = strconv.Atoi(get("endCol4"))
+		}
+
+		message = get("message")
+	}
+
+	return message, position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
+}
 
 func (s *server) queueDiagnostics(uri protocol.DocumentURI) {
 	s.cache.diagMutex.Lock()
@@ -109,9 +158,7 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 	}
 
-	// Initialize with 1 because we indiscriminately subtract one to map error ranges to LSP ranges.
 	if doc.err != nil {
-		line, col, endLine, endCol := 1, 1, 1, 1
 		diag := protocol.Diagnostic{Source: "jsonnet evaluation"}
 		lines := strings.Split(doc.err.Error(), "\n")
 		if len(lines) == 0 {
@@ -127,34 +174,17 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 		} else {
 			match = errRegexp.FindStringSubmatch(lines[0])
 		}
-		if len(match) == 10 {
-			if match[1] != "" {
-				line, _ = strconv.Atoi(match[1])
-				endLine = line + 1
-			}
-			if match[2] != "" {
-				line, _ = strconv.Atoi(match[2])
-				col, _ = strconv.Atoi(match[3])
-				endLine = line
-				endCol, _ = strconv.Atoi(match[4])
-			}
-			if match[5] != "" {
-				line, _ = strconv.Atoi(match[5])
-				col, _ = strconv.Atoi(match[6])
-				endLine, _ = strconv.Atoi(match[7])
-				endCol, _ = strconv.Atoi(match[8])
-			}
-		}
 
+		message, rang := parseErrRegexpMatch(match)
 		if runtimeErr {
 			diag.Message = doc.err.Error()
 			diag.Severity = protocol.SeverityWarning
 		} else {
-			diag.Message = match[9]
+			diag.Message = message
 			diag.Severity = protocol.SeverityError
 		}
 
-		diag.Range = position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
+		diag.Range = rang
 		diags = append(diags, diag)
 	}
 
@@ -167,31 +197,8 @@ func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 		log.Errorf("getLintDiags: %s: %v\n", errorRetrievingDocument, err)
 	} else {
 		for _, match := range errRegexp.FindAllStringSubmatch(result, -1) {
-			line, col, endLine, endCol := 1, 1, 1, 1
 			diag := protocol.Diagnostic{Source: "lint", Severity: protocol.SeverityWarning}
-
-			if len(match) == 10 {
-				if match[1] != "" {
-					line, _ = strconv.Atoi(match[1])
-					endLine = line + 1
-				}
-				if match[2] != "" {
-					line, _ = strconv.Atoi(match[2])
-					col, _ = strconv.Atoi(match[3])
-					endLine = line
-					endCol, _ = strconv.Atoi(match[4])
-				}
-				if match[5] != "" {
-					line, _ = strconv.Atoi(match[5])
-					col, _ = strconv.Atoi(match[6])
-					endLine, _ = strconv.Atoi(match[7])
-					endCol, _ = strconv.Atoi(match[8])
-				}
-			}
-
-			diag.Message = match[9]
-
-			diag.Range = position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
+			diag.Message, diag.Range = parseErrRegexpMatch(match)
 			diags = append(diags, diag)
 		}
 	}
