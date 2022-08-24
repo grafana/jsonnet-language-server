@@ -37,7 +37,7 @@ func TestFunctions(t *testing.T) {
 		Name:                "clamp",
 		AvailableSince:      "0.15.0",
 		Params:              []string{"x", "minVal", "maxVal"},
-		MarkdownDescription: "Clamp a value to fit within the range [ `minVal`, `maxVal`].\nEquivalent to `std.max(minVal, std.min(x, maxVal))`.",
+		MarkdownDescription: "Clamp a value to fit within the range \\[ `minVal`, `maxVal`\\].\nEquivalent to `std.max(minVal, std.min(x, maxVal))`.",
 	}
 	contains(t, functions, clampFunc)
 

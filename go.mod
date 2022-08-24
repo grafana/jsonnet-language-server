@@ -3,7 +3,7 @@ module github.com/grafana/jsonnet-language-server
 go 1.18
 
 require (
-	github.com/JohannesKaufmann/html-to-markdown v1.3.0
+	github.com/JohannesKaufmann/html-to-markdown v1.3.5
 	github.com/google/go-jsonnet v0.18.0
 	github.com/grafana/tanka v0.22.1
 	github.com/hexops/gotextdiff v1.0.3
