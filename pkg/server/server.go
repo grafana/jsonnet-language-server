@@ -79,7 +79,7 @@ func (s *server) WithStaticVM(jpaths []string) *server {
 func (s *server) WithTankaVM(fallbackJPath []string) *server {
 	log.Infof("Using tanka mode. Will fall back to the following jpaths: %v", fallbackJPath)
 	s.getVM = func(path string) (*jsonnet.VM, error) {
-		jpath, _, _, err := jpath.Resolve(path)
+		jpath, _, _, err := jpath.Resolve(path, false)
 		if err != nil {
 			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
 			jpath = append(fallbackJPath, filepath.Dir(path))
