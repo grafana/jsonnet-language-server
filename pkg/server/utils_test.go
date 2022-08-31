@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
@@ -42,7 +42,9 @@ func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
 	stream := jsonrpc2.NewHeaderStream(utils.NewStdio(nil, fakeWriterCloser{io.Discard}))
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
-	server = NewServer("jsonnet-language-server", "dev", client).WithStaticVM([]string{})
+	server = NewServer("jsonnet-language-server", "dev", client, Configuration{
+		FormattingOptions: formatter.DefaultOptions(),
+	})
 	server.stdlib = stdlib
 	_, err := server.Initialize(context.Background(), &protocol.ParamInitialize{})
 	require.NoError(t, err)
@@ -80,10 +82,4 @@ func testServerWithFile(t *testing.T, stdlib []stdlib.Function, fileContent stri
 	require.NoError(t, err)
 
 	return server, serverOpenTestFile(t, server, tmpFile.Name())
-}
-
-func testGetVM(path string) (*jsonnet.VM, error) {
-	vm := jsonnet.MakeVM()
-	vm.Importer(&jsonnet.FileImporter{JPaths: []string{"testdata"}})
-	return vm, nil
 }

@@ -85,8 +85,8 @@ func TestFormatting(t *testing.T) {
 	}
 	testCases := []kase{
 		{
-			name:     "default settings",
-			settings: nil,
+			name:        "default settings",
+			settings:    nil,
 			fileContent: "{foo:		'bar'}",
 			expected: []protocol.TextEdit{
 				{Range: makeRange(t, "0:0-1:0"), NewText: ""},

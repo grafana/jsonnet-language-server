@@ -737,8 +737,9 @@ func TestDefinition(t *testing.T) {
 				},
 			}
 
-			server := NewServer("any", "test version", nil)
-			server.getVM = testGetVM
+			server := NewServer("any", "test version", nil, Configuration{
+				JPaths: []string{"testdata"},
+			})
 			serverOpenTestFile(t, server, string(tc.filename))
 			response, err := server.definitionLink(context.Background(), params)
 			require.NoError(t, err)
@@ -775,8 +776,9 @@ func BenchmarkDefinition(b *testing.B) {
 					Position: tc.position,
 				},
 			}
-			server := NewServer("any", "test version", nil)
-			server.getVM = testGetVM
+			server := NewServer("any", "test version", nil, Configuration{
+				JPaths: []string{"testdata"},
+			})
 			serverOpenTestFile(b, server, string(tc.filename))
 
 			for i := 0; i < b.N; i++ {
@@ -845,8 +847,9 @@ func TestDefinitionFail(t *testing.T) {
 				},
 			}
 
-			server := NewServer("any", "test version", nil)
-			server.getVM = testGetVM
+			server := NewServer("any", "test version", nil, Configuration{
+				JPaths: []string{"testdata"},
+			})
 			serverOpenTestFile(t, server, tc.filename)
 			got, err := server.definitionLink(context.Background(), params)
 

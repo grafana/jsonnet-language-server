@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
@@ -35,13 +34,13 @@ const (
 )
 
 // New returns a new language server.
-func NewServer(name, version string, client protocol.ClientCloser) *server {
+func NewServer(name, version string, client protocol.ClientCloser, configuration Configuration) *server {
 	server := &server{
-		name:    name,
-		version: version,
-		cache:   newCache(),
-		client:  client,
-		fmtOpts: formatter.DefaultOptions(),
+		name:          name,
+		version:       version,
+		cache:         newCache(),
+		client:        client,
+		configuration: configuration,
 	}
 
 	return server
@@ -51,47 +50,33 @@ func NewServer(name, version string, client protocol.ClientCloser) *server {
 type server struct {
 	name, version string
 
-	stdlib  []stdlib.Function
-	cache   *cache
-	client  protocol.ClientCloser
-	getVM   func(path string) (*jsonnet.VM, error)
-	extVars map[string]string
-	fmtOpts formatter.Options
+	stdlib []stdlib.Function
+	cache  *cache
+	client protocol.ClientCloser
 
-	// Feature flags
-	EvalDiags bool
-	LintDiags bool
+	configuration Configuration
 }
 
-func (s *server) WithStaticVM(jpaths []string) *server {
-	log.Infof("Using the following jpaths: %v", jpaths)
-	s.getVM = func(path string) (*jsonnet.VM, error) {
-		jpaths = append(jpaths, filepath.Dir(path))
-		vm := jsonnet.MakeVM()
-		resetExtVars(vm, s.extVars)
-		importer := &jsonnet.FileImporter{JPaths: jpaths}
-		vm.Importer(importer)
-		return vm, nil
-	}
-	return s
-}
-
-func (s *server) WithTankaVM(fallbackJPath []string) *server {
-	log.Infof("Using tanka mode. Will fall back to the following jpaths: %v", fallbackJPath)
-	s.getVM = func(path string) (*jsonnet.VM, error) {
+func (s *server) getVM(path string) (vm *jsonnet.VM, err error) {
+	if s.configuration.ResolvePathsWithTanka {
 		jpath, _, _, err := jpath.Resolve(path, false)
 		if err != nil {
 			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
-			jpath = append(fallbackJPath, filepath.Dir(path))
+			jpath = append(s.configuration.JPaths, filepath.Dir(path))
 		}
 		opts := tankaJsonnet.Opts{
 			ImportPaths: jpath,
 		}
-		vm := tankaJsonnet.MakeVM(opts)
-		resetExtVars(vm, s.extVars)
-		return vm, nil
+		vm = tankaJsonnet.MakeVM(opts)
+	} else {
+		jpath := append(s.configuration.JPaths, filepath.Dir(path))
+		vm = jsonnet.MakeVM()
+		importer := &jsonnet.FileImporter{JPaths: jpath}
+		vm.Importer(importer)
 	}
-	return s
+
+	resetExtVars(vm, s.configuration.ExtVars)
+	return vm, nil
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
