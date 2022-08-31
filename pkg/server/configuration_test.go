@@ -121,10 +121,10 @@ func TestConfiguration(t *testing.T) {
 
 func TestConfiguration_Formatting(t *testing.T) {
 	type kase struct {
-		name            string
-		settings        interface{}
-		expectedOptions formatter.Options
-		expectedErr     error
+		name                  string
+		settings              interface{}
+		expectedConfiguration Configuration
+		expectedErr           error
 	}
 
 	testCases := []kase{
@@ -146,21 +146,23 @@ func TestConfiguration_Formatting(t *testing.T) {
 					// not setting StripAllButComments
 				},
 			},
-			expectedOptions: func() formatter.Options {
-				opts := formatter.DefaultOptions()
-				opts.Indent = 4
-				opts.MaxBlankLines = 10
-				opts.StringStyle = formatter.StringStyleSingle
-				opts.CommentStyle = formatter.CommentStyleLeave
-				opts.PrettyFieldNames = true
-				opts.PadArrays = false
-				opts.PadObjects = true
-				opts.SortImports = false
-				opts.UseImplicitPlus = true
-				opts.StripEverything = false
-				opts.StripComments = false
-				return opts
-			}(),
+			expectedConfiguration: Configuration{
+				FormattingOptions: func() formatter.Options {
+					opts := formatter.DefaultOptions()
+					opts.Indent = 4
+					opts.MaxBlankLines = 10
+					opts.StringStyle = formatter.StringStyleSingle
+					opts.CommentStyle = formatter.CommentStyleLeave
+					opts.PrettyFieldNames = true
+					opts.PadArrays = false
+					opts.PadObjects = true
+					opts.SortImports = false
+					opts.UseImplicitPlus = true
+					opts.StripEverything = false
+					opts.StripComments = false
+					return opts
+				}(),
+			},
 		},
 		{
 			name: "invalid string style",
@@ -185,7 +187,58 @@ func TestConfiguration_Formatting(t *testing.T) {
 			settings: map[string]interface{}{
 				"formatting": map[string]interface{}{},
 			},
-			expectedOptions: formatter.DefaultOptions(),
+			expectedConfiguration: Configuration{FormattingOptions: formatter.DefaultOptions()},
+		},
+		{
+			name: "all settings",
+			settings: map[string]interface{}{
+				"formatting": map[string]interface{}{
+					"Indent":              4,
+					"MaxBlankLines":       10,
+					"StringStyle":         "double",
+					"CommentStyle":        "slash",
+					"PrettyFieldNames":    false,
+					"PadArrays":           true,
+					"PadObjects":          false,
+					"SortImports":         false,
+					"UseImplicitPlus":     false,
+					"StripEverything":     true,
+					"StripComments":       true,
+					"StripAllButComments": true,
+				},
+				"ext_vars": map[string]interface{}{
+					"hello": "world",
+				},
+				"resolve_paths_with_tanka": false,
+				"jpath":                    []interface{}{"blabla", "blabla2"},
+				"enable_eval_diagnostics":  false,
+				"enable_lint_diagnostics":  true,
+			},
+			expectedConfiguration: Configuration{
+				FormattingOptions: func() formatter.Options {
+					opts := formatter.DefaultOptions()
+					opts.Indent = 4
+					opts.MaxBlankLines = 10
+					opts.StringStyle = formatter.StringStyleDouble
+					opts.CommentStyle = formatter.CommentStyleSlash
+					opts.PrettyFieldNames = false
+					opts.PadArrays = true
+					opts.PadObjects = false
+					opts.SortImports = false
+					opts.UseImplicitPlus = false
+					opts.StripEverything = true
+					opts.StripComments = true
+					opts.StripAllButComments = true
+					return opts
+				}(),
+				ExtVars: map[string]string{
+					"hello": "world",
+				},
+				ResolvePathsWithTanka: false,
+				JPaths:                []string{"blabla", "blabla2"},
+				EnableEvalDiagnostics: false,
+				EnableLintDiagnostics: true,
+			},
 		},
 	}
 
@@ -208,7 +261,7 @@ func TestConfiguration_Formatting(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tc.expectedOptions, s.fmtOpts)
+			assert.Equal(t, tc.expectedConfiguration, s.configuration)
 		})
 	}
 }

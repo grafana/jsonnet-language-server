@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/server"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
@@ -69,10 +70,10 @@ Environment variables:
 }
 
 func main() {
-	jpaths := filepath.SplitList(os.Getenv("JSONNET_PATH"))
-	tankaMode := false
-	lint := false
-	evalDiags := false
+	config := server.Configuration{
+		JPaths:            filepath.SplitList(os.Getenv("JSONNET_PATH")),
+		FormattingOptions: formatter.DefaultOptions(),
+	}
 	log.SetLevel(log.InfoLevel)
 
 	for i, arg := range os.Args {
@@ -83,9 +84,9 @@ func main() {
 			printVersion(os.Stdout)
 			os.Exit(0)
 		} else if arg == "-J" || arg == "--jpath" {
-			jpaths = append([]string{getArgValue(i)}, jpaths...)
+			config.JPaths = append([]string{getArgValue(i)}, config.JPaths...)
 		} else if arg == "-t" || arg == "--tanka" {
-			tankaMode = true
+			config.ResolvePathsWithTanka = true
 		} else if arg == "-l" || arg == "--log-level" {
 			logLevel, err := log.ParseLevel(getArgValue(i))
 			if err != nil {
@@ -93,9 +94,9 @@ func main() {
 			}
 			log.SetLevel(logLevel)
 		} else if arg == "--lint" {
-			lint = true
+			config.EnableLintDiagnostics = true
 		} else if arg == "--eval-diags" {
-			evalDiags = true
+			config.EnableEvalDiagnostics = true
 		}
 
 	}
@@ -107,14 +108,7 @@ func main() {
 	conn := jsonrpc2.NewConn(stream)
 	client := protocol.ClientDispatcher(conn)
 
-	s := server.NewServer(name, version, client)
-	if tankaMode {
-		s = s.WithTankaVM(jpaths)
-	} else {
-		s = s.WithStaticVM(jpaths)
-	}
-	s.LintDiags = lint
-	s.EvalDiags = evalDiags
+	s := server.NewServer(name, version, client, config)
 
 	conn.Go(ctx, protocol.Handlers(
 		protocol.ServerHandler(s, jsonrpc2.MethodNotFound)))

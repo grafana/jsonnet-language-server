@@ -10,7 +10,18 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/mitchellh/mapstructure"
+	log "github.com/sirupsen/logrus"
 )
+
+type Configuration struct {
+	ResolvePathsWithTanka bool
+	JPaths                []string
+	ExtVars               map[string]string
+	FormattingOptions     formatter.Options
+
+	EnableEvalDiagnostics bool
+	EnableLintDiagnostics bool
+}
 
 func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
 	settingsMap, ok := params.Settings.(map[string]interface{})
@@ -20,24 +31,43 @@ func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.Di
 
 	for sk, sv := range settingsMap {
 		switch sk {
+		case "log_level":
+			level, err := log.ParseLevel(sv.(string))
+			if err != nil {
+				return fmt.Errorf("%w: %v", jsonrpc2.ErrInvalidParams, err)
+			}
+			log.SetLevel(level)
+		case "resolve_paths_with_tanka":
+			s.configuration.ResolvePathsWithTanka = sv.(bool)
+		case "jpath":
+			svList := sv.([]interface{})
+			s.configuration.JPaths = make([]string, len(svList))
+			for i, v := range svList {
+				s.configuration.JPaths[i] = v.(string)
+			}
+		case "enable_eval_diagnostics":
+			s.configuration.EnableEvalDiagnostics = sv.(bool)
+		case "enable_lint_diagnostics":
+			s.configuration.EnableLintDiagnostics = sv.(bool)
 		case "ext_vars":
 			newVars, err := s.parseExtVars(sv)
 			if err != nil {
 				return fmt.Errorf("%w: ext_vars parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
 			}
-			s.extVars = newVars
-
+			s.configuration.ExtVars = newVars
 		case "formatting":
 			newFmtOpts, err := s.parseFormattingOpts(sv)
 			if err != nil {
 				return fmt.Errorf("%w: formatting options parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
 			}
-			s.fmtOpts = newFmtOpts
+			s.configuration.FormattingOptions = newFmtOpts
 
 		default:
 			return fmt.Errorf("%w: unsupported settings key: %q", jsonrpc2.ErrInvalidParams, sk)
 		}
 	}
+	log.Infof("configuration updated: %+v", s.configuration)
+
 	return nil
 }
 
