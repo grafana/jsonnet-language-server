@@ -69,36 +69,24 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	case *ast.Var:
 		log.Debugf("Found Var node %s", deepestNode.Id)
 
-		var (
-			filename                          string
-			resultRange, resultSelectionRange protocol.Range
-		)
+		var objectRange processing.ObjectRange
 
 		if bind := processing.FindBindByIdViaStack(searchStack, deepestNode.Id); bind != nil {
-			locRange := bind.LocRange
-			if !locRange.Begin.IsSet() {
-				locRange = *bind.Body.Loc()
-			}
-			filename = locRange.FileName
-			resultRange = position.RangeASTToProtocol(locRange)
-			resultSelectionRange = position.NewProtocolRange(
-				locRange.Begin.Line-1,
-				locRange.Begin.Column-1,
-				locRange.Begin.Line-1,
-				locRange.Begin.Column-1+len(bind.Variable),
-			)
+			objectRange = processing.LocalBindToRange(bind)
 		} else if param := processing.FindParameterByIdViaStack(searchStack, deepestNode.Id); param != nil {
-			filename = param.LocRange.FileName
-			resultRange = position.RangeASTToProtocol(param.LocRange)
-			resultSelectionRange = position.RangeASTToProtocol(param.LocRange)
+			objectRange = processing.ObjectRange{
+				Filename:       param.LocRange.FileName,
+				FullRange:      param.LocRange,
+				SelectionRange: param.LocRange,
+			}
 		} else {
 			return nil, fmt.Errorf("no matching bind found for %s", deepestNode.Id)
 		}
 
 		response = append(response, protocol.DefinitionLink{
-			TargetURI:            protocol.DocumentURI(filename),
-			TargetRange:          resultRange,
-			TargetSelectionRange: resultSelectionRange,
+			TargetURI:            protocol.DocumentURI(objectRange.Filename),
+			TargetRange:          position.RangeASTToProtocol(objectRange.FullRange),
+			TargetSelectionRange: position.RangeASTToProtocol(objectRange.SelectionRange),
 		})
 	case *ast.SuperIndex, *ast.Index:
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)

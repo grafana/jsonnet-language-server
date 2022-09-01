@@ -1,4 +1,4 @@
-package processing
+package ast_processing
 
 import (
 	"fmt"
@@ -9,30 +9,6 @@ import (
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	log "github.com/sirupsen/logrus"
 )
-
-type ObjectRange struct {
-	Filename       string
-	SelectionRange ast.LocationRange
-	FullRange      ast.LocationRange
-}
-
-func FieldToRange(field *ast.DesugaredObjectField) ObjectRange {
-	selectionRange := ast.LocationRange{
-		Begin: ast.Location{
-			Line:   field.LocRange.Begin.Line,
-			Column: field.LocRange.Begin.Column,
-		},
-		End: ast.Location{
-			Line:   field.LocRange.Begin.Line,
-			Column: field.LocRange.Begin.Column + len(field.Name.(*ast.LiteralString).Value),
-		},
-	}
-	return ObjectRange{
-		Filename:       field.LocRange.FileName,
-		SelectionRange: selectionRange,
-		FullRange:      field.LocRange,
-	}
-}
 
 func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) ([]ObjectRange, error) {
 	var foundDesugaredObjects []*ast.DesugaredObject

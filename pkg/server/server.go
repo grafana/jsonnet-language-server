@@ -130,6 +130,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitializ
 			HoverProvider:              true,
 			DefinitionProvider:         true,
 			DocumentFormattingProvider: true,
+			DocumentSymbolProvider:     true,
 			ExecuteCommandProvider:     protocol.ExecuteCommandOptions{Commands: []string{}},
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,
