@@ -12,10 +12,6 @@ func (s *server) Initialized(context.Context, *protocol.InitializedParams) error
 	return nil
 }
 
-func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
-	return nil, nil
-}
-
 func (s *server) CodeAction(context.Context, *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
 	return nil, notImplemented("CodeAction")
 }
