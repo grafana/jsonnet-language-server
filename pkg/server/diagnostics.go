@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-jsonnet/linter"
-	"github.com/grafana/jsonnet-language-server/pkg/position"
+	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
 )

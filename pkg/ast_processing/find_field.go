@@ -10,13 +10,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type objectRange struct {
+type ObjectRange struct {
 	Filename       string
 	SelectionRange ast.LocationRange
 	FullRange      ast.LocationRange
 }
 
-func fieldToRange(field *ast.DesugaredObjectField) objectRange {
+func FieldToRange(field *ast.DesugaredObjectField) ObjectRange {
 	selectionRange := ast.LocationRange{
 		Begin: ast.Location{
 			Line:   field.LocRange.Begin.Line,
@@ -27,14 +27,14 @@ func fieldToRange(field *ast.DesugaredObjectField) objectRange {
 			Column: field.LocRange.Begin.Column + len(field.Name.(*ast.LiteralString).Value),
 		},
 	}
-	return objectRange{
+	return ObjectRange{
 		Filename:       field.LocRange.FileName,
 		SelectionRange: selectionRange,
 		FullRange:      field.LocRange,
 	}
 }
 
-func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) ([]objectRange, error) {
+func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) ([]ObjectRange, error) {
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
@@ -69,7 +69,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		if bind == nil {
 			param := FindParameterByIdViaStack(stack, ast.Identifier(start))
 			if param != nil {
-				return []objectRange{
+				return []ObjectRange{
 					{
 						Filename:       param.LocRange.FileName,
 						SelectionRange: param.LocRange,
@@ -96,7 +96,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
 		}
 	}
-	var ranges []objectRange
+	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
@@ -107,7 +107,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 		if len(indexList) == 0 {
 			for _, found := range foundFields {
-				ranges = append(ranges, fieldToRange(found))
+				ranges = append(ranges, FieldToRange(found))
 
 				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
 				if !found.PlusSuper {

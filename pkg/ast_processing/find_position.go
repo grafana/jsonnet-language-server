@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/go-jsonnet/ast"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
-	"github.com/grafana/jsonnet-language-server/pkg/position"
 )
 
 func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeStack, error) {
@@ -25,7 +24,7 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 		if curr, isType := curr.(*ast.SuperIndex); isType {
 			curr.Loc().End.Column = curr.Loc().End.Column + len(curr.Index.(*ast.LiteralString).Value) + 1
 		}
-		inRange := position.InRange(location, *curr.Loc())
+		inRange := InRange(location, *curr.Loc())
 		if inRange {
 			searchStack.Push(curr)
 		} else if curr.Loc().End.IsSet() {
