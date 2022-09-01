@@ -47,7 +47,7 @@ func TestSymbols(t *testing.T) {
 			},
 		},
 		{
-			name:     "Two fields from plus root objects",
+			name:     "local var + two fields from plus root objects",
 			filename: "testdata/goto-basic-object.jsonnet",
 			expectSymbols: []interface{}{
 				protocol.DocumentSymbol{

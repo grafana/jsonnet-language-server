@@ -16,11 +16,11 @@ import (
 func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
-		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
+		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
 	}
 
 	if doc.ast == nil {
-		return nil, utils.LogErrorf("Definition: error parsing the document")
+		return nil, utils.LogErrorf("DocumentSymbol: error parsing the document")
 	}
 
 	symbols := buildDocumentSymbols(doc.ast)
