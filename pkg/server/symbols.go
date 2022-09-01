@@ -42,23 +42,12 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 		symbols = append(symbols, buildDocumentSymbols(node.Right)...)
 	case *ast.Local:
 		for _, bind := range node.Binds {
-			locRange := bind.LocRange
-			if !locRange.IsSet() {
-				locRange = *bind.Body.Loc()
-			}
-			resultRange := position.RangeASTToProtocol(locRange)
-			resultSelectionRange := position.NewProtocolRange(
-				locRange.Begin.Line-1,
-				locRange.Begin.Column-1,
-				locRange.Begin.Line-1,
-				locRange.Begin.Column-1+len(bind.Variable),
-			)
-
+			objectRange := processing.LocalBindToRange(&bind)
 			symbols = append(symbols, protocol.DocumentSymbol{
 				Name:           string(bind.Variable),
 				Kind:           protocol.Variable,
-				Range:          resultRange,
-				SelectionRange: resultSelectionRange,
+				Range:          position.RangeASTToProtocol(objectRange.FullRange),
+				SelectionRange: position.RangeASTToProtocol(objectRange.SelectionRange),
 				Detail:         symbolDetails(bind.Body),
 			})
 		}
