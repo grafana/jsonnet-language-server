@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	processing "github.com/grafana/jsonnet-language-server/pkg/ast_processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
-	"github.com/grafana/jsonnet-language-server/pkg/position"
-	"github.com/grafana/jsonnet-language-server/pkg/processing"
+	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
