@@ -2,6 +2,7 @@ package ast_processing
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/google/go-jsonnet"
@@ -68,8 +69,13 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
 			return FindRangesFromIndexList(stack, indexList, vm)
+		case *ast.Function:
+			// If the function's body is an object, it means we can look for indexes within the function
+			if funcBody, ok := bodyNode.Body.(*ast.DesugaredObject); ok {
+				foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
+			}
 		default:
-			return nil, fmt.Errorf("unexpected node type when finding bind for '%s'", start)
+			return nil, fmt.Errorf("unexpected node type when finding bind for '%s': %s", start, reflect.TypeOf(bind.Body))
 		}
 	}
 	var ranges []ObjectRange
@@ -98,14 +104,29 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return nil, err
 		}
 
-		for _, fieldNode := range fieldNodes {
+		i := 0
+		for i < len(fieldNodes) {
+			fieldNode := fieldNodes[i]
 			switch fieldNode := fieldNode.(type) {
+			case *ast.Apply:
+				// Add the target of the Apply to the list of field nodes to look for
+				// The target is a function and will be found by findVarReference on the next loop
+				fieldNodes = append(fieldNodes, fieldNode.Target)
 			case *ast.Var:
 				varReference, err := findVarReference(fieldNode, vm)
 				if err != nil {
 					return nil, err
 				}
-				foundDesugaredObjects = append(foundDesugaredObjects, varReference.(*ast.DesugaredObject))
+				// If the reference is an object, add it directly to the list of objects to look in
+				if varReference, ok := varReference.(*ast.DesugaredObject); ok {
+					foundDesugaredObjects = append(foundDesugaredObjects, varReference)
+				}
+				// If the reference is a function, and the body of that function is an object, add it to the list of objects to look in
+				if varReference, ok := varReference.(*ast.Function); ok {
+					if funcBody, ok := varReference.Body.(*ast.DesugaredObject); ok {
+						foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
+					}
+				}
 			case *ast.DesugaredObject:
 				stack.Push(fieldNode)
 				foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
@@ -123,6 +144,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
 				foundDesugaredObjects = append(foundDesugaredObjects, newObjs...)
 			}
+			i++
 		}
 	}
 

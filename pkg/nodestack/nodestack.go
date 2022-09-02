@@ -55,6 +55,10 @@ func (s *NodeStack) BuildIndexList() []string {
 	for !s.IsEmpty() {
 		curr := s.Pop()
 		switch curr := curr.(type) {
+		case *ast.Apply:
+			if target, ok := curr.Target.(*ast.Var); ok {
+				indexList = append(indexList, string(target.Id))
+			}
 		case *ast.SuperIndex:
 			s.Push(curr.Index)
 			indexList = append(indexList, "super")
