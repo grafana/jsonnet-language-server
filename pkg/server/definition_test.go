@@ -723,6 +723,22 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto computed field name object field",
+		filename: "testdata/goto-computed-field-names.jsonnet",
+		position: protocol.Position{Line: 3, Character: 9},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-computed-field-names.jsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 14},
+				End:   protocol.Position{Line: 0, Character: 26},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 0, Character: 14},
+				End:   protocol.Position{Line: 0, Character: 17},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
