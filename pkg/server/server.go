@@ -15,6 +15,7 @@ import (
 
 const (
 	errorRetrievingDocument = "unable to retrieve document from the cache"
+	errorParsingDocument    = "error parsing the document"
 )
 
 // New returns a new language server.

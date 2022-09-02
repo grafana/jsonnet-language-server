@@ -11,6 +11,7 @@ import (
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
@@ -20,7 +21,10 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 	}
 
 	if doc.ast == nil {
-		return nil, utils.LogErrorf("DocumentSymbol: error parsing the document")
+		// Returning an error too often can lead to the client killing the language server
+		// Logging the errors is sufficient
+		log.Errorf("DocumentSymbol: %s", errorParsingDocument)
+		return nil, nil
 	}
 
 	symbols := buildDocumentSymbols(doc.ast)
