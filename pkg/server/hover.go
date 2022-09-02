@@ -21,7 +21,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 
 	if doc.ast == nil {
 		// Hover triggers often. Throwing an error on each request is noisy
-		log.Error("Hover: error parsing the document")
+		log.Errorf("Hover: %s", errorParsingDocument)
 		return nil, nil
 	}
 

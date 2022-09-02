@@ -45,7 +45,7 @@ func (s *server) definitionLink(ctx context.Context, params *protocol.Definition
 	}
 
 	if doc.ast == nil {
-		return nil, utils.LogErrorf("Definition: error parsing the document")
+		return nil, utils.LogErrorf("Definition: %s", errorParsingDocument)
 	}
 
 	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
