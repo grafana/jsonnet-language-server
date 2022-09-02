@@ -739,6 +739,36 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto field through function",
+		filename: "testdata/goto-functions-advanced.libsonnet",
+		position: protocol.Position{Line: 6, Character: 46},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 12},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 6},
+			},
+		}},
+	},
+	{
+		name:     "goto field through function-created object",
+		filename: "testdata/goto-functions-advanced.libsonnet",
+		position: protocol.Position{Line: 8, Character: 52},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 12},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 6},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
@@ -837,7 +867,7 @@ func TestDefinitionFail(t *testing.T) {
 			name:     "goto range index fails",
 			filename: "testdata/goto-local-function.libsonnet",
 			position: protocol.Position{Line: 15, Character: 57},
-			expected: fmt.Errorf("unexpected node type when finding bind for 'ports'"),
+			expected: fmt.Errorf("unexpected node type when finding bind for 'ports': *ast.Apply"),
 		},
 		{
 			name:     "goto super fails as no LHS object exists",
