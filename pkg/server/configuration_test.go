@@ -100,9 +100,8 @@ func TestConfiguration(t *testing.T) {
 			if tc.expectedErr != nil {
 				assert.EqualError(t, err, tc.expectedErr.Error())
 				return
-			} else {
-				assert.NoError(t, err)
 			}
+			assert.NoError(t, err)
 
 			vm := s.getVM("any")
 
@@ -180,6 +179,15 @@ func TestConfiguration_Formatting(t *testing.T) {
 			expectedErr: errors.New("JSON RPC invalid params: formatting options parsing failed: map decode failed: 1 error(s) decoding:\n\n* error decoding 'CommentStyle': expected one of 'hash', 'slash', 'leave', got: \"invalid\""),
 		},
 		{
+			name: "invalid comment style type",
+			settings: map[string]interface{}{
+				"formatting": map[string]interface{}{
+					"CommentStyle": 123,
+				},
+			},
+			expectedErr: errors.New("JSON RPC invalid params: formatting options parsing failed: map decode failed: 1 error(s) decoding:\n\n* error decoding 'CommentStyle': expected string, got: int"),
+		},
+		{
 			name: "does not override default values",
 			settings: map[string]interface{}{
 				"formatting": map[string]interface{}{},
@@ -187,8 +195,37 @@ func TestConfiguration_Formatting(t *testing.T) {
 			expectedConfiguration: Configuration{FormattingOptions: formatter.DefaultOptions()},
 		},
 		{
+			name: "invalid jpath type",
+			settings: map[string]interface{}{
+				"jpath": 123,
+			},
+			expectedErr: errors.New("JSON RPC invalid params: unsupported settings value for jpath. expected array of strings. got: int"),
+		},
+		{
+			name: "invalid jpath item type",
+			settings: map[string]interface{}{
+				"jpath": []interface{}{123},
+			},
+			expectedErr: errors.New("JSON RPC invalid params: unsupported settings value for jpath. expected string. got: int"),
+		},
+		{
+			name: "invalid bool",
+			settings: map[string]interface{}{
+				"resolve_paths_with_tanka": "true",
+			},
+			expectedErr: errors.New("JSON RPC invalid params: unsupported settings value for resolve_paths_with_tanka. expected boolean. got: string"),
+		},
+		{
+			name: "invalid log level",
+			settings: map[string]interface{}{
+				"log_level": "bad",
+			},
+			expectedErr: errors.New(`JSON RPC invalid params: not a valid logrus Level: "bad"`),
+		},
+		{
 			name: "all settings",
 			settings: map[string]interface{}{
+				"log_level": "info",
 				"formatting": map[string]interface{}{
 					"Indent":              4,
 					"MaxBlankLines":       10,
@@ -252,9 +289,8 @@ func TestConfiguration_Formatting(t *testing.T) {
 			if tc.expectedErr != nil {
 				assert.EqualError(t, err, tc.expectedErr.Error())
 				return
-			} else {
-				assert.NoError(t, err)
 			}
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.expectedConfiguration, s.configuration)
 		})

@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
 	switch params.Command {
 	case "jsonnet.evalItem":
 		// WIP
@@ -28,7 +28,7 @@ func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 	return nil, fmt.Errorf("unknown command: %s", params.Command)
 }
 
-func (s *server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *Server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, error) {
 	args := params.Arguments
 	if len(args) != 2 {
 		return nil, fmt.Errorf("expected 2 arguments, got %d", len(args))
@@ -48,7 +48,7 @@ func (s *server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, e
 		return nil, utils.LogErrorf("evalItem: %s: %w", errorRetrievingDocument, err)
 	}
 
-	stack, err := processing.FindNodeByPosition(doc.ast, position.PositionProtocolToAST(p))
+	stack, err := processing.FindNodeByPosition(doc.ast, position.ProtocolToAST(p))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (s *server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, e
 	return nil, fmt.Errorf("%v: %+v", reflect.TypeOf(node), node)
 }
 
-func (s *server) evalExpression(params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *Server) evalExpression(params *protocol.ExecuteCommandParams) (interface{}, error) {
 	args := params.Arguments
 	if len(args) != 2 {
 		return nil, fmt.Errorf("expected 2 arguments, got %d", len(args))

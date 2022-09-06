@@ -21,8 +21,8 @@ const (
 )
 
 // New returns a new language server.
-func NewServer(name, version string, client protocol.ClientCloser, configuration Configuration) *server {
-	server := &server{
+func NewServer(name, version string, client protocol.ClientCloser, configuration Configuration) *Server {
+	server := &Server{
 		name:          name,
 		version:       version,
 		cache:         newCache(),
@@ -34,7 +34,7 @@ func NewServer(name, version string, client protocol.ClientCloser, configuration
 }
 
 // server is the Jsonnet language server.
-type server struct {
+type Server struct {
 	name, version string
 
 	stdlib []stdlib.Function
@@ -44,7 +44,7 @@ type server struct {
 	configuration Configuration
 }
 
-func (s *server) getVM(path string) *jsonnet.VM {
+func (s *Server) getVM(path string) *jsonnet.VM {
 	var vm *jsonnet.VM
 	if s.configuration.ResolvePathsWithTanka {
 		jpath, _, _, err := jpath.Resolve(path, false)
@@ -69,7 +69,7 @@ func (s *server) getVM(path string) *jsonnet.VM {
 	return vm
 }
 
-func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
+func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
 	doc, err := s.cache.get(params.TextDocument.URI)
@@ -105,7 +105,7 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	return nil
 }
 
-func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
+func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
 	doc := &document{item: params.TextDocument, linesChangedSinceAST: map[int]bool{}}
@@ -115,7 +115,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	return s.cache.put(doc)
 }
 
-func (s *server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
+func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	log.Infof("Initializing %s version %s", s.name, s.version)
 
 	s.diagnosticsLoop()

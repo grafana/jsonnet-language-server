@@ -8,7 +8,7 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
-func (s *server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+func (s *Server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Completion: %s: %w", errorRetrievingDocument, err)

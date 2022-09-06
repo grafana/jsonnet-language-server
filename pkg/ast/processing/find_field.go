@@ -19,7 +19,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	switch {
 	case start == "super":
 		// Find the LHS desugared object of a binary node
-		lhsObject, err := findLhsDesugaredObject(stack)
+		lhsObject, err := findLHSDesugaredObject(stack)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func findVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
 	return bind.Body, nil
 }
 
-func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, error) {
+func findLHSDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, error) {
 	for !stack.IsEmpty() {
 		curr := stack.Pop()
 		switch curr := curr.(type) {
@@ -251,7 +251,9 @@ func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, e
 			case *ast.Var:
 				bind := FindBindByIDViaStack(stack, lhsNode.Id)
 				if bind != nil {
-					return bind.Body.(*ast.DesugaredObject), nil
+					if bindBody, ok := bind.Body.(*ast.DesugaredObject); ok {
+						return bindBody, nil
+					}
 				}
 			}
 		case *ast.Local:

@@ -1,9 +1,9 @@
 [linters]
-disable-all = true
 enable = [
   "depguard",
   "dogsled",
   "exportloopref",
+  "forcetypeassert",
   "goconst",
   "gocritic",
   "gocyclo",
@@ -15,6 +15,7 @@ enable = [
   "ineffassign",
   "misspell",
   "nakedret",
+  "revive",
   "staticcheck",
   "stylecheck",
   "typecheck",

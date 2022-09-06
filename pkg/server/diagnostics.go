@@ -73,13 +73,13 @@ func parseErrRegexpMatch(match []string) (string, protocol.Range) {
 	return message, position.NewProtocolRange(line-1, col-1, endLine-1, endCol-1)
 }
 
-func (s *server) queueDiagnostics(uri protocol.DocumentURI) {
+func (s *Server) queueDiagnostics(uri protocol.DocumentURI) {
 	s.cache.diagMutex.Lock()
 	defer s.cache.diagMutex.Unlock()
 	s.cache.diagQueue[uri] = struct{}{}
 }
 
-func (s *server) diagnosticsLoop() {
+func (s *Server) diagnosticsLoop() {
 	go func() {
 		for {
 			s.cache.diagMutex.Lock()
@@ -148,7 +148,7 @@ func (s *server) diagnosticsLoop() {
 	}()
 }
 
-func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
+func (s *Server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 	if doc.err == nil && s.configuration.EnableEvalDiagnostics {
 		vm := s.getVM(doc.item.URI.SpanURI().Filename())
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
@@ -187,7 +187,7 @@ func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 	return diags
 }
 
-func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
+func (s *Server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 	result, err := s.lintWithRecover(doc)
 	if err != nil {
 		log.Errorf("getLintDiags: %s: %v\n", errorRetrievingDocument, err)
@@ -202,7 +202,7 @@ func (s *server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 	return diags
 }
 
-func (s *server) lintWithRecover(doc *document) (result string, err error) {
+func (s *Server) lintWithRecover(doc *document) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error linting: %v", r)
