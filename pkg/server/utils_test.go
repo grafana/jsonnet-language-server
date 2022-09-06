@@ -28,7 +28,7 @@ func init() {
 	logrus.SetLevel(logrus.WarnLevel)
 }
 
-func absUri(t *testing.T, path string) protocol.DocumentURI {
+func absURI(t *testing.T, path string) protocol.DocumentURI {
 	t.Helper()
 
 	abs, err := filepath.Abs(path)

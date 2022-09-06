@@ -1,11 +1,11 @@
-package ast_processing
+package processing
 
 import (
 	"github.com/google/go-jsonnet/ast"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 )
 
-func FindBindByIdViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.LocalBind {
+func FindBindByIDViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.LocalBind {
 	for _, node := range stack.Stack {
 		switch curr := node.(type) {
 		case *ast.Local:

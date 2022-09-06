@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
-	processing "github.com/grafana/jsonnet-language-server/pkg/ast_processing"
+	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -46,7 +46,7 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 		symbols = append(symbols, buildDocumentSymbols(node.Right)...)
 	case *ast.Local:
 		for _, bind := range node.Binds {
-			objectRange := processing.LocalBindToRange(&bind)
+			objectRange := processing.LocalBindToRange(bind)
 			symbols = append(symbols, protocol.DocumentSymbol{
 				Name:           string(bind.Variable),
 				Kind:           protocol.Variable,
@@ -62,7 +62,7 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 			if field.Hide == ast.ObjectFieldHidden {
 				kind = protocol.Property
 			}
-			fieldRange := processing.FieldToRange(&field)
+			fieldRange := processing.FieldToRange(field)
 			symbols = append(symbols, protocol.DocumentSymbol{
 				Name:           processing.FieldNameToString(field.Name),
 				Kind:           kind,
@@ -78,7 +78,6 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 }
 
 func symbolDetails(node ast.Node) string {
-
 	switch node := node.(type) {
 	case *ast.Function:
 		var args []string

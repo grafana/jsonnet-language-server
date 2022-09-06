@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
 	"testing"
@@ -786,8 +785,8 @@ func TestDefinition(t *testing.T) {
 			server := NewServer("any", "test version", nil, Configuration{
 				JPaths: []string{"testdata"},
 			})
-			serverOpenTestFile(t, server, string(tc.filename))
-			response, err := server.definitionLink(context.Background(), params)
+			serverOpenTestFile(t, server, tc.filename)
+			response, err := server.definitionLink(params)
 			require.NoError(t, err)
 
 			var expected []protocol.DefinitionLink
@@ -800,7 +799,7 @@ func TestDefinition(t *testing.T) {
 					r.targetFilename = tc.filename
 				}
 				expected = append(expected, protocol.DefinitionLink{
-					TargetURI:            absUri(t, r.targetFilename),
+					TargetURI:            absURI(t, r.targetFilename),
 					TargetRange:          r.targetRange,
 					TargetSelectionRange: r.targetSelectionRange,
 				})
@@ -825,12 +824,12 @@ func BenchmarkDefinition(b *testing.B) {
 			server := NewServer("any", "test version", nil, Configuration{
 				JPaths: []string{"testdata"},
 			})
-			serverOpenTestFile(b, server, string(tc.filename))
+			serverOpenTestFile(b, server, tc.filename)
 
 			for i := 0; i < b.N; i++ {
 				// We don't care about the response for the benchmark
 				// nolint:errcheck
-				server.definitionLink(context.Background(), params)
+				server.definitionLink(params)
 			}
 		})
 	}
@@ -897,7 +896,7 @@ func TestDefinitionFail(t *testing.T) {
 				JPaths: []string{"testdata"},
 			})
 			serverOpenTestFile(t, server, tc.filename)
-			got, err := server.definitionLink(context.Background(), params)
+			got, err := server.definitionLink(params)
 
 			require.Error(t, err)
 			assert.Equal(t, tc.expected.Error(), err.Error())

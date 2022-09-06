@@ -1,4 +1,4 @@
-package ast_processing
+package processing
 
 import "github.com/google/go-jsonnet/ast"
 

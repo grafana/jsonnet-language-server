@@ -44,11 +44,13 @@ type server struct {
 	configuration Configuration
 }
 
-func (s *server) getVM(path string) (vm *jsonnet.VM, err error) {
+func (s *server) getVM(path string) *jsonnet.VM {
+	var vm *jsonnet.VM
 	if s.configuration.ResolvePathsWithTanka {
 		jpath, _, _, err := jpath.Resolve(path, false)
 		if err != nil {
 			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
+			// nolint: gocritic
 			jpath = append(s.configuration.JPaths, filepath.Dir(path))
 		}
 		opts := tankaJsonnet.Opts{
@@ -56,6 +58,7 @@ func (s *server) getVM(path string) (vm *jsonnet.VM, err error) {
 		}
 		vm = tankaJsonnet.MakeVM(opts)
 	} else {
+		// nolint: gocritic
 		jpath := append(s.configuration.JPaths, filepath.Dir(path))
 		vm = jsonnet.MakeVM()
 		importer := &jsonnet.FileImporter{JPaths: jpath}
@@ -63,7 +66,7 @@ func (s *server) getVM(path string) (vm *jsonnet.VM, err error) {
 	}
 
 	resetExtVars(vm, s.configuration.ExtVars)
-	return vm, nil
+	return vm
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {

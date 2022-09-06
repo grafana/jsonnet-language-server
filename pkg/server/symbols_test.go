@@ -277,7 +277,7 @@ func TestSymbols(t *testing.T) {
 			server := NewServer("any", "test version", nil, Configuration{
 				JPaths: []string{"testdata"},
 			})
-			serverOpenTestFile(t, server, string(tc.filename))
+			serverOpenTestFile(t, server, tc.filename)
 			response, err := server.DocumentSymbol(context.Background(), params)
 			require.NoError(t, err)
 

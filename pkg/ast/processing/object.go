@@ -1,4 +1,4 @@
-package ast_processing
+package processing
 
 import (
 	"github.com/google/go-jsonnet/ast"
@@ -16,7 +16,8 @@ func filterSelfScope(objs []*ast.DesugaredObject) (result []*ast.DesugaredObject
 	}
 
 	// Copy the array so we don't modify the original
-	result = objs[:]
+	result = make([]*ast.DesugaredObject, len(objs))
+	copy(result, objs)
 
 	topLevel := result[0]
 	i := 1

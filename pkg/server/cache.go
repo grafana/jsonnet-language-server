@@ -13,7 +13,7 @@ type document struct {
 	// From DidOpen and DidChange
 	item protocol.TextDocumentItem
 
-	// Contains the last succesfully parsed AST. If doc.err is not nil, it's out of date.
+	// Contains the last successfully parsed AST. If doc.err is not nil, it's out of date.
 	ast                  ast.Node
 	linesChangedSinceAST map[int]bool
 

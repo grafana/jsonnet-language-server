@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
-	processing "github.com/grafana/jsonnet-language-server/pkg/ast_processing"
+	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
@@ -17,7 +17,7 @@ import (
 )
 
 func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	responseDefLinks, err := s.definitionLink(ctx, params)
+	responseDefLinks, err := s.definitionLink(params)
 	if err != nil {
 		// Returning an error too often can lead to the client killing the language server
 		// Logging the errors is sufficient
@@ -38,13 +38,13 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 	return response, nil
 }
 
-func (s *server) definitionLink(ctx context.Context, params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
+func (s *server) definitionLink(params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
-	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last succesful AST parse
+	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last successful AST parse
 	if doc.ast == nil {
 		return nil, utils.LogErrorf("Definition: document was never successfully parsed, can't find definitions")
 	}
@@ -52,10 +52,7 @@ func (s *server) definitionLink(ctx context.Context, params *protocol.Definition
 		return nil, utils.LogErrorf("Definition: document line %d was changed since last successful parse, can't find definitions", params.Position.Line)
 	}
 
-	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-	if err != nil {
-		return nil, utils.LogErrorf("error creating the VM: %w", err)
-	}
+	vm := s.getVM(doc.item.URI.SpanURI().Filename())
 	responseDefLinks, err := findDefinition(doc.ast, params, vm)
 	if err != nil {
 		return nil, err
@@ -75,9 +72,9 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 
 		var objectRange processing.ObjectRange
 
-		if bind := processing.FindBindByIdViaStack(searchStack, deepestNode.Id); bind != nil {
-			objectRange = processing.LocalBindToRange(bind)
-		} else if param := processing.FindParameterByIdViaStack(searchStack, deepestNode.Id); param != nil {
+		if bind := processing.FindBindByIDViaStack(searchStack, deepestNode.Id); bind != nil {
+			objectRange = processing.LocalBindToRange(*bind)
+		} else if param := processing.FindParameterByIDViaStack(searchStack, deepestNode.Id); param != nil {
 			objectRange = processing.ObjectRange{
 				Filename:       param.LocRange.FileName,
 				FullRange:      param.LocRange,
@@ -116,7 +113,6 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 	default:
 		log.Debugf("cannot find definition for node type %T", deepestNode)
 		return nil, fmt.Errorf("cannot find definition")
-
 	}
 
 	for i, item := range response {

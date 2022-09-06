@@ -7,7 +7,6 @@ import (
 )
 
 func TestFunctions(t *testing.T) {
-
 	functions, err := Functions()
 	assert.NoError(t, err)
 

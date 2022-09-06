@@ -1,4 +1,4 @@
-package ast_processing
+package processing
 
 import (
 	"fmt"
@@ -16,14 +16,15 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
 	sameFileOnly := false
-	if start == "super" {
+	switch {
+	case start == "super":
 		// Find the LHS desugared object of a binary node
 		lhsObject, err := findLhsDesugaredObject(stack)
 		if err != nil {
 			return nil, err
 		}
 		foundDesugaredObjects = append(foundDesugaredObjects, lhsObject)
-	} else if start == "self" {
+	case start == "self":
 		tmpStack := stack.Clone()
 
 		// Special case. If the index was part of a binary node (ex: self.foo + {...}),
@@ -31,20 +32,20 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		if _, ok := tmpStack.Peek().(*ast.Binary); ok {
 			tmpStack.Pop()
 		}
-
 		foundDesugaredObjects = filterSelfScope(findTopLevelObjects(tmpStack, vm))
-	} else if start == "std" {
+	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
-	} else if strings.Contains(start, ".") {
-		foundDesugaredObjects = findTopLevelObjectsInFile(vm, start, "")
-	} else if start == "$" {
+	case start == "$":
 		sameFileOnly = true
 		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
-	} else {
+	case strings.Contains(start, "."):
+		foundDesugaredObjects = findTopLevelObjectsInFile(vm, start, "")
+
+	default:
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
-		bind := FindBindByIdViaStack(stack, ast.Identifier(start))
+		bind := FindBindByIDViaStack(stack, ast.Identifier(start))
 		if bind == nil {
-			param := FindParameterByIdViaStack(stack, ast.Identifier(start))
+			param := FindParameterByIDViaStack(stack, ast.Identifier(start))
 			if param != nil {
 				return []ObjectRange{
 					{
@@ -78,18 +79,23 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s': %s", start, reflect.TypeOf(bind.Body))
 		}
 	}
+
+	return extractObjectRangesFromDesugaredObjs(stack, vm, foundDesugaredObjects, sameFileOnly, indexList)
+}
+
+func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, sameFileOnly bool, indexList []string) ([]ObjectRange, error) {
 	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		foundFields := findObjectFieldsInObjects(foundDesugaredObjects, index)
-		foundDesugaredObjects = nil
+		foundFields := findObjectFieldsInObjects(desugaredObjs, index)
+		desugaredObjs = nil
 		if len(foundFields) == 0 {
 			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
 		}
 		if len(indexList) == 0 {
 			for _, found := range foundFields {
-				ranges = append(ranges, FieldToRange(found))
+				ranges = append(ranges, FieldToRange(*found))
 
 				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
 				if !found.PlusSuper {
@@ -119,17 +125,17 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 				}
 				// If the reference is an object, add it directly to the list of objects to look in
 				if varReference, ok := varReference.(*ast.DesugaredObject); ok {
-					foundDesugaredObjects = append(foundDesugaredObjects, varReference)
+					desugaredObjs = append(desugaredObjs, varReference)
 				}
 				// If the reference is a function, and the body of that function is an object, add it to the list of objects to look in
 				if varReference, ok := varReference.(*ast.Function); ok {
 					if funcBody, ok := varReference.Body.(*ast.DesugaredObject); ok {
-						foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
+						desugaredObjs = append(desugaredObjs, funcBody)
 					}
 				}
 			case *ast.DesugaredObject:
 				stack.Push(fieldNode)
-				foundDesugaredObjects = append(foundDesugaredObjects, findDesugaredObjectFromStack(stack))
+				desugaredObjs = append(desugaredObjs, findDesugaredObjectFromStack(stack))
 			case *ast.Index:
 				tempStack := nodestack.NewNodeStack(fieldNode)
 				additionalIndexList := tempStack.BuildIndexList()
@@ -142,12 +148,11 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			case *ast.Import:
 				filename := fieldNode.File.Value
 				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
-				foundDesugaredObjects = append(foundDesugaredObjects, newObjs...)
+				desugaredObjs = append(desugaredObjs, newObjs...)
 			}
 			i++
 		}
 	}
-
 	return ranges, nil
 }
 
@@ -212,9 +217,7 @@ func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast
 
 func findDesugaredObjectFromStack(stack *nodestack.NodeStack) *ast.DesugaredObject {
 	for !stack.IsEmpty() {
-		curr := stack.Pop()
-		switch curr := curr.(type) {
-		case *ast.DesugaredObject:
+		if curr, ok := stack.Pop().(*ast.DesugaredObject); ok {
 			return curr
 		}
 	}
@@ -229,7 +232,7 @@ func findVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
 	if err != nil {
 		return nil, fmt.Errorf("got the following error when finding the bind for %s: %w", varNode.Id, err)
 	}
-	bind := FindBindByIdViaStack(varStack, varNode.Id)
+	bind := FindBindByIDViaStack(varStack, varNode.Id)
 	if bind == nil {
 		return nil, fmt.Errorf("could not find bind for %s", varNode.Id)
 	}
@@ -246,7 +249,7 @@ func findLhsDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, e
 			case *ast.DesugaredObject:
 				return lhsNode, nil
 			case *ast.Var:
-				bind := FindBindByIdViaStack(stack, lhsNode.Id)
+				bind := FindBindByIDViaStack(stack, lhsNode.Id)
 				if bind != nil {
 					return bind.Body.(*ast.DesugaredObject), nil
 				}
