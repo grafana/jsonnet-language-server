@@ -44,8 +44,12 @@ func (s *server) definitionLink(ctx context.Context, params *protocol.Definition
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
+	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last succesful AST parse
 	if doc.ast == nil {
-		return nil, utils.LogErrorf("Definition: %s", errorParsingDocument)
+		return nil, utils.LogErrorf("Definition: document was never successfully parsed, can't find definitions")
+	}
+	if doc.linesChangedSinceAST[int(params.Position.Line)] {
+		return nil, utils.LogErrorf("Definition: document line %d was changed since last successful parse, can't find definitions", params.Position.Line)
 	}
 
 	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())

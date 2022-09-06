@@ -20,7 +20,7 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
 	}
 
-	if doc.ast == nil {
+	if doc.err != nil {
 		// Returning an error too often can lead to the client killing the language server
 		// Logging the errors is sufficient
 		log.Errorf("DocumentSymbol: %s", errorParsingDocument)

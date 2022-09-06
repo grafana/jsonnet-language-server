@@ -12,7 +12,10 @@ import (
 type document struct {
 	// From DidOpen and DidChange
 	item protocol.TextDocumentItem
-	ast  ast.Node
+
+	// Contains the last succesfully parsed AST. If doc.err is not nil, it's out of date.
+	ast                  ast.Node
+	linesChangedSinceAST map[int]bool
 
 	// From diagnostics
 	val         string
