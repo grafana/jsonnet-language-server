@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/ast"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
@@ -73,10 +75,28 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	}
 
 	if params.TextDocument.Version > doc.item.Version && len(params.ContentChanges) != 0 {
+		oldText := doc.item.Text
 		doc.item.Text = params.ContentChanges[len(params.ContentChanges)-1].Text
-		doc.ast, doc.err = jsonnet.SnippetToAST(doc.item.URI.SpanURI().Filename(), doc.item.Text)
-		if doc.err != nil {
-			return s.cache.put(doc)
+
+		var ast ast.Node
+		ast, doc.err = jsonnet.SnippetToAST(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+
+		// If the AST parsed correctly, set it on the document
+		// Otherwise, keep the old AST, and find all the lines that have changed since last AST
+		if ast != nil {
+			doc.ast = ast
+			doc.linesChangedSinceAST = map[int]bool{}
+		} else {
+			splitOldText := strings.Split(oldText, "\n")
+			splitNewText := strings.Split(doc.item.Text, "\n")
+			for index, oldLine := range splitOldText {
+				if index >= len(splitNewText) {
+					doc.linesChangedSinceAST[index] = true
+				}
+				if oldLine != splitNewText[index] {
+					doc.linesChangedSinceAST[index] = true
+				}
+			}
 		}
 	}
 	return nil
@@ -85,12 +105,9 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
-	doc := &document{item: params.TextDocument}
+	doc := &document{item: params.TextDocument, linesChangedSinceAST: map[int]bool{}}
 	if params.TextDocument.Text != "" {
 		doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
-		if doc.err != nil {
-			return s.cache.put(doc)
-		}
 	}
 	return s.cache.put(doc)
 }
