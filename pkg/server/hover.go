@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+func (s *Server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Hover: %s: %w", errorRetrievingDocument, err)
@@ -25,7 +25,7 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, nil
 	}
 
-	stack, err := processing.FindNodeByPosition(doc.ast, position.PositionProtocolToAST(params.Position))
+	stack, err := processing.FindNodeByPosition(doc.ast, position.ProtocolToAST(params.Position))
 	if err != nil {
 		return nil, err
 	}

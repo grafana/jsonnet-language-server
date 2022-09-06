@@ -23,7 +23,7 @@ type Configuration struct {
 	EnableLintDiagnostics bool
 }
 
-func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
 	settingsMap, ok := params.Settings.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("%w: unsupported settings payload. expected json object, got: %T", jsonrpc2.ErrInvalidParams, params.Settings)
@@ -38,17 +38,37 @@ func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.Di
 			}
 			log.SetLevel(level)
 		case "resolve_paths_with_tanka":
-			s.configuration.ResolvePathsWithTanka = sv.(bool)
-		case "jpath":
-			svList := sv.([]interface{})
-			s.configuration.JPaths = make([]string, len(svList))
-			for i, v := range svList {
-				s.configuration.JPaths[i] = v.(string)
+			if boolVal, ok := sv.(bool); ok {
+				s.configuration.ResolvePathsWithTanka = boolVal
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for resolve_paths_with_tanka. expected boolean. got: %T", jsonrpc2.ErrInvalidParams, sv)
 			}
+		case "jpath":
+			if svList, ok := sv.([]interface{}); ok {
+				s.configuration.JPaths = make([]string, len(svList))
+				for i, v := range svList {
+					if strVal, ok := v.(string); ok {
+						s.configuration.JPaths[i] = strVal
+					} else {
+						return fmt.Errorf("%w: unsupported settings value for jpath. expected string. got: %T", jsonrpc2.ErrInvalidParams, v)
+					}
+				}
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for jpath. expected array of strings. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
+
 		case "enable_eval_diagnostics":
-			s.configuration.EnableEvalDiagnostics = sv.(bool)
+			if boolVal, ok := sv.(bool); ok {
+				s.configuration.EnableEvalDiagnostics = boolVal
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for enable_eval_diagnostics. expected boolean. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
 		case "enable_lint_diagnostics":
-			s.configuration.EnableLintDiagnostics = sv.(bool)
+			if boolVal, ok := sv.(bool); ok {
+				s.configuration.EnableLintDiagnostics = boolVal
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for enable_lint_diagnostics. expected boolean. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
 		case "ext_vars":
 			newVars, err := s.parseExtVars(sv)
 			if err != nil {
@@ -71,7 +91,7 @@ func (s *server) DidChangeConfiguration(ctx context.Context, params *protocol.Di
 	return nil
 }
 
-func (s *server) parseExtVars(unparsed interface{}) (map[string]string, error) {
+func (s *Server) parseExtVars(unparsed interface{}) (map[string]string, error) {
 	newVars, ok := unparsed.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unsupported settings value for ext_vars. expected json object. got: %T", unparsed)
@@ -88,7 +108,7 @@ func (s *server) parseExtVars(unparsed interface{}) (map[string]string, error) {
 	return extVars, nil
 }
 
-func (s *server) parseFormattingOpts(unparsed interface{}) (formatter.Options, error) {
+func (s *Server) parseFormattingOpts(unparsed interface{}) (formatter.Options, error) {
 	newOpts, ok := unparsed.(map[string]interface{})
 	if !ok {
 		return formatter.Options{}, fmt.Errorf("unsupported settings value for formatting. expected json object. got: %T", unparsed)
@@ -124,12 +144,13 @@ func stringStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interfa
 	if to != reflect.TypeOf(formatter.StringStyleDouble) {
 		return unparsed, nil
 	}
-	if from.Kind() != reflect.String {
-		return nil, fmt.Errorf("expected string, got: %v", from.Kind())
-	}
 
+	str, ok := unparsed.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected string, got: %T", unparsed)
+	}
 	// will not panic because of the kind == string check above
-	switch str := unparsed.(string); str {
+	switch str {
 	case "double":
 		return formatter.StringStyleDouble, nil
 	case "single":
@@ -145,12 +166,12 @@ func commentStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interf
 	if to != reflect.TypeOf(formatter.CommentStyleHash) {
 		return unparsed, nil
 	}
-	if from.Kind() != reflect.String {
-		return nil, fmt.Errorf("expected string, got: %v", from.Kind())
-	}
 
-	// will not panic because of the kind == string check above
-	switch str := unparsed.(string); str {
+	str, ok := unparsed.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected string, got: %T", unparsed)
+	}
+	switch str {
 	case "hash":
 		return formatter.CommentStyleHash, nil
 	case "slash":

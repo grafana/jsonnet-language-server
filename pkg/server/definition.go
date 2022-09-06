@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (s *server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+func (s *Server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	responseDefLinks, err := s.definitionLink(params)
 	if err != nil {
 		// Returning an error too often can lead to the client killing the language server
@@ -38,7 +38,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 	return response, nil
 }
 
-func (s *server) definitionLink(params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
+func (s *Server) definitionLink(params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
@@ -64,7 +64,7 @@ func (s *server) definitionLink(params *protocol.DefinitionParams) ([]protocol.D
 func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) ([]protocol.DefinitionLink, error) {
 	var response []protocol.DefinitionLink
 
-	searchStack, _ := processing.FindNodeByPosition(root, position.PositionProtocolToAST(params.Position))
+	searchStack, _ := processing.FindNodeByPosition(root, position.ProtocolToAST(params.Position))
 	deepestNode := searchStack.Pop()
 	switch deepestNode := deepestNode.(type) {
 	case *ast.Var:

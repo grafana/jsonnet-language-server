@@ -36,7 +36,7 @@ func absURI(t *testing.T, path string) protocol.DocumentURI {
 	return protocol.URIFromPath(abs)
 }
 
-func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
+func testServer(t *testing.T, stdlib []stdlib.Function) (server *Server) {
 	t.Helper()
 
 	stream := jsonrpc2.NewHeaderStream(utils.NewStdio(nil, fakeWriterCloser{io.Discard}))
@@ -52,7 +52,7 @@ func testServer(t *testing.T, stdlib []stdlib.Function) (server *server) {
 	return server
 }
 
-func serverOpenTestFile(t require.TestingT, server *server, filename string) protocol.DocumentURI {
+func serverOpenTestFile(t require.TestingT, server *Server, filename string) protocol.DocumentURI {
 	fileContent, err := os.ReadFile(filename)
 	require.NoError(t, err)
 
@@ -70,7 +70,7 @@ func serverOpenTestFile(t require.TestingT, server *server, filename string) pro
 	return uri
 }
 
-func testServerWithFile(t *testing.T, stdlib []stdlib.Function, fileContent string) (server *server, fileURI protocol.DocumentURI) {
+func testServerWithFile(t *testing.T, stdlib []stdlib.Function, fileContent string) (server *Server, fileURI protocol.DocumentURI) {
 	t.Helper()
 
 	server = testServer(t, stdlib)

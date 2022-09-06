@@ -22,7 +22,11 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 		// This is needed because SuperIndex only spans "key: super" and not the ".foo" after. This only occurs
 		// when super only has 1 additional index. "super.foo.bar" will not have this issue
 		if curr, isType := curr.(*ast.SuperIndex); isType {
-			curr.Loc().End.Column = curr.Loc().End.Column + len(curr.Index.(*ast.LiteralString).Value) + 1
+			var indexLength int
+			if index, ok := curr.Index.(*ast.LiteralString); ok {
+				indexLength = len(index.Value)
+			}
+			curr.Loc().End.Column = curr.Loc().End.Column + indexLength + 1
 		}
 		inRange := InRange(location, *curr.Loc())
 		if inRange {
