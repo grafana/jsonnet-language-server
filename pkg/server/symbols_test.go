@@ -184,6 +184,88 @@ func TestSymbols(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "Computed fields",
+			filename: "testdata/goto-computed-field-names.jsonnet",
+			expectSymbols: []interface{}{
+				protocol.DocumentSymbol{
+					Name:   "obj",
+					Detail: "Object",
+					Kind:   protocol.Variable,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      0,
+							Character: 6,
+						},
+						End: protocol.Position{
+							Line:      0,
+							Character: 54,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      0,
+							Character: 6,
+						},
+						End: protocol.Position{
+							Line:      0,
+							Character: 9,
+						},
+					},
+				},
+
+				protocol.DocumentSymbol{
+					Name:   "[obj.bar]",
+					Detail: "String",
+					Kind:   protocol.Field,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      3,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      3,
+							Character: 21,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      3,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      3,
+							Character: 11,
+						},
+					},
+				},
+				protocol.DocumentSymbol{
+					Name:   "[obj.nested.bar]",
+					Detail: "String",
+					Kind:   protocol.Field,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      4,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      4,
+							Character: 28,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      4,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      4,
+							Character: 18,
+						},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			params := &protocol.DocumentSymbolParams{

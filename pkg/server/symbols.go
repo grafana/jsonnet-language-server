@@ -64,7 +64,7 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 			}
 			fieldRange := processing.FieldToRange(&field)
 			symbols = append(symbols, protocol.DocumentSymbol{
-				Name:           field.Name.(*ast.LiteralString).Value,
+				Name:           processing.FieldNameToString(field.Name),
 				Kind:           kind,
 				Range:          position.RangeASTToProtocol(fieldRange.FullRange),
 				SelectionRange: position.RangeASTToProtocol(fieldRange.SelectionRange),

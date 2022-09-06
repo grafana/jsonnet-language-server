@@ -1,6 +1,9 @@
 package ast_processing
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/google/go-jsonnet/ast"
 )
 
@@ -18,7 +21,7 @@ func FieldToRange(field *ast.DesugaredObjectField) ObjectRange {
 		},
 		End: ast.Location{
 			Line:   field.LocRange.Begin.Line,
-			Column: field.LocRange.Begin.Column + len(field.Name.(*ast.LiteralString).Value),
+			Column: field.LocRange.Begin.Column + len(FieldNameToString(field.Name)),
 		},
 	}
 	return ObjectRange{
@@ -26,6 +29,23 @@ func FieldToRange(field *ast.DesugaredObjectField) ObjectRange {
 		SelectionRange: selectionRange,
 		FullRange:      field.LocRange,
 	}
+}
+
+func FieldNameToString(fieldName ast.Node) string {
+	if fieldName, ok := fieldName.(*ast.LiteralString); ok {
+		return fieldName.Value
+	}
+	if fieldName, ok := fieldName.(*ast.Index); ok {
+		// We only want to wrap in brackets at the top level, so we trim at all step and then rewrap
+		return fmt.Sprintf("[%s.%s]",
+			strings.Trim(FieldNameToString(fieldName.Target), "[]"),
+			strings.Trim(FieldNameToString(fieldName.Index), "[]"),
+		)
+	}
+	if fieldName, ok := fieldName.(*ast.Var); ok {
+		return string(fieldName.Id)
+	}
+	return ""
 }
 
 func LocalBindToRange(bind *ast.LocalBind) ObjectRange {
