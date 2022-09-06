@@ -61,28 +61,28 @@ func main() {
 	log.SetLevel(log.InfoLevel)
 
 	for i, arg := range os.Args {
-		if arg == "-h" || arg == "--help" {
+		switch arg {
+		case "-h", "--help":
 			printHelp(os.Stdout)
 			os.Exit(0)
-		} else if arg == "-v" || arg == "--version" {
+		case "-v", "--version":
 			printVersion(os.Stdout)
 			os.Exit(0)
-		} else if arg == "-J" || arg == "--jpath" {
+		case "-J", "--jpath":
 			config.JPaths = append([]string{getArgValue(i)}, config.JPaths...)
-		} else if arg == "-t" || arg == "--tanka" {
+		case "-t", "--tanka":
 			config.ResolvePathsWithTanka = true
-		} else if arg == "-l" || arg == "--log-level" {
+		case "-l", "--log-level":
 			logLevel, err := log.ParseLevel(getArgValue(i))
 			if err != nil {
 				log.Fatalf("Invalid log level: %s", err)
 			}
 			log.SetLevel(logLevel)
-		} else if arg == "--lint" {
+		case "--lint":
 			config.EnableLintDiagnostics = true
-		} else if arg == "--eval-diags" {
+		case "--eval-diags":
 			config.EnableEvalDiagnostics = true
 		}
-
 	}
 
 	log.Infoln("Starting the language server")

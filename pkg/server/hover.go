@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
-	processing "github.com/grafana/jsonnet-language-server/pkg/ast_processing"
+	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"

@@ -1,4 +1,4 @@
-package ast_processing
+package processing
 
 import (
 	"errors"

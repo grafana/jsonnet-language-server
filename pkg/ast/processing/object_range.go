@@ -1,4 +1,4 @@
-package ast_processing
+package processing
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type ObjectRange struct {
 	FullRange      ast.LocationRange
 }
 
-func FieldToRange(field *ast.DesugaredObjectField) ObjectRange {
+func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
 	selectionRange := ast.LocationRange{
 		Begin: ast.Location{
 			Line:   field.LocRange.Begin.Line,
@@ -48,7 +48,7 @@ func FieldNameToString(fieldName ast.Node) string {
 	return ""
 }
 
-func LocalBindToRange(bind *ast.LocalBind) ObjectRange {
+func LocalBindToRange(bind ast.LocalBind) ObjectRange {
 	locRange := bind.LocRange
 	if !locRange.Begin.IsSet() {
 		locRange = *bind.Body.Loc()

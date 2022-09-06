@@ -97,17 +97,14 @@ func TestConfiguration(t *testing.T) {
 					Settings: tc.settings,
 				},
 			)
-			if tc.expectedErr == nil && err != nil {
-				t.Fatalf("DidChangeConfiguration produced unexpected error: %v", err)
-			} else if tc.expectedErr != nil && err == nil {
-				t.Fatalf("expected DidChangeConfiguration to produce error but it did not")
-			} else if tc.expectedErr != nil && err != nil {
+			if tc.expectedErr != nil {
 				assert.EqualError(t, err, tc.expectedErr.Error())
 				return
+			} else {
+				assert.NoError(t, err)
 			}
 
-			vm, err := s.getVM("any")
-			assert.NoError(t, err)
+			vm := s.getVM("any")
 
 			doc, err := s.cache.get(fileURI)
 			assert.NoError(t, err)
@@ -252,13 +249,11 @@ func TestConfiguration_Formatting(t *testing.T) {
 					Settings: tc.settings,
 				},
 			)
-			if tc.expectedErr == nil && err != nil {
-				t.Fatalf("DidChangeConfiguration produced unexpected error: %v", err)
-			} else if tc.expectedErr != nil && err == nil {
-				t.Fatalf("expected DidChangeConfiguration to produce error but it did not")
-			} else if tc.expectedErr != nil && err != nil {
+			if tc.expectedErr != nil {
 				assert.EqualError(t, err, tc.expectedErr.Error())
 				return
+			} else {
+				assert.NoError(t, err)
 			}
 
 			assert.Equal(t, tc.expectedConfiguration, s.configuration)

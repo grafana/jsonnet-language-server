@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	processing "github.com/grafana/jsonnet-language-server/pkg/ast_processing"
+	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -17,18 +17,18 @@ func (s *server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 	switch params.Command {
 	case "jsonnet.evalItem":
 		// WIP
-		return s.evalItem(ctx, params)
+		return s.evalItem(params)
 	case "jsonnet.evalFile":
 		params.Arguments = append(params.Arguments, json.RawMessage("\"\""))
-		return s.evalExpression(ctx, params)
+		return s.evalExpression(params)
 	case "jsonnet.evalExpression":
-		return s.evalExpression(ctx, params)
+		return s.evalExpression(params)
 	}
 
 	return nil, fmt.Errorf("unknown command: %s", params.Command)
 }
 
-func (s *server) evalItem(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, error) {
 	args := params.Arguments
 	if len(args) != 2 {
 		return nil, fmt.Errorf("expected 2 arguments, got %d", len(args))
@@ -65,7 +65,7 @@ func (s *server) evalItem(ctx context.Context, params *protocol.ExecuteCommandPa
 	return nil, fmt.Errorf("%v: %+v", reflect.TypeOf(node), node)
 }
 
-func (s *server) evalExpression(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+func (s *server) evalExpression(params *protocol.ExecuteCommandParams) (interface{}, error) {
 	args := params.Arguments
 	if len(args) != 2 {
 		return nil, fmt.Errorf("expected 2 arguments, got %d", len(args))
@@ -81,15 +81,11 @@ func (s *server) evalExpression(ctx context.Context, params *protocol.ExecuteCom
 	}
 
 	// TODO: Replace this stuff with Tanka's `eval` code
-	vm, err := s.getVM(fileName)
-	if err != nil {
-		return nil, err
-	}
+	vm := s.getVM(fileName)
 
 	script := fmt.Sprintf("local main = (import '%s');\nmain", fileName)
 	if expression != "" {
 		script += "." + expression
-
 	}
 
 	return vm.EvaluateAnonymousSnippet(fileName, script)

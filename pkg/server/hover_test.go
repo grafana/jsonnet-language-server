@@ -57,7 +57,7 @@ var (
 			End:   protocol.Position{Line: 5, Character: 24},
 		},
 	}
-	expectedManifestJson = &protocol.Hover{
+	expectedManifestJSON = &protocol.Hover{
 		Contents: protocol.MarkupContent{Kind: protocol.Markdown, Value: "`std.manifestJson(any)`\n\ndesc"},
 		Range: protocol.Range{
 			Start: protocol.Position{Line: 7, Character: 71},
@@ -116,13 +116,13 @@ func TestHover(t *testing.T) {
 			name:     "std.manifestJson over std",
 			document: "./testdata/hover-std.jsonnet",
 			position: protocol.Position{Line: 7, Character: 73},
-			expected: expectedManifestJson,
+			expected: expectedManifestJSON,
 		},
 		{
 			name:     "std.manifestJson over func name",
 			document: "./testdata/hover-std.jsonnet",
 			position: protocol.Position{Line: 7, Character: 82},
-			expected: expectedManifestJson,
+			expected: expectedManifestJSON,
 		},
 		{
 			name:     "list comprehension for",

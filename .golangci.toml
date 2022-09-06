@@ -1,0 +1,25 @@
+[linters]
+disable-all = true
+enable = [
+  "depguard",
+  "dogsled",
+  "exportloopref",
+  "goconst",
+  "gocritic",
+  "gocyclo",
+  "goimports",
+  "goprintffuncname",
+  "gosec",
+  "gosimple",
+  "govet",
+  "ineffassign",
+  "misspell",
+  "nakedret",
+  "staticcheck",
+  "stylecheck",
+  "typecheck",
+  "unconvert",
+  "unparam",
+  "unused",
+  "whitespace"
+]

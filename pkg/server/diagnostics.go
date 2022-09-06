@@ -150,11 +150,7 @@ func (s *server) diagnosticsLoop() {
 
 func (s *server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 	if doc.err == nil && s.configuration.EnableEvalDiagnostics {
-		vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-		if err != nil {
-			log.Errorf("getEvalDiags: %s: %v\n", errorRetrievingDocument, err)
-			return
-		}
+		vm := s.getVM(doc.item.URI.SpanURI().Filename())
 		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
 	}
 
@@ -213,10 +209,7 @@ func (s *server) lintWithRecover(doc *document) (result string, err error) {
 		}
 	}()
 
-	vm, err := s.getVM(doc.item.URI.SpanURI().Filename())
-	if err != nil {
-		return "", err
-	}
+	vm := s.getVM(doc.item.URI.SpanURI().Filename())
 
 	buf := &bytes.Buffer{}
 	linter.LintSnippet(vm, buf, []linter.Snippet{
