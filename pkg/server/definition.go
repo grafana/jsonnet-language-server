@@ -44,7 +44,7 @@ func (s *server) definitionLink(params *protocol.DefinitionParams) ([]protocol.D
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
-	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last succesful AST parse
+	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last successful AST parse
 	if doc.ast == nil {
 		return nil, utils.LogErrorf("Definition: document was never successfully parsed, can't find definitions")
 	}
