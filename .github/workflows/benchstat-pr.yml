@@ -51,13 +51,15 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: bench-incoming
+          path: bench-incoming.txt
       - name: Download Current
         uses: actions/download-artifact@v3
         with:
           name: bench-current
+          path: bench-current.txt
       - run: ls -R
       - name: Benchstat Results
-        run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
+        run: benchstat bench-current.txt bench-incoming.txt | tee -a benchstat.txt
       - name: Upload benchstat results
         uses: actions/upload-artifact@v3
         with:
