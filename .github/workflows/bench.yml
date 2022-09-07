@@ -3,7 +3,7 @@ name: go benchmark
 on:
   push:
     branches:
-      - master
+      - main
 
 permissions:
   # deployments permission to deploy GitHub pages website
