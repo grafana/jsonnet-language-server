@@ -144,7 +144,14 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 				if sameFileOnly && len(result) > 0 && result[0].Filename != stack.From.Loc().FileName {
 					continue
 				}
-				return result, err
+				if len(result) > 0 {
+					return result, err
+				}
+
+				fieldNodes = append(fieldNodes, fieldNode.Target)
+			case *ast.Function:
+				stack.Push(fieldNode.Body)
+				desugaredObjs = append(desugaredObjs, findDesugaredObjectFromStack(stack))
 			case *ast.Import:
 				filename := fieldNode.File.Value
 				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
@@ -217,8 +224,12 @@ func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast
 
 func findDesugaredObjectFromStack(stack *nodestack.NodeStack) *ast.DesugaredObject {
 	for !stack.IsEmpty() {
-		if curr, ok := stack.Pop().(*ast.DesugaredObject); ok {
-			return curr
+		switch node := stack.Pop().(type) {
+		case *ast.DesugaredObject:
+			return node
+		case *ast.Binary:
+			stack.Push(node.Left)
+			stack.Push(node.Right)
 		}
 	}
 	return nil

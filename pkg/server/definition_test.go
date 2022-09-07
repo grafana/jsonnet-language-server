@@ -741,7 +741,22 @@ var definitionTestCases = []definitionTestCase{
 	{
 		name:     "goto field through function",
 		filename: "testdata/goto-functions-advanced.libsonnet",
-		position: protocol.Position{Line: 6, Character: 46},
+		position: protocol.Position{Line: 15, Character: 48},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 12},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 6},
+			},
+		}},
+	},
+	{
+		name:     "goto field through function-created object",
+		filename: "testdata/goto-functions-advanced.libsonnet",
+		position: protocol.Position{Line: 16, Character: 54},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 2, Character: 2},
@@ -754,17 +769,32 @@ var definitionTestCases = []definitionTestCase{
 		}},
 	},
 	{
-		name:     "goto field through function-created object",
+		name:     "goto field through builder pattern attribute",
 		filename: "testdata/goto-functions-advanced.libsonnet",
-		position: protocol.Position{Line: 8, Character: 52},
+		position: protocol.Position{Line: 17, Character: 67},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 2},
-				End:   protocol.Position{Line: 2, Character: 12},
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 14},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 2, Character: 2},
-				End:   protocol.Position{Line: 2, Character: 6},
+				Start: protocol.Position{Line: 5, Character: 4},
+				End:   protocol.Position{Line: 5, Character: 8},
+			},
+		}},
+	},
+	{
+		name:     "goto field through mixin attribute",
+		filename: "testdata/goto-functions-advanced.libsonnet",
+		position: protocol.Position{Line: 18, Character: 58},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 11, Character: 4},
+				End:   protocol.Position{Line: 11, Character: 14},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 11, Character: 4},
+				End:   protocol.Position{Line: 11, Character: 8},
 			},
 		}},
 	},
