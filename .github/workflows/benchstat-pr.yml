@@ -13,10 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Benchmark
-        run: |
-          for i in {1..5}; do
-            go test ./... -run=Benchmark -bench=. | tee -a bench.txt
-          done
+        run: go test ./... -count=2 -run=Benchmark -bench=. | tee -a bench.txt
       - name: Upload Benchmark
         uses: actions/upload-artifact@v3
         with:
@@ -34,10 +31,7 @@ jobs:
         with:
           ref: main
       - name: Benchmark
-        run: |
-          for i in {1..5}; do
-            go test ./... -run=Benchmark -bench=. | tee -a bench.txt
-          done
+        run: go test ./... -count=2 -run=Benchmark -bench=. | tee -a bench.txt
       - name: Upload Benchmark
         uses: actions/upload-artifact@v3
         with:
@@ -61,10 +55,17 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: bench-current
+      - run: ls -R
       - name: Benchstat Results
         run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
       - name: Upload benchstat results
         uses: actions/upload-artifact@v3
         with:
           name: benchstat
+          path: benchstat.txt
+      - name: Comment on PR
+        uses: machine-learning-apps/pr-comment@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
           path: benchstat.txt
