@@ -72,7 +72,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			return FindRangesFromIndexList(stack, indexList, vm)
 		case *ast.Function:
 			// If the function's body is an object, it means we can look for indexes within the function
-			if funcBody, ok := bodyNode.Body.(*ast.DesugaredObject); ok {
+			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
 				foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
 			}
 		default:
@@ -124,34 +124,29 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 					return nil, err
 				}
 				// If the reference is an object, add it directly to the list of objects to look in
-				if varReference, ok := varReference.(*ast.DesugaredObject); ok {
+				if varReference := findChildDesugaredObject(varReference); varReference != nil {
 					desugaredObjs = append(desugaredObjs, varReference)
 				}
 				// If the reference is a function, and the body of that function is an object, add it to the list of objects to look in
 				if varReference, ok := varReference.(*ast.Function); ok {
-					if funcBody, ok := varReference.Body.(*ast.DesugaredObject); ok {
+					if funcBody := findChildDesugaredObject(varReference.Body); funcBody != nil {
 						desugaredObjs = append(desugaredObjs, funcBody)
 					}
 				}
 			case *ast.DesugaredObject:
-				stack.Push(fieldNode)
-				desugaredObjs = append(desugaredObjs, findDesugaredObjectFromStack(stack))
+				desugaredObjs = append(desugaredObjs, fieldNode)
 			case *ast.Index:
-				tempStack := nodestack.NewNodeStack(fieldNode)
-				additionalIndexList := tempStack.BuildIndexList()
-				additionalIndexList = append(additionalIndexList, indexList...)
+				additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
 				result, err := FindRangesFromIndexList(stack, additionalIndexList, vm)
-				if sameFileOnly && len(result) > 0 && result[0].Filename != stack.From.Loc().FileName {
-					continue
-				}
 				if len(result) > 0 {
-					return result, err
+					if !sameFileOnly || result[0].Filename == stack.From.Loc().FileName {
+						return result, err
+					}
 				}
 
 				fieldNodes = append(fieldNodes, fieldNode.Target)
 			case *ast.Function:
-				stack.Push(fieldNode.Body)
-				desugaredObjs = append(desugaredObjs, findDesugaredObjectFromStack(stack))
+				desugaredObjs = append(desugaredObjs, findChildDesugaredObject(fieldNode.Body))
 			case *ast.Import:
 				filename := fieldNode.File.Value
 				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
@@ -222,14 +217,16 @@ func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast
 	return nil
 }
 
-func findDesugaredObjectFromStack(stack *nodestack.NodeStack) *ast.DesugaredObject {
-	for !stack.IsEmpty() {
-		switch node := stack.Pop().(type) {
-		case *ast.DesugaredObject:
-			return node
-		case *ast.Binary:
-			stack.Push(node.Left)
-			stack.Push(node.Right)
+func findChildDesugaredObject(node ast.Node) *ast.DesugaredObject {
+	switch node := node.(type) {
+	case *ast.DesugaredObject:
+		return node
+	case *ast.Binary:
+		if res := findChildDesugaredObject(node.Left); res != nil {
+			return res
+		}
+		if res := findChildDesugaredObject(node.Right); res != nil {
+			return res
 		}
 	}
 	return nil
@@ -262,7 +259,7 @@ func findLHSDesugaredObject(stack *nodestack.NodeStack) (*ast.DesugaredObject, e
 			case *ast.Var:
 				bind := FindBindByIDViaStack(stack, lhsNode.Id)
 				if bind != nil {
-					if bindBody, ok := bind.Body.(*ast.DesugaredObject); ok {
+					if bindBody := findChildDesugaredObject(bind.Body); bindBody != nil {
 						return bindBody, nil
 					}
 				}
