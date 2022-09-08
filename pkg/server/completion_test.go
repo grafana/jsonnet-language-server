@@ -3,11 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -54,11 +57,11 @@ var (
 	}
 )
 
-func TestCompletion(t *testing.T) {
+func TestCompletionStdLib(t *testing.T) {
 	var testCases = []struct {
 		name        string
 		line        string
-		expected    protocol.CompletionList
+		expected    *protocol.CompletionList
 		expectedErr error
 	}{
 		{
@@ -80,7 +83,7 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "std: all functions",
 			line: "all_std_funcs: std.",
-			expected: protocol.CompletionList{
+			expected: &protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem, maxItem, minItem},
 				IsIncomplete: false,
 			},
@@ -88,7 +91,7 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "std: starting with aaa",
 			line: "std_funcs_starting_with: std.aaa",
-			expected: protocol.CompletionList{
+			expected: &protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem},
 				IsIncomplete: false,
 			},
@@ -96,7 +99,7 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "std: partial match",
 			line: "partial_match: std.ther",
-			expected: protocol.CompletionList{
+			expected: &protocol.CompletionList{
 				Items:        []protocol.CompletionItem{otherMinItem},
 				IsIncomplete: false,
 			},
@@ -104,7 +107,7 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "std: case insensitive",
 			line: "case_insensitive: std.MAX",
-			expected: protocol.CompletionList{
+			expected: &protocol.CompletionList{
 				Items:        []protocol.CompletionItem{maxItem},
 				IsIncomplete: false,
 			},
@@ -112,7 +115,7 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "std: submatch + startswith",
 			line: "submatch_and_startwith: std.Min",
-			expected: protocol.CompletionList{
+			expected: &protocol.CompletionList{
 				Items:        []protocol.CompletionItem{minItem, otherMinItem},
 				IsIncomplete: false,
 			},
@@ -121,13 +124,6 @@ func TestCompletion(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			document := fmt.Sprintf("{ %s }", tc.line)
-
-			if tc.expected.Items == nil {
-				tc.expected = protocol.CompletionList{
-					IsIncomplete: false,
-					Items:        []protocol.CompletionItem{},
-				}
-			}
 
 			server, fileURI := testServerWithFile(t, completionTestStdlib, document)
 
@@ -142,6 +138,153 @@ func TestCompletion(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestCompletion(t *testing.T) {
+	var testCases = []struct {
+		name                           string
+		filename                       string
+		replaceString, replaceByString string
+		expected                       protocol.CompletionList
+	}{
+		{
+			name:            "self function",
+			filename:        "testdata/test_basic_lib.libsonnet",
+			replaceString:   "self.greet('Zack')",
+			replaceByString: "self.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{{
+					Label:      "greet",
+					Kind:       protocol.FunctionCompletion,
+					Detail:     "self.greet(name)",
+					InsertText: "greet(name)",
+				}},
+			},
+		},
+		{
+			name:            "self function with bad first letter letter",
+			filename:        "testdata/test_basic_lib.libsonnet",
+			replaceString:   "self.greet('Zack')",
+			replaceByString: "self.h",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items:        nil,
+			},
+		},
+		{
+			name:            "self function with first letter",
+			filename:        "testdata/test_basic_lib.libsonnet",
+			replaceString:   "self.greet('Zack')",
+			replaceByString: "self.g",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{{
+					Label:      "greet",
+					Kind:       protocol.FunctionCompletion,
+					Detail:     "self.greet(name)",
+					InsertText: "greet(name)",
+				}},
+			},
+		},
+		{
+			name:            "autocomplete through binary",
+			filename:        "testdata/goto-basic-object.jsonnet",
+			replaceString:   "bar: 'foo',",
+			replaceByString: "bar: self.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{{
+					Label:      "foo",
+					Kind:       protocol.FieldCompletion,
+					Detail:     "self.foo",
+					InsertText: "foo",
+				}},
+			},
+		},
+		{
+			name:            "autocomplete locals",
+			filename:        "testdata/goto-basic-object.jsonnet",
+			replaceString:   "bar: 'foo',",
+			replaceByString: "bar: ",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{{
+					Label:      "somevar",
+					Kind:       protocol.VariableCompletion,
+					Detail:     "somevar",
+					InsertText: "somevar",
+				}},
+			},
+		},
+		{
+			name:            "autocomplete locals: good prefix",
+			filename:        "testdata/goto-basic-object.jsonnet",
+			replaceString:   "bar: 'foo',",
+			replaceByString: "bar: some",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{{
+					Label:      "somevar",
+					Kind:       protocol.VariableCompletion,
+					Detail:     "somevar",
+					InsertText: "somevar",
+				}},
+			},
+		},
+		{
+			name:            "autocomplete locals: bad prefix",
+			filename:        "testdata/goto-basic-object.jsonnet",
+			replaceString:   "bar: 'foo',",
+			replaceByString: "bar: bad",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items:        nil,
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			content, err := os.ReadFile(tc.filename)
+			require.NoError(t, err)
+
+			server, fileURI := testServerWithFile(t, completionTestStdlib, string(content))
+
+			replacedContent := strings.ReplaceAll(string(content), tc.replaceString, tc.replaceByString)
+
+			err = server.DidChange(context.Background(), &protocol.DidChangeTextDocumentParams{
+				ContentChanges: []protocol.TextDocumentContentChangeEvent{{
+					Text: replacedContent,
+				}},
+				TextDocument: protocol.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: fileURI},
+					Version:                2,
+				},
+			})
+			require.NoError(t, err)
+
+			cursorPosition := protocol.Position{}
+			for _, line := range strings.Split(replacedContent, "\n") {
+				if strings.Contains(line, tc.replaceByString) {
+					cursorPosition.Character = uint32(strings.Index(line, tc.replaceByString) + len(tc.replaceByString))
+					break
+				}
+				cursorPosition.Line++
+			}
+			if cursorPosition.Character == 0 {
+				t.Fatal("Could not find cursor position for test. Replace probably didn't work")
+			}
+
+			result, err := server.Completion(context.TODO(), &protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{URI: fileURI},
+					Position:     cursorPosition,
+				},
+			})
+			require.NoError(t, err)
 			assert.Equal(t, &tc.expected, result)
 		})
 	}
