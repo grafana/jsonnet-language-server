@@ -225,7 +225,7 @@ func TestConfiguration_Formatting(t *testing.T) {
 		{
 			name: "all settings",
 			settings: map[string]interface{}{
-				"log_level": "info",
+				"log_level": "error",
 				"formatting": map[string]interface{}{
 					"Indent":              4,
 					"MaxBlankLines":       10,
