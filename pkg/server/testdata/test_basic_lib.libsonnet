@@ -1,6 +1,6 @@
 {
-  greet(x)::
+  greet(name)::
     local greeting = 'Hello, ';
-    greeting + x,
+    greeting + name,
   message: self.greet('Zack'),
 }
