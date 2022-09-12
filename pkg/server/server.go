@@ -93,12 +93,10 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 			splitOldText := strings.Split(oldText, "\n")
 			splitNewText := strings.Split(doc.item.Text, "\n")
 			for index, oldLine := range splitOldText {
-				if index >= len(splitNewText) {
+				if index >= len(splitNewText) || oldLine != splitNewText[index] {
 					doc.linesChangedSinceAST[index] = true
 				}
-				if oldLine != splitNewText[index] {
-					doc.linesChangedSinceAST[index] = true
-				}
+
 			}
 		}
 	}
