@@ -96,7 +96,6 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 				if index >= len(splitNewText) || oldLine != splitNewText[index] {
 					doc.linesChangedSinceAST[index] = true
 				}
-
 			}
 		}
 	}
