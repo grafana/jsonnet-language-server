@@ -3,7 +3,7 @@
 with pkgs;
 buildGoModule rec {
   pname = "jsonnet-language-server";
-  version = "0.8.0";
+  version = "0.9.1";
 
   ldflags = ''
     -X main.version=${version}
