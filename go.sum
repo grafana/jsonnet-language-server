@@ -26,8 +26,8 @@ github.com/google/go-jsonnet v0.18.0/go.mod h1:C3fTzyVJDslXdiTqw/bTFk7vSGyCtH3MG
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/grafana/tanka v0.22.1 h1:OssU78lA1skUXac4+R1ur9wbfp8m0Shvmhn2gAyoiuk=
-github.com/grafana/tanka v0.22.1/go.mod h1:B6Tgi1YHOfym1FOM1HOXKyOnCjtG/8imTav6vwj3C38=
+github.com/grafana/tanka v0.23.1 h1:yRiToCwr5KgOz5H0U6ytsq2j0qbhg/VChXS8mbNTa7c=
+github.com/grafana/tanka v0.23.1/go.mod h1:2ihsickzs4quqt9kQ+jAQ7PPeBk4TaBFkABWxSzMEU8=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/huandu/xstrings v1.3.1/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
