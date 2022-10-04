@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.3.6
 	github.com/google/go-jsonnet v0.18.0
-	github.com/grafana/tanka v0.22.1
+	github.com/grafana/tanka v0.23.1
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
 	github.com/mitchellh/mapstructure v1.5.0
