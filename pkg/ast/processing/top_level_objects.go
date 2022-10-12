@@ -55,6 +55,8 @@ func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 				continue
 			}
 			stack.Push(varReference)
+		case *ast.Function:
+			stack.Push(curr.Body)
 		}
 	}
 	return objects
