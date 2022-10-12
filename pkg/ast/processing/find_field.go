@@ -66,7 +66,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			foundDesugaredObjects = findTopLevelObjectsInFile(vm, filename, "")
-		case *ast.Index:
+		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
 			return FindRangesFromIndexList(stack, indexList, vm)

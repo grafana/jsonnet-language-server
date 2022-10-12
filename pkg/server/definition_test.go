@@ -798,6 +798,102 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto attribute of root-function library",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 5, Character: 70},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 22},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 11},
+			},
+		}},
+	},
+	{
+		name:     "goto attribute of root-function library through local import",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 6, Character: 28},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 22},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 11},
+			},
+		}},
+	},
+	{
+		name:     "goto attribute of root-function library through local resolved import",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 7, Character: 36},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 22},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 11},
+			},
+		}},
+	},
+	{
+		name:     "goto nested attribute of root-function library",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 9, Character: 98},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 36},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 19},
+			},
+		}},
+	},
+	{
+		name:     "goto nested attribute of root-function library through local import",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 10, Character: 55},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 36},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 19},
+			},
+		}},
+	},
+	{
+		name:     "goto nested attribute of root-function library through local resolved import",
+		filename: "testdata/goto-root-function.jsonnet",
+		position: protocol.Position{Line: 11, Character: 64},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 36},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 4, Character: 4},
+				End:   protocol.Position{Line: 4, Character: 19},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
@@ -890,13 +986,6 @@ func TestDefinitionFail(t *testing.T) {
 			filename: "testdata/goto-comment.jsonnet",
 			position: protocol.Position{Line: 0, Character: 1},
 			expected: fmt.Errorf("cannot find definition"),
-		},
-
-		{
-			name:     "goto range index fails",
-			filename: "testdata/goto-local-function.libsonnet",
-			position: protocol.Position{Line: 15, Character: 57},
-			expected: fmt.Errorf("unexpected node type when finding bind for 'ports': *ast.Apply"),
 		},
 		{
 			name:     "goto super fails as no LHS object exists",
