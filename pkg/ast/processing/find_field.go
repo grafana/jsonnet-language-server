@@ -32,14 +32,14 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		if _, ok := tmpStack.Peek().(*ast.Binary); ok {
 			tmpStack.Pop()
 		}
-		foundDesugaredObjects = filterSelfScope(findTopLevelObjects(tmpStack, vm))
+		foundDesugaredObjects = filterSelfScope(FindTopLevelObjects(tmpStack, vm))
 	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	case start == "$":
 		sameFileOnly = true
-		foundDesugaredObjects = findTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
+		foundDesugaredObjects = FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 	case strings.Contains(start, "."):
-		foundDesugaredObjects = findTopLevelObjectsInFile(vm, start, "")
+		foundDesugaredObjects = FindTopLevelObjectsInFile(vm, start, "")
 
 	default:
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
@@ -62,10 +62,10 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
 		case *ast.Self:
 			tmpStack := nodestack.NewNodeStack(stack.From)
-			foundDesugaredObjects = findTopLevelObjects(tmpStack, vm)
+			foundDesugaredObjects = FindTopLevelObjects(tmpStack, vm)
 		case *ast.Import:
 			filename := bodyNode.File.Value
-			foundDesugaredObjects = findTopLevelObjectsInFile(vm, filename, "")
+			foundDesugaredObjects = FindTopLevelObjectsInFile(vm, filename, "")
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
@@ -116,10 +116,10 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 			switch fieldNode := fieldNode.(type) {
 			case *ast.Apply:
 				// Add the target of the Apply to the list of field nodes to look for
-				// The target is a function and will be found by findVarReference on the next loop
+				// The target is a function and will be found by FindVarReference on the next loop
 				fieldNodes = append(fieldNodes, fieldNode.Target)
 			case *ast.Var:
-				varReference, err := findVarReference(fieldNode, vm)
+				varReference, err := FindVarReference(fieldNode, vm)
 				if err != nil {
 					return nil, err
 				}
@@ -149,7 +149,7 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 				desugaredObjs = append(desugaredObjs, findChildDesugaredObject(fieldNode.Body))
 			case *ast.Import:
 				filename := fieldNode.File.Value
-				newObjs := findTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
+				newObjs := FindTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
 				desugaredObjs = append(desugaredObjs, newObjs...)
 			}
 			i++
@@ -232,9 +232,9 @@ func findChildDesugaredObject(node ast.Node) *ast.DesugaredObject {
 	return nil
 }
 
-// findVarReference finds the object that the variable is referencing
+// FindVarReference finds the object that the variable is referencing
 // To do so, we get the stack where the var is used and search that stack for the var's definition
-func findVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
+func FindVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
 	varFileNode, _, _ := vm.ImportAST("", varNode.LocRange.FileName)
 	varStack, err := FindNodeByPosition(varFileNode, varNode.Loc().Begin)
 	if err != nil {

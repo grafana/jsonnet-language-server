@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/google/go-jsonnet/toolutils"
 	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
@@ -38,7 +40,9 @@ func (s *Server) Completion(ctx context.Context, params *protocol.CompletionPara
 		return nil, nil
 	}
 
-	items := s.completionFromStack(line, searchStack)
+	vm := s.getVM(doc.item.URI.SpanURI().Filename())
+
+	items := s.completionFromStack(line, searchStack, vm)
 	return &protocol.CompletionList{IsIncomplete: false, Items: items}, nil
 }
 
@@ -52,8 +56,7 @@ func getCompletionLine(fileContent string, position protocol.Position) string {
 	return line
 }
 
-func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack) []protocol.CompletionItem {
-	var items []protocol.CompletionItem
+func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM) []protocol.CompletionItem {
 
 	lineWords := strings.Split(line, " ")
 	lastWord := lineWords[len(lineWords)-1]
@@ -63,32 +66,9 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack) []
 
 	if firstIndex == "self" && len(indexes) > 0 {
 		fieldPrefix := indexes[0]
-
-		for !stack.IsEmpty() {
-			curr := stack.Pop()
-
-			switch curr := curr.(type) {
-			case *ast.Binary:
-				stack.Push(curr.Left)
-				stack.Push(curr.Right)
-			case *ast.DesugaredObject:
-				for _, field := range curr.Fields {
-					label := processing.FieldNameToString(field.Name)
-					// Ignore fields that don't match the prefix
-					if !strings.HasPrefix(label, fieldPrefix) {
-						continue
-					}
-
-					// Ignore the current field
-					if strings.Contains(line, label+":") {
-						continue
-					}
-
-					items = append(items, createCompletionItem(label, "self."+label, protocol.FieldCompletion, field.Body))
-				}
-			}
-		}
+		return createCompletionItemsFromObjects(processing.FindTopLevelObjects(stack, vm), "self", fieldPrefix, line)
 	} else if len(indexes) == 0 {
+		var items []protocol.CompletionItem
 		// firstIndex is a variable (local) completion
 		for !stack.IsEmpty() {
 			if curr, ok := stack.Pop().(*ast.Local); ok {
@@ -103,13 +83,37 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack) []
 				}
 			}
 		}
+		return items
+	} else {
+		for !stack.IsEmpty() {
+			curr := stack.Pop()
+
+			if targetVar, ok := curr.(*ast.Var); ok && string(targetVar.Id) == firstIndex {
+				ref, _ := processing.FindVarReference(targetVar, vm)
+
+				var objs []*ast.DesugaredObject
+
+				switch ref := ref.(type) {
+				case *ast.DesugaredObject:
+					objs = []*ast.DesugaredObject{ref}
+				case *ast.Import:
+					filename := ref.File.Value
+					objs = processing.FindTopLevelObjectsInFile(vm, filename, string(curr.Loc().File.DiagnosticFileName))
+				}
+				return createCompletionItemsFromObjects(objs, firstIndex, indexes[0], line)
+			} else {
+				for _, node := range toolutils.Children(curr) {
+					stack.Push(node)
+				}
+			}
+		}
 	}
 
-	return items
+	return nil
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
-	items := []protocol.CompletionItem{}
+	var items []protocol.CompletionItem
 
 	stdIndex := strings.LastIndex(line, "std.")
 	if stdIndex != -1 {
@@ -142,6 +146,36 @@ func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
 
 		items = append(items, funcStartWith...)
 		items = append(items, funcContains...)
+	}
+
+	return items
+}
+
+func createCompletionItemsFromObjects(objects []*ast.DesugaredObject, firstIndex, fieldPrefix, currentLine string) []protocol.CompletionItem {
+	var items []protocol.CompletionItem
+	labels := make(map[string]bool)
+
+	for _, obj := range objects {
+		for _, field := range obj.Fields {
+			label := processing.FieldNameToString(field.Name)
+
+			if labels[label] {
+				continue
+			}
+
+			// Ignore fields that don't match the prefix
+			if !strings.HasPrefix(label, fieldPrefix) {
+				continue
+			}
+
+			// Ignore the current field
+			if strings.Contains(currentLine, label+":") {
+				continue
+			}
+
+			items = append(items, createCompletionItem(label, firstIndex+"."+label, protocol.FieldCompletion, field.Body))
+			labels[label] = true
+		}
 	}
 
 	return items

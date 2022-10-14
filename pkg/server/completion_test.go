@@ -245,6 +245,46 @@ func TestCompletion(t *testing.T) {
 				Items:        nil,
 			},
 		},
+		{
+			name:            "autocomplete through import",
+			filename:        "testdata/goto-imported-file.jsonnet",
+			replaceString:   "b: otherfile.bar,",
+			replaceByString: "b: otherfile.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "bar",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "otherfile.bar",
+						InsertText: "bar",
+					},
+					{
+						Label:      "foo",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "otherfile.foo",
+						InsertText: "foo",
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete through import with prefix",
+			filename:        "testdata/goto-imported-file.jsonnet",
+			replaceString:   "b: otherfile.bar,",
+			replaceByString: "b: otherfile.b",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "bar",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "otherfile.bar",
+						InsertText: "bar",
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -252,6 +292,7 @@ func TestCompletion(t *testing.T) {
 			require.NoError(t, err)
 
 			server, fileURI := testServerWithFile(t, completionTestStdlib, string(content))
+			server.configuration.JPaths = []string{"testdata"}
 
 			replacedContent := strings.ReplaceAll(string(content), tc.replaceString, tc.replaceByString)
 
