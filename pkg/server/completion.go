@@ -57,17 +57,13 @@ func getCompletionLine(fileContent string, position protocol.Position) string {
 }
 
 func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM) []protocol.CompletionItem {
-
 	lineWords := strings.Split(line, " ")
 	lastWord := lineWords[len(lineWords)-1]
 
 	indexes := strings.Split(lastWord, ".")
 	firstIndex, indexes := indexes[0], indexes[1:]
 
-	if firstIndex == "self" && len(indexes) > 0 {
-		fieldPrefix := indexes[0]
-		return createCompletionItemsFromObjects(processing.FindTopLevelObjects(stack, vm), "self", fieldPrefix, line)
-	} else if len(indexes) == 0 {
+	if len(indexes) == 0 {
 		var items []protocol.CompletionItem
 		// firstIndex is a variable (local) completion
 		for !stack.IsEmpty() {
@@ -84,32 +80,41 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 			}
 		}
 		return items
+	}
+
+	var (
+		objectsToSearch []*ast.DesugaredObject
+	)
+
+	if firstIndex == "self" {
+		// Search through the current stack
+		objectsToSearch = processing.FindTopLevelObjects(stack, vm)
 	} else {
+		// If the index is something other than 'self', find what it refers to (Var reference) and find objects in that
 		for !stack.IsEmpty() {
 			curr := stack.Pop()
 
 			if targetVar, ok := curr.(*ast.Var); ok && string(targetVar.Id) == firstIndex {
 				ref, _ := processing.FindVarReference(targetVar, vm)
 
-				var objs []*ast.DesugaredObject
-
 				switch ref := ref.(type) {
 				case *ast.DesugaredObject:
-					objs = []*ast.DesugaredObject{ref}
+					objectsToSearch = []*ast.DesugaredObject{ref}
 				case *ast.Import:
 					filename := ref.File.Value
-					objs = processing.FindTopLevelObjectsInFile(vm, filename, string(curr.Loc().File.DiagnosticFileName))
+					objectsToSearch = processing.FindTopLevelObjectsInFile(vm, filename, string(curr.Loc().File.DiagnosticFileName))
 				}
-				return createCompletionItemsFromObjects(objs, firstIndex, indexes[0], line)
-			} else {
-				for _, node := range toolutils.Children(curr) {
-					stack.Push(node)
-				}
+				break
+			}
+
+			for _, node := range toolutils.Children(curr) {
+				stack.Push(node)
 			}
 		}
 	}
 
-	return nil
+	fieldPrefix := indexes[0]
+	return createCompletionItemsFromObjects(objectsToSearch, firstIndex, fieldPrefix, line)
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
