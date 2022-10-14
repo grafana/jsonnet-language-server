@@ -82,6 +82,11 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 		return items
 	}
 
+	if len(indexes) > 1 {
+		// TODO: Support multiple indexes, the objects to search through will be the reference in the last index
+		return nil
+	}
+
 	var (
 		objectsToSearch []*ast.DesugaredObject
 	)
