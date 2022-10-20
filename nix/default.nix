@@ -3,13 +3,13 @@
 with pkgs;
 buildGoModule rec {
   pname = "jsonnet-language-server";
-  version = "0.9.1";
+  version = "0.10.0";
 
   ldflags = ''
     -X main.version=${version}
   '';
   src = lib.cleanSource ../.;
-  vendorSha256 = "sha256-tsVevkMHuCv70A9Ohg9L+ghH5+v52X4sToI4bMlDzzo=";
+  vendorSha256 = "sha256-imFr4N/YmpwjVZSCBHG7cyJt4RKTn+T7VPdL8R/ba5o=";
 
   meta = with lib; {
     description = "A Language Server Protocol server for Jsonnet";
