@@ -285,6 +285,52 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "autocomplete dollar sign",
+			filename:        "testdata/goto-dollar-simple.jsonnet",
+			replaceString:   "test: $.attribute,",
+			replaceByString: "test: $.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "attribute",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "$.attribute",
+						InsertText: "attribute",
+					},
+					{
+						Label:      "attribute2",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "$.attribute2",
+						InsertText: "attribute2",
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete dollar sign, end with comma",
+			filename:        "testdata/goto-dollar-simple.jsonnet",
+			replaceString:   "test: $.attribute,",
+			replaceByString: "test: $.,",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "attribute",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "$.attribute",
+						InsertText: "attribute",
+					},
+					{
+						Label:      "attribute2",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "$.attribute2",
+						InsertText: "attribute2",
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
