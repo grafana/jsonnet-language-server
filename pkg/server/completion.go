@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/google/go-jsonnet"
@@ -59,6 +60,7 @@ func getCompletionLine(fileContent string, position protocol.Position) string {
 func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM) []protocol.CompletionItem {
 	lineWords := strings.Split(line, " ")
 	lastWord := lineWords[len(lineWords)-1]
+	lastWord = strings.TrimRight(lastWord, ",;") // Ignore trailing commas and semicolons, they can present when someone is modifying an existing line
 
 	indexes := strings.Split(lastWord, ".")
 	firstIndex, indexes := indexes[0], indexes[1:]
@@ -103,6 +105,8 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 				ref, _ := processing.FindVarReference(targetVar, vm)
 
 				switch ref := ref.(type) {
+				case *ast.Self: // This case catches `$` references (it's set as a self reference on the root object)
+					objectsToSearch = processing.FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 				case *ast.DesugaredObject:
 					objectsToSearch = []*ast.DesugaredObject{ref}
 				case *ast.Import:
@@ -187,6 +191,10 @@ func createCompletionItemsFromObjects(objects []*ast.DesugaredObject, firstIndex
 			labels[label] = true
 		}
 	}
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Label < items[j].Label
+	})
 
 	return items
 }
