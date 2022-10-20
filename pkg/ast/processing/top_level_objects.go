@@ -9,18 +9,18 @@ import (
 
 var fileTopLevelObjectsCache = make(map[string][]*ast.DesugaredObject)
 
-func findTopLevelObjectsInFile(vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
+func FindTopLevelObjectsInFile(vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
 	cacheKey := importedFrom + ":" + filename
 	if _, ok := fileTopLevelObjectsCache[cacheKey]; !ok {
 		rootNode, _, _ := vm.ImportAST(importedFrom, filename)
-		fileTopLevelObjectsCache[cacheKey] = findTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+		fileTopLevelObjectsCache[cacheKey] = FindTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
 	}
 
 	return fileTopLevelObjectsCache[cacheKey]
 }
 
 // Find all ast.DesugaredObject's from NodeStack
-func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
+func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
 	var objects []*ast.DesugaredObject
 	for !stack.IsEmpty() {
 		curr := stack.Pop()
@@ -49,7 +49,7 @@ func findTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 				}
 			}
 		case *ast.Var:
-			varReference, err := findVarReference(curr, vm)
+			varReference, err := FindVarReference(curr, vm)
 			if err != nil {
 				log.WithError(err).Errorf("Error finding var reference, ignoring this node")
 				continue
