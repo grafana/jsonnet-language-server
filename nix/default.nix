@@ -9,7 +9,7 @@ buildGoModule rec {
     -X main.version=${version}
   '';
   src = lib.cleanSource ../.;
-  vendorSha256 = "sha256-imFr4N/YmpwjVZSCBHG7cyJt4RKTn+T7VPdL8R/ba5o=";
+  vendorSha256 = "sha256-ZyTo79M5nqtqrtTOGanzgHcnSvqCKACacNBWzhYG5nY=";
 
   meta = with lib; {
     description = "A Language Server Protocol server for Jsonnet";
