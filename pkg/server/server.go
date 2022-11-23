@@ -65,7 +65,7 @@ func (s *Server) getVM(path string) *jsonnet.VM {
 		vm.Importer(importer)
 	}
 
-	resetExtVars(vm, s.configuration.ExtVars)
+	resetExtVars(vm, s.configuration.ExtVars, s.configuration.ExtCode)
 	return vm
 }
 

@@ -85,6 +85,42 @@ func TestConfiguration(t *testing.T) {
 }
 			`,
 		},
+		{
+			name: "ext_code config is not an object",
+			settings: map[string]interface{}{
+				"ext_code": []string{},
+			},
+			fileContent: `[]`,
+			expectedErr: errors.New("JSON RPC invalid params: ext_code parsing failed: unsupported settings value for ext_code. expected json object. got: []string"),
+		},
+		{
+			name: "ext_code config is empty",
+			settings: map[string]interface{}{
+				"ext_code": map[string]interface{}{},
+			},
+			fileContent:        `[]`,
+			expectedFileOutput: `[]`,
+		},
+		{
+			name: "ext_code config is valid",
+			settings: map[string]interface{}{
+				"ext_code": map[string]interface{}{
+					"hello": "{\"world\": true,}",
+				},
+			},
+			fileContent: `
+{
+	hello: std.extVar("hello"),
+}
+			`,
+			expectedFileOutput: `
+{
+	"hello": {
+		"world": true
+	}
+}
+			`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -243,6 +279,9 @@ func TestConfiguration_Formatting(t *testing.T) {
 				"ext_vars": map[string]interface{}{
 					"hello": "world",
 				},
+				"ext_code": map[string]interface{}{
+					"hello": "{\"world\": true,}",
+				},
 				"resolve_paths_with_tanka": false,
 				"jpath":                    []interface{}{"blabla", "blabla2"},
 				"enable_eval_diagnostics":  false,
@@ -267,6 +306,9 @@ func TestConfiguration_Formatting(t *testing.T) {
 				}(),
 				ExtVars: map[string]string{
 					"hello": "world",
+				},
+				ExtCode: map[string]string{
+					"hello": "{\n   \"world\": true\n}\n",
 				},
 				ResolvePathsWithTanka: false,
 				JPaths:                []string{"blabla", "blabla2"},
