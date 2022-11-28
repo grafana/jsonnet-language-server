@@ -894,6 +894,22 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto function nested multiple times in different ways",
+		filename: "testdata/goto-multilevel-library-main.jsonnet",
+		position: protocol.Position{Line: 2, Character: 34},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-multilevel-library-sub-1.1.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 28},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 2},
+				End:   protocol.Position{Line: 1, Character: 5},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
