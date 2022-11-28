@@ -129,7 +129,6 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 					desugaredObjs = append(desugaredObjs, varReferenceObj)
 				} else {
 					fieldNodes = append(fieldNodes, varReference)
-
 				}
 			case *ast.DesugaredObject:
 				desugaredObjs = append(desugaredObjs, fieldNode)
