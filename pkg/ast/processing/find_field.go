@@ -124,14 +124,11 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 					return nil, err
 				}
 				// If the reference is an object, add it directly to the list of objects to look in
-				if varReference := findChildDesugaredObject(varReference); varReference != nil {
-					desugaredObjs = append(desugaredObjs, varReference)
-				}
-				// If the reference is a function, and the body of that function is an object, add it to the list of objects to look in
-				if varReference, ok := varReference.(*ast.Function); ok {
-					if funcBody := findChildDesugaredObject(varReference.Body); funcBody != nil {
-						desugaredObjs = append(desugaredObjs, funcBody)
-					}
+				// Otherwise, add it back to the list for further processing
+				if varReferenceObj := findChildDesugaredObject(varReference); varReferenceObj != nil {
+					desugaredObjs = append(desugaredObjs, varReferenceObj)
+				} else {
+					fieldNodes = append(fieldNodes, varReference)
 				}
 			case *ast.DesugaredObject:
 				desugaredObjs = append(desugaredObjs, fieldNode)
