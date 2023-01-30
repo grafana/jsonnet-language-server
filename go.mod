@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.3.6
 	github.com/google/go-jsonnet v0.19.1
-	github.com/grafana/tanka v0.23.1
+	github.com/grafana/tanka v0.24.0
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
 	github.com/mitchellh/mapstructure v1.5.0
@@ -33,6 +33,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/zerolog v1.28.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
