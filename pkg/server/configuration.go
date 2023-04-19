@@ -24,7 +24,7 @@ type Configuration struct {
 	EnableLintDiagnostics bool
 }
 
-func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidChangeConfigurationParams) error {
 	settingsMap, ok := params.Settings.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("%w: unsupported settings payload. expected json object, got: %T", jsonrpc2.ErrInvalidParams, params.Settings)
@@ -172,7 +172,7 @@ func resetExtVars(vm *jsonnet.VM, vars map[string]string, code map[string]string
 	}
 }
 
-func stringStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interface{}, error) {
+func stringStyleDecodeFunc(_, to reflect.Type, unparsed interface{}) (interface{}, error) {
 	if to != reflect.TypeOf(formatter.StringStyleDouble) {
 		return unparsed, nil
 	}
@@ -194,7 +194,7 @@ func stringStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interfa
 	}
 }
 
-func commentStyleDecodeFunc(from, to reflect.Type, unparsed interface{}) (interface{}, error) {
+func commentStyleDecodeFunc(_, to reflect.Type, unparsed interface{}) (interface{}, error) {
 	if to != reflect.TypeOf(formatter.CommentStyleHash) {
 		return unparsed, nil
 	}

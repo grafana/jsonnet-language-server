@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (s *Server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+func (s *Server) Definition(_ context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	responseDefLinks, err := s.definitionLink(params)
 	if err != nil {
 		// Returning an error too often can lead to the client killing the language server

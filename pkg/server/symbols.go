@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (s *Server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
+func (s *Server) DocumentSymbol(_ context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	doc, err := s.cache.get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)

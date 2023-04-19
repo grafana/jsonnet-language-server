@@ -44,13 +44,13 @@ func (s Stdio) LocalAddr() net.Addr { return s }
 func (s Stdio) RemoteAddr() net.Addr { return s }
 
 // SetDeadline implements net.Conn interface.
-func (Stdio) SetDeadline(t time.Time) error { return nil }
+func (Stdio) SetDeadline(_ time.Time) error { return nil }
 
 // SetReadDeadline implements net.Conn interface.
-func (Stdio) SetReadDeadline(t time.Time) error { return nil }
+func (Stdio) SetReadDeadline(_ time.Time) error { return nil }
 
 // SetWriteDeadline implements net.Conn interface.
-func (Stdio) SetWriteDeadline(t time.Time) error { return nil }
+func (Stdio) SetWriteDeadline(_ time.Time) error { return nil }
 
 // Network implements net.Addr interface.
 func (Stdio) Network() string { return "Stdio" }

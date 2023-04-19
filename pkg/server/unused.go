@@ -16,7 +16,7 @@ func (s *Server) CodeAction(context.Context, *protocol.CodeActionParams) ([]prot
 	return nil, notImplemented("CodeAction")
 }
 
-func (s *Server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
+func (s *Server) CodeLens(_ context.Context, _ *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
 	return []protocol.CodeLens{}, nil
 }
 
