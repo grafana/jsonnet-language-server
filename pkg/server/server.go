@@ -69,7 +69,7 @@ func (s *Server) getVM(path string) *jsonnet.VM {
 	return vm
 }
 
-func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
+func (s *Server) DidChange(_ context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
 	doc, err := s.cache.get(params.TextDocument.URI)
@@ -102,7 +102,7 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	return nil
 }
 
-func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
+func (s *Server) DidOpen(_ context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
 	doc := &document{item: params.TextDocument, linesChangedSinceAST: map[int]bool{}}
@@ -112,7 +112,7 @@ func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	return s.cache.put(doc)
 }
 
-func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
+func (s *Server) Initialize(_ context.Context, _ *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	log.Infof("Initializing %s version %s", s.name, s.version)
 
 	s.diagnosticsLoop()
