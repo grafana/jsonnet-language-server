@@ -15,6 +15,9 @@ local html = import 'html.libsonnet';
       then the actual code executed would be <code>local std = { ... }; {x: "foo"}</code>. The
       functions in the standard library are all hidden fields of the <code>std</code> object.
     |||,
+    |||
+      Note: Some of these functions marked available since v0.10.0 were actually available earlier.
+    |||,
   ]),
   prefix: 'std',
   groups: [
@@ -25,6 +28,7 @@ local html = import 'html.libsonnet';
         {
           name: 'extVar',
           params: ['x'],
+          availableSince: '0.10.0',
           description: 'If an external variable with the given name was defined, return its string value. Otherwise, raise an error.',
         },
       ],
@@ -35,11 +39,13 @@ local html = import 'html.libsonnet';
       fields: [
         {
           name: 'thisFile',
+          availableSince: '0.10.0',
           description: 'Note that this is a field. It contains the current Jsonnet filename as a string.',
         },
         {
           name: 'type',
           params: ['x'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               Return a string that indicates the type of the value. The possible return values are:
@@ -56,6 +62,7 @@ local html = import 'html.libsonnet';
         {
           name: 'length',
           params: ['x'],
+          availableSince: '0.10.0',
           description: |||
             Depending on the type of the value given, either returns the number of elements in the
             array, the number of codepoints in the string, the number of parameters in the function, or
@@ -75,6 +82,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectHas',
           params: ['o', 'f'],
+          availableSince: '0.10.0',
           description: |||
             Returns <code>true</code> if the given object has the field (given as a string), otherwise
             <code>false</code>. Raises an error if the arguments are not object and string
@@ -84,6 +92,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectFields',
           params: ['o'],
+          availableSince: '0.10.0',
           description: |||
             Returns an array of strings, each element being a field from the given object. Does not include
             hidden fields.
@@ -98,8 +107,18 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'objectKeysValues',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns an array of objects from the given object, each object having two fields: 
+            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+          |||,
+        },
+        {
           name: 'objectHasAll',
           params: ['o', 'f'],
+          availableSince: '0.10.0',
           description: |||
             As <code>std.objectHas</code> but also includes hidden fields.
           |||,
@@ -107,6 +126,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectFieldsAll',
           params: ['o'],
+          availableSince: '0.10.0',
           description: |||
             As <code>std.objectFields</code> but also includes hidden fields.
           |||,
@@ -120,8 +140,17 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
+          name: 'objectKeysValuesAll',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            As <code>std.objectKeysValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
           name: 'prune',
           params: ['a'],
+          availableSince: '0.10.0',
           description: |||
             Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
             length `arrays`, zero length `objects`, or `null` values.
@@ -131,6 +160,7 @@ local html = import 'html.libsonnet';
         {
           name: 'mapWithKey',
           params: ['func', 'obj'],
+          availableSince: '0.10.0',
           description: |||
             Apply the given function to all fields of the given object, also passing
             the field name. The function <code>func</code> is expected to take the
@@ -166,6 +196,7 @@ local html = import 'html.libsonnet';
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
+              <ul><code>std.round(x)</code></ul>
           </ul>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
@@ -208,6 +239,7 @@ local html = import 'html.libsonnet';
         {
           name: 'assertEqual',
           params: ['a', 'b'],
+          availableSince: '0.10.0',
           description: 'Ensure that <code>a == b</code>. Returns <code>true</code> or throws an error message.',
         },
       ],
@@ -219,6 +251,7 @@ local html = import 'html.libsonnet';
         {
           name: 'toString',
           params: ['a'],
+          availableSince: '0.10.0',
           description: |||
             Convert the given argument to a string.
           |||,
@@ -226,6 +259,7 @@ local html = import 'html.libsonnet';
         {
           name: 'codepoint',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Returns the positive integer representing the unicode codepoint of the character in the
             given single-character string. This function is the inverse of <code>std.char(n)</code>.
@@ -234,6 +268,7 @@ local html = import 'html.libsonnet';
         {
           name: 'char',
           params: ['n'],
+          availableSince: '0.10.0',
           description: |||
             Returns a string of length one whose only unicode codepoint has integer id <code>n</code>.
             This function is the inverse of <code>std.codepoint(str)</code>.
@@ -242,6 +277,7 @@ local html = import 'html.libsonnet';
         {
           name: 'substr',
           params: ['str', 'from', 'len'],
+          availableSince: '0.10.0',
           description: |||
             Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
             and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
@@ -251,6 +287,7 @@ local html = import 'html.libsonnet';
         {
           name: 'findSubstr',
           params: ['pat', 'str'],
+          availableSince: '0.10.0',
           description: |||
             Returns an array that contains the indexes of all occurrences of <code>pat</code> in
             <code>str</code>.
@@ -259,6 +296,7 @@ local html = import 'html.libsonnet';
         {
           name: 'startsWith',
           params: ['a', 'b'],
+          availableSince: '0.10.0',
           description: |||
             Returns whether the string a is prefixed by the string b.
           |||,
@@ -266,6 +304,7 @@ local html = import 'html.libsonnet';
         {
           name: 'endsWith',
           params: ['a', 'b'],
+          availableSince: '0.10.0',
           description: |||
             Returns whether the string a is suffixed by the string b.
           |||,
@@ -339,6 +378,7 @@ local html = import 'html.libsonnet';
         {
           name: 'split',
           params: ['str', 'c'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Split the string <code>str</code> into an array of strings, divided by the string
@@ -362,6 +402,7 @@ local html = import 'html.libsonnet';
         {
           name: 'splitLimit',
           params: ['str', 'c', 'maxsplits'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               As <code>std.split(str, c)</code> but will stop after <code>maxsplits</code> splits, thereby the largest
@@ -385,7 +426,7 @@ local html = import 'html.libsonnet';
         {
           name: 'splitLimitR',
           params: ['str', 'c', 'maxsplits'],
-          availableSince: 'v0.19.0',
+          availableSince: '0.19.0',
           description: 'As <code>std.splitLimit(str, c, maxsplits)</code> but will split from right to left.',
           examples: [
             {
@@ -397,6 +438,7 @@ local html = import 'html.libsonnet';
         {
           name: 'strReplace',
           params: ['str', 'from', 'to'],
+          availableSince: '0.10.0',
           description: |||
             Returns a copy of the string in which all occurrences of string <code>from</code> have been
             replaced with string <code>to</code>.
@@ -409,8 +451,17 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'isEmpty',
+          params: ['str'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns true if the the given string is of zero length.
+          |||,
+        },
+        {
           name: 'asciiUpper',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Returns a copy of the string in which all ASCII letters are capitalized.
           |||,
@@ -424,6 +475,7 @@ local html = import 'html.libsonnet';
         {
           name: 'asciiLower',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Returns a copy of the string in which all ASCII letters are lower cased.
           |||,
@@ -437,6 +489,7 @@ local html = import 'html.libsonnet';
         {
           name: 'stringChars',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Split the string <code>str</code> into an array of strings, each containing a single
             codepoint.
@@ -451,6 +504,7 @@ local html = import 'html.libsonnet';
         {
           name: 'format',
           params: ['str', 'vals'],
+          availableSince: '0.10.0',
           description: |||
             Format the string <code>str</code> using the values in <code>vals</code>. The values can be
             an array, an object, or in other cases are treated as if they were provided in a singleton
@@ -480,6 +534,7 @@ local html = import 'html.libsonnet';
         {
           name: 'escapeStringBash',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Wrap <code>str</code> in single quotes, and escape any single quotes within <code>str</code>
             by changing them to a sequence <tt>'"'"'</tt>. This allows injection of arbitrary strings
@@ -489,6 +544,7 @@ local html = import 'html.libsonnet';
         {
           name: 'escapeStringDollars',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Convert $ to $$ in <code>str</code>. This allows injection of arbitrary strings into
             systems that use $ for string interpolation (like Terraform).
@@ -497,6 +553,7 @@ local html = import 'html.libsonnet';
         {
           name: 'escapeStringJson',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Convert <code>str</code> to allow it to be embedded in a JSON representation, within a
             string. This adds quotes, escapes backslashes, and escapes unprintable characters.
@@ -517,9 +574,27 @@ local html = import 'html.libsonnet';
         {
           name: 'escapeStringPython',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Convert <code>str</code> to allow it to be embedded in Python. This is an alias for
             <code>std.escapeStringJson</code>.
+          |||,
+        },
+        {
+          name: 'escapeStringXml',
+          params: ['str'],
+          availableSince: '0.10.0',
+          description: |||
+            Convert <code>str</code> to allow it to be embedded in XML (or HTML). The following replacements are made:
+            <pre>
+            {
+              "&lt;": "&amp;lt;",
+              "&gt;": "&amp;gt;",
+              "&amp;": "&amp;amp;",
+              "\&quot;": "&amp;quot;",
+              "&apos;": "&amp;apos;",
+            }
+            </pre>
           |||,
         },
       ],
@@ -531,6 +606,7 @@ local html = import 'html.libsonnet';
         {
           name: 'parseInt',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Parses a signed decimal integer from the input string.
           |||,
@@ -548,6 +624,7 @@ local html = import 'html.libsonnet';
         {
           name: 'parseOctal',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
           |||,
@@ -561,6 +638,7 @@ local html = import 'html.libsonnet';
         {
           name: 'parseHex',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
           |||,
@@ -573,8 +651,8 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'parseJson',
-          availableSince: '0.13.0',
           params: ['str'],
+          availableSince: '0.13.0',
           description: |||
             Parses a JSON string.
           |||,
@@ -587,8 +665,8 @@ local html = import 'html.libsonnet';
         },
         {
           name: 'parseYaml',
-          availableSince: '0.18.0',
           params: ['str'],
+          availableSince: '0.18.0',
           description: |||
             Parses a YAML string. This is provided as a "best-effort" mechanism and should not be relied on to provide
             a fully standards compliant YAML parser. YAML is a superset of JSON, consequently "downcasting" or
@@ -631,6 +709,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestIni',
           params: ['ini'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given structure to a string in <a href="https://en.wikipedia.org/wiki/INI_file">INI format</a>. This
@@ -671,6 +750,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestPython',
           params: ['v'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given value to a JSON-like form that is compatible with Python. The chief
@@ -703,6 +783,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestPythonVars',
           params: ['conf'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given object to a JSON-like form that is compatible with Python. The key
@@ -734,6 +815,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestJsonEx',
           params: ['value', 'indent', 'newline', 'key_val_sep'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given object to a JSON form. <code>indent</code> is a string containing
@@ -826,6 +908,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestYamlDoc',
           params: ['value', 'indent_array_in_object=false', 'quote_keys=true'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given value to a YAML form. Note that <code>std.manifestJson</code> could also
@@ -875,6 +958,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestYamlStream',
           params: ['value', 'indent_array_in_object=false', 'c_document_end=false', 'quote_keys=true'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Given an array of values, emit a YAML "stream", which is a sequence of documents separated
@@ -914,6 +998,7 @@ local html = import 'html.libsonnet';
         {
           name: 'manifestXmlJsonml',
           params: ['value'],
+          availableSince: '0.10.0',
           description: [
             html.p({}, |||
               Convert the given <a href="http://www.jsonml.org/">JsonML</a>-encoded value to a string
@@ -1039,6 +1124,7 @@ local html = import 'html.libsonnet';
         {
           name: 'makeArray',
           params: ['sz', 'func'],
+          availableSince: '0.10.0',
           description: |||
             Create a new array of <code>sz</code> elements by calling <code>func(i)</code> to initialize
             each element. Func is expected to be a function that takes a single parameter, the index of
@@ -1063,6 +1149,7 @@ local html = import 'html.libsonnet';
         {
           name: 'count',
           params: ['arr', 'x'],
+          availableSince: '0.10.0',
           description: |||
             Return the number of times that <code>x</code> occurs in <code>arr</code>.
           |||,
@@ -1070,6 +1157,7 @@ local html = import 'html.libsonnet';
         {
           name: 'find',
           params: ['value', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             Returns an array that contains the indexes of all occurrences of <code>value</code> in
             <code>arr</code>.
@@ -1078,6 +1166,7 @@ local html = import 'html.libsonnet';
         {
           name: 'map',
           params: ['func', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             Apply the given function to every element of the array to form a new array.
           |||,
@@ -1085,6 +1174,7 @@ local html = import 'html.libsonnet';
         {
           name: 'mapWithIndex',
           params: ['func', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             Similar to <a href="#map">map</a> above, but it also passes to the function the element's
             index in the array. The function <code>func</code> is expected to take the index as the
@@ -1094,6 +1184,7 @@ local html = import 'html.libsonnet';
         {
           name: 'filterMap',
           params: ['filter_func', 'map_func', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             It first filters, then maps the given array, using the two functions provided.
           |||,
@@ -1101,6 +1192,7 @@ local html = import 'html.libsonnet';
         {
           name: 'flatMap',
           params: ['func', 'arr'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               Apply the given function to every element of <code>arr</code> to form a new array then flatten the result.
@@ -1134,6 +1226,7 @@ local html = import 'html.libsonnet';
         {
           name: 'filter',
           params: ['func', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             Return a new array containing all the elements of <code>arr</code> for which the
             <code>func</code> function returns true.
@@ -1142,6 +1235,7 @@ local html = import 'html.libsonnet';
         {
           name: 'foldl',
           params: ['func', 'arr', 'init'],
+          availableSince: '0.10.0',
           description: |||
             Classic foldl function. Calls the function on the result of the previous function call and
             each array element, or <code>init</code> in the case of the initial element. Traverses the
@@ -1151,6 +1245,7 @@ local html = import 'html.libsonnet';
         {
           name: 'foldr',
           params: ['func', 'arr', 'init'],
+          availableSince: '0.10.0',
           description: |||
             Classic foldr function. Calls the function on the result of the previous function call and
             each array element, or <code>init</code> in the case of the initial element. Traverses the
@@ -1160,6 +1255,7 @@ local html = import 'html.libsonnet';
         {
           name: 'range',
           params: ['from', 'to'],
+          availableSince: '0.10.0',
           description: |||
             Return an array of ascending numbers between the two limits, inclusively.
           |||,
@@ -1185,6 +1281,7 @@ local html = import 'html.libsonnet';
         {
           name: 'slice',
           params: ['indexable', 'index', 'end', 'step'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               Selects the elements of an array or a string from <code>index</code> to <code>end</code> with <code>step</code> and returns an array or a string respectively.
@@ -1211,6 +1308,7 @@ local html = import 'html.libsonnet';
         {
           name: 'join',
           params: ['sep', 'arr'],
+          availableSince: '0.10.0',
           description: |||
             If <code>sep</code> is a string, then <code>arr</code> must be an array of strings, in which
             case they are concatenated with <code>sep</code> used as a delimiter. If <code>sep</code>
@@ -1231,6 +1329,7 @@ local html = import 'html.libsonnet';
         {
           name: 'lines',
           params: ['arr'],
+          availableSince: '0.10.0',
           description: |||
             Concatenate an array of strings into a text file with newline characters after each string.
             This is suitable for constructing bash scripts and the like.
@@ -1239,6 +1338,7 @@ local html = import 'html.libsonnet';
         {
           name: 'flattenArrays',
           params: ['arr'],
+          availableSince: '0.10.0',
           description: |||
             Concatenate an array of arrays into a single array.
           |||,
@@ -1260,6 +1360,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sort',
           params: ['arr', 'keyF=id'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               Sorts the array using the <= operator.
@@ -1273,6 +1374,7 @@ local html = import 'html.libsonnet';
         {
           name: 'uniq',
           params: ['arr', 'keyF=id'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               Removes successive duplicates. When given a sorted array, removes all duplicates.
@@ -1286,7 +1388,7 @@ local html = import 'html.libsonnet';
         {
           name: 'all',
           params: ['arr'],
-          availableSince: 'v0.19.0',
+          availableSince: '0.19.0',
           description: html.paragraphs([
             |||
               Return true if all elements of <code>arr</code> is true, false otherwise. <code>all([])</code> evaluates to true.
@@ -1299,13 +1401,23 @@ local html = import 'html.libsonnet';
         {
           name: 'any',
           params: ['arr'],
-          availableSince: 'v0.19.0',
+          availableSince: '0.19.0',
           description: html.paragraphs([
             |||
               Return true if any element of <code>arr</code> is true, false otherwise. <code>any([])</code> evaluates to false.
             |||,
             |||
               It's an error if 1) <code>arr</code> is not an array, or 2) <code>arr</code> contains non-boolean values.
+            |||,
+          ]),
+        },
+        {
+          name: 'sum',
+          params: ['arr'],
+          availableSince: '0.20.0',
+          description: html.paragraphs([
+            |||
+              Return sum of all element in <code>arr</code>.
             |||,
           ]),
         },
@@ -1333,6 +1445,7 @@ local html = import 'html.libsonnet';
         {
           name: 'set',
           params: ['arr', 'keyF=id'],
+          availableSince: '0.10.0',
           description: |||
             Shortcut for std.uniq(std.sort(arr)).
           |||,
@@ -1340,6 +1453,7 @@ local html = import 'html.libsonnet';
         {
           name: 'setInter',
           params: ['a', 'b', 'keyF=id'],
+          availableSince: '0.10.0',
           description: |||
             Set intersection operation (values in both a and b).
           |||,
@@ -1347,6 +1461,7 @@ local html = import 'html.libsonnet';
         {
           name: 'setUnion',
           params: ['a', 'b', 'keyF=id'],
+          availableSince: '0.10.0',
           description: |||
             Set union operation (values in any of <code>a</code> or <code>b</code>). Note that + on sets will simply
             concatenate
@@ -1367,6 +1482,7 @@ local html = import 'html.libsonnet';
         {
           name: 'setDiff',
           params: ['a', 'b', 'keyF=id'],
+          availableSince: '0.10.0',
           description: |||
             Set difference operation (values in a but not b).
           |||,
@@ -1374,6 +1490,7 @@ local html = import 'html.libsonnet';
         {
           name: 'setMember',
           params: ['x', 'arr', 'keyF=id'],
+          availableSince: '0.10.0',
           description: |||
             Returns <code>true</code> if x is a member of array, otherwise <code>false</code>.
           |||,
@@ -1387,6 +1504,7 @@ local html = import 'html.libsonnet';
         {
           name: 'base64',
           params: ['input'],
+          availableSince: '0.10.0',
           description: |||
             Encodes the given value into a base64 string. The encoding sequence is <code>A-Za-z0-9+/</code> with
             <code>=</code>
@@ -1398,6 +1516,7 @@ local html = import 'html.libsonnet';
         {
           name: 'base64DecodeBytes',
           params: ['str'],
+          availableSince: '0.10.0',
           description: |||
             Decodes the given base64 string into an array of bytes (number values). Currently assumes
             the input string has no linebreaks and is padded to a multiple of 4 (with the = character).
@@ -1407,6 +1526,7 @@ local html = import 'html.libsonnet';
         {
           name: 'base64Decode',
           params: ['str'],
+          availableSince: '0.10.0',
           description: html.paragraphs([
             |||
               <em>Deprecated, use <code>std.base64DecodeBytes</code> and decode the string explicitly (e.g. with <code>std.decodeUTF8</code>) instead.</code></em>
@@ -1419,8 +1539,31 @@ local html = import 'html.libsonnet';
         {
           name: 'md5',
           params: ['s'],
+          availableSince: '0.10.0',
           description: |||
             Encodes the given value into an MD5 string.
+          |||,
+        },
+      ],
+    },
+    {
+      name: 'Booleans',
+      id: 'booleans',
+      fields: [
+        {
+          name: 'xor',
+          params: ['x', 'y'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns the xor of the two given booleans.
+          |||,
+        },
+        {
+          name: 'xnor',
+          params: ['x', 'y'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns the xnor of the two given booleans.
           |||,
         },
       ],
@@ -1432,6 +1575,7 @@ local html = import 'html.libsonnet';
         {
           name: 'mergePatch',
           params: ['target', 'patch'],
+          availableSince: '0.10.0',
           description: |||
             Applies <code>patch</code> to <code>target</code>
             according to <a href="https://tools.ietf.org/html/rfc7396">RFC7396</a>
