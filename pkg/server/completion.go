@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
+	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
-	"github.com/google/go-jsonnet/toolutils"
 	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
@@ -63,9 +63,8 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	lastWord = strings.TrimRight(lastWord, ",;") // Ignore trailing commas and semicolons, they can present when someone is modifying an existing line
 
 	indexes := strings.Split(lastWord, ".")
-	firstIndex, indexes := indexes[0], indexes[1:]
 
-	if len(indexes) == 0 {
+	if len(indexes) == 1 {
 		var items []protocol.CompletionItem
 		// firstIndex is a variable (local) completion
 		for !stack.IsEmpty() {
@@ -73,7 +72,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 				for _, bind := range curr.Binds {
 					label := string(bind.Variable)
 
-					if !strings.HasPrefix(label, firstIndex) {
+					if !strings.HasPrefix(label, indexes[0]) {
 						continue
 					}
 
@@ -84,46 +83,14 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 		return items
 	}
 
-	if len(indexes) > 1 {
-		// TODO: Support multiple indexes, the objects to search through will be the reference in the last index
+	ranges, err := processing.FindRangesFromIndexList(stack, indexes, vm, true)
+	if err != nil {
+		log.Errorf("Completion: error finding ranges: %v", err)
 		return nil
 	}
 
-	var (
-		objectsToSearch []*ast.DesugaredObject
-	)
-
-	if firstIndex == "self" {
-		// Search through the current stack
-		objectsToSearch = processing.FindTopLevelObjects(stack, vm)
-	} else {
-		// If the index is something other than 'self', find what it refers to (Var reference) and find objects in that
-		for !stack.IsEmpty() {
-			curr := stack.Pop()
-
-			if targetVar, ok := curr.(*ast.Var); ok && string(targetVar.Id) == firstIndex {
-				ref, _ := processing.FindVarReference(targetVar, vm)
-
-				switch ref := ref.(type) {
-				case *ast.Self: // This case catches `$` references (it's set as a self reference on the root object)
-					objectsToSearch = processing.FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
-				case *ast.DesugaredObject:
-					objectsToSearch = []*ast.DesugaredObject{ref}
-				case *ast.Import:
-					filename := ref.File.Value
-					objectsToSearch = processing.FindTopLevelObjectsInFile(vm, filename, string(curr.Loc().File.DiagnosticFileName))
-				}
-				break
-			}
-
-			for _, node := range toolutils.Children(curr) {
-				stack.Push(node)
-			}
-		}
-	}
-
-	fieldPrefix := indexes[0]
-	return createCompletionItemsFromObjects(objectsToSearch, firstIndex, fieldPrefix, line)
+	completionPrefix := strings.Join(indexes[:len(indexes)-1], ".")
+	return createCompletionItemsFromRanges(ranges, completionPrefix, line)
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
@@ -165,31 +132,24 @@ func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
 	return items
 }
 
-func createCompletionItemsFromObjects(objects []*ast.DesugaredObject, firstIndex, fieldPrefix, currentLine string) []protocol.CompletionItem {
+func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 	labels := make(map[string]bool)
 
-	for _, obj := range objects {
-		for _, field := range obj.Fields {
-			label := processing.FieldNameToString(field.Name)
+	for _, field := range ranges {
+		label := field.FieldName
 
-			if labels[label] {
-				continue
-			}
-
-			// Ignore fields that don't match the prefix
-			if !strings.HasPrefix(label, fieldPrefix) {
-				continue
-			}
-
-			// Ignore the current field
-			if strings.Contains(currentLine, label+":") {
-				continue
-			}
-
-			items = append(items, createCompletionItem(label, firstIndex+"."+label, protocol.FieldCompletion, field.Body))
-			labels[label] = true
+		if labels[label] {
+			continue
 		}
+
+		// Ignore the current field
+		if strings.Contains(currentLine, label+":") && completionPrefix == "self" {
+			continue
+		}
+
+		items = append(items, createCompletionItem(label, completionPrefix+"."+label, protocol.FieldCompletion, field.Node))
+		labels[label] = true
 	}
 
 	sort.Slice(items, func(i, j int) bool {
@@ -213,9 +173,34 @@ func createCompletionItem(label, detail string, kind protocol.CompletionItemKind
 	}
 
 	return protocol.CompletionItem{
-		Label:      label,
-		Detail:     detail,
-		Kind:       kind,
+		Label:  label,
+		Detail: detail,
+		Kind:   kind,
+		LabelDetails: protocol.CompletionItemLabelDetails{
+			Description: typeToString(body),
+		},
 		InsertText: insertText,
 	}
+}
+
+func typeToString(t ast.Node) string {
+	switch t.(type) {
+	case *ast.Array:
+		return "array"
+	case *ast.LiteralBoolean:
+		return "boolean"
+	case *ast.Function:
+		return "function"
+	case *ast.LiteralNull:
+		return "null"
+	case *ast.LiteralNumber:
+		return "number"
+	case *ast.Object, *ast.DesugaredObject:
+		return "object"
+	case *ast.LiteralString:
+		return "string"
+	case *ast.Import, *ast.ImportStr:
+		return "import"
+	}
+	return reflect.TypeOf(t).String()
 }

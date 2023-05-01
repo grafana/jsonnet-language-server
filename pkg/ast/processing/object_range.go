@@ -11,6 +11,8 @@ type ObjectRange struct {
 	Filename       string
 	SelectionRange ast.LocationRange
 	FullRange      ast.LocationRange
+	FieldName      string
+	Node           ast.Node
 }
 
 func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
@@ -28,6 +30,8 @@ func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
 		Filename:       field.LocRange.FileName,
 		SelectionRange: selectionRange,
 		FullRange:      field.LocRange,
+		FieldName:      FieldNameToString(field.Name),
+		Node:           field.Body,
 	}
 }
 
