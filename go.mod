@@ -3,7 +3,7 @@ module github.com/grafana/jsonnet-language-server
 go 1.19
 
 require (
-	github.com/JohannesKaufmann/html-to-markdown v1.3.7
+	github.com/JohannesKaufmann/html-to-markdown v1.4.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/grafana/tanka v0.24.0
 	github.com/hexops/gotextdiff v1.0.3
@@ -38,8 +38,8 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
