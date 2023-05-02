@@ -43,9 +43,9 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 				if !indexIsString {
 					continue
 				}
-				obj := findObjectFieldInObject(containerObj, indexValue.Value)
-				if obj != nil {
-					stack.Push(obj.Body)
+				objs := findObjectFieldsInObject(containerObj, indexValue.Value, false)
+				if len(objs) > 0 {
+					stack.Push(objs[0].Body)
 				}
 			}
 		case *ast.Var:

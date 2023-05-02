@@ -74,7 +74,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 
 		if bind := processing.FindBindByIDViaStack(searchStack, deepestNode.Id); bind != nil {
 			objectRange = processing.LocalBindToRange(*bind)
-		} else if param := processing.FindParameterByIDViaStack(searchStack, deepestNode.Id); param != nil {
+		} else if param := processing.FindParameterByIDViaStack(searchStack, deepestNode.Id, false); param != nil {
 			objectRange = processing.ObjectRange{
 				Filename:       param.LocRange.FileName,
 				FullRange:      param.LocRange,
@@ -93,7 +93,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
-		objectRanges, err := processing.FindRangesFromIndexList(&tempSearchStack, indexList, vm)
+		objectRanges, err := processing.FindRangesFromIndexList(&tempSearchStack, indexList, vm, false)
 		if err != nil {
 			return nil, err
 		}

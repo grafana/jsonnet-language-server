@@ -162,6 +162,9 @@ func TestCompletion(t *testing.T) {
 					Kind:       protocol.FunctionCompletion,
 					Detail:     "self.greet(name)",
 					InsertText: "greet(name)",
+					LabelDetails: protocol.CompletionItemLabelDetails{
+						Description: "function",
+					},
 				}},
 			},
 		},
@@ -187,6 +190,9 @@ func TestCompletion(t *testing.T) {
 					Kind:       protocol.FunctionCompletion,
 					Detail:     "self.greet(name)",
 					InsertText: "greet(name)",
+					LabelDetails: protocol.CompletionItemLabelDetails{
+						Description: "function",
+					},
 				}},
 			},
 		},
@@ -202,6 +208,9 @@ func TestCompletion(t *testing.T) {
 					Kind:       protocol.FieldCompletion,
 					Detail:     "self.foo",
 					InsertText: "foo",
+					LabelDetails: protocol.CompletionItemLabelDetails{
+						Description: "string",
+					},
 				}},
 			},
 		},
@@ -217,6 +226,9 @@ func TestCompletion(t *testing.T) {
 					Kind:       protocol.VariableCompletion,
 					Detail:     "somevar",
 					InsertText: "somevar",
+					LabelDetails: protocol.CompletionItemLabelDetails{
+						Description: "string",
+					},
 				}},
 			},
 		},
@@ -232,6 +244,9 @@ func TestCompletion(t *testing.T) {
 					Kind:       protocol.VariableCompletion,
 					Detail:     "somevar",
 					InsertText: "somevar",
+					LabelDetails: protocol.CompletionItemLabelDetails{
+						Description: "string",
+					},
 				}},
 			},
 		},
@@ -258,12 +273,18 @@ func TestCompletion(t *testing.T) {
 						Kind:       protocol.FieldCompletion,
 						Detail:     "otherfile.bar",
 						InsertText: "bar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
 					},
 					{
 						Label:      "foo",
 						Kind:       protocol.FieldCompletion,
 						Detail:     "otherfile.foo",
 						InsertText: "foo",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
 					},
 				},
 			},
@@ -281,6 +302,9 @@ func TestCompletion(t *testing.T) {
 						Kind:       protocol.FieldCompletion,
 						Detail:     "otherfile.bar",
 						InsertText: "bar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
 					},
 				},
 			},
@@ -298,12 +322,18 @@ func TestCompletion(t *testing.T) {
 						Kind:       protocol.FieldCompletion,
 						Detail:     "$.attribute",
 						InsertText: "attribute",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
 					},
 					{
 						Label:      "attribute2",
 						Kind:       protocol.FieldCompletion,
 						Detail:     "$.attribute2",
 						InsertText: "attribute2",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
 					},
 				},
 			},
@@ -321,12 +351,76 @@ func TestCompletion(t *testing.T) {
 						Kind:       protocol.FieldCompletion,
 						Detail:     "$.attribute",
 						InsertText: "attribute",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
 					},
 					{
 						Label:      "attribute2",
 						Kind:       protocol.FieldCompletion,
 						Detail:     "$.attribute2",
 						InsertText: "attribute2",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete nested imported file",
+			filename:        "testdata/goto-nested-imported-file.jsonnet",
+			replaceString:   "foo: file.foo,",
+			replaceByString: "foo: file.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "bar",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "file.bar",
+						InsertText: "bar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+					{
+						Label:      "foo",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "file.foo",
+						InsertText: "foo",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete multiple fields within local",
+			filename:        "testdata/goto-indexes.jsonnet",
+			replaceString:   "attr: obj.foo",
+			replaceByString: "attr: obj.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "bar",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "obj.bar",
+						InsertText: "bar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+					{
+						Label:      "foo",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "obj.foo",
+						InsertText: "foo",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
 					},
 				},
 			},

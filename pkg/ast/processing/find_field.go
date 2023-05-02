@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM) ([]ObjectRange, error) {
+func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM, partialMatchFields bool) ([]ObjectRange, error) {
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
@@ -45,7 +45,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind := FindBindByIDViaStack(stack, ast.Identifier(start))
 		if bind == nil {
-			param := FindParameterByIDViaStack(stack, ast.Identifier(start))
+			param := FindParameterByIDViaStack(stack, ast.Identifier(start), partialMatchFields)
 			if param != nil {
 				return []ObjectRange{
 					{
@@ -69,7 +69,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
-			return FindRangesFromIndexList(stack, indexList, vm)
+			return FindRangesFromIndexList(stack, indexList, vm, partialMatchFields)
 		case *ast.Function:
 			// If the function's body is an object, it means we can look for indexes within the function
 			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
@@ -80,15 +80,15 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 	}
 
-	return extractObjectRangesFromDesugaredObjs(stack, vm, foundDesugaredObjects, sameFileOnly, indexList)
+	return extractObjectRangesFromDesugaredObjs(stack, vm, foundDesugaredObjects, sameFileOnly, indexList, partialMatchFields)
 }
 
-func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, sameFileOnly bool, indexList []string) ([]ObjectRange, error) {
+func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, sameFileOnly bool, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
 	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		foundFields := findObjectFieldsInObjects(desugaredObjs, index)
+		foundFields := findObjectFieldsInObjects(desugaredObjs, index, partialMatchFields)
 		desugaredObjs = nil
 		if len(foundFields) == 0 {
 			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
@@ -98,7 +98,8 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 				ranges = append(ranges, FieldToRange(*found))
 
 				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
-				if !found.PlusSuper {
+				// If partialMatchFields is true, we can continue to look for other fields
+				if !found.PlusSuper && !partialMatchFields {
 					break
 				}
 			}
@@ -134,7 +135,7 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 				desugaredObjs = append(desugaredObjs, fieldNode)
 			case *ast.Index:
 				additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
-				result, err := FindRangesFromIndexList(stack, additionalIndexList, vm)
+				result, err := FindRangesFromIndexList(stack, additionalIndexList, vm, partialMatchFields)
 				if len(result) > 0 {
 					if !sameFileOnly || result[0].Filename == stack.From.Loc().FileName {
 						return result, err
@@ -186,32 +187,36 @@ func unpackFieldNodes(vm *jsonnet.VM, fields []*ast.DesugaredObjectField) ([]ast
 	return fieldNodes, nil
 }
 
-func findObjectFieldsInObjects(objectNodes []*ast.DesugaredObject, index string) []*ast.DesugaredObjectField {
+func findObjectFieldsInObjects(objectNodes []*ast.DesugaredObject, index string, partialMatchFields bool) []*ast.DesugaredObjectField {
 	var matchingFields []*ast.DesugaredObjectField
 	for _, object := range objectNodes {
-		field := findObjectFieldInObject(object, index)
-		if field != nil {
-			matchingFields = append(matchingFields, field)
-		}
+		fields := findObjectFieldsInObject(object, index, partialMatchFields)
+		matchingFields = append(matchingFields, fields...)
 	}
 	return matchingFields
 }
 
-func findObjectFieldInObject(objectNode *ast.DesugaredObject, index string) *ast.DesugaredObjectField {
+func findObjectFieldsInObject(objectNode *ast.DesugaredObject, index string, partialMatchFields bool) []*ast.DesugaredObjectField {
 	if objectNode == nil {
 		return nil
 	}
+
+	var matchingFields []*ast.DesugaredObjectField
 	for _, field := range objectNode.Fields {
+		field := field
 		literalString, isString := field.Name.(*ast.LiteralString)
 		if !isString {
 			continue
 		}
 		log.Debugf("Checking index name %s against field name %s", index, literalString.Value)
-		if index == literalString.Value {
-			return &field
+		if index == literalString.Value || (partialMatchFields && strings.HasPrefix(literalString.Value, index)) {
+			matchingFields = append(matchingFields, &field)
+			if !partialMatchFields {
+				break
+			}
 		}
 	}
-	return nil
+	return matchingFields
 }
 
 func findChildDesugaredObject(node ast.Node) *ast.DesugaredObject {
