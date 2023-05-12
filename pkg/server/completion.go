@@ -139,6 +139,10 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 	for _, field := range ranges {
 		label := field.FieldName
 
+		if field.Node == nil {
+			continue
+		}
+
 		if labels[label] {
 			continue
 		}
