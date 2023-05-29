@@ -9,7 +9,7 @@ require (
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.3
 )
 
