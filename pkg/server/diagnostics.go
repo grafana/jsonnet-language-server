@@ -159,7 +159,7 @@ func (s *Server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 		lines := strings.Split(doc.err.Error(), "\n")
 		if len(lines) == 0 {
 			log.Errorf("publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
-			return
+			return diags
 		}
 
 		var match []string
