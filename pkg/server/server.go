@@ -52,6 +52,8 @@ func (s *Server) getVM(path string) *jsonnet.VM {
 			log.Debugf("Unable to resolve jpath for %s: %s", path, err)
 			// nolint: gocritic
 			jpath = append(s.configuration.JPaths, filepath.Dir(path))
+		} else {
+			jpath = append(jpath, s.configuration.JPaths...)
 		}
 		opts := tankaJsonnet.Opts{
 			ImportPaths: jpath,
