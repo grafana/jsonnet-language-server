@@ -88,6 +88,7 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
+		partialMatchFields := partialMatchFields && len(indexList) == 0 // Only partial match on the last index. Others are considered complete
 		foundFields := findObjectFieldsInObjects(desugaredObjs, index, partialMatchFields)
 		desugaredObjs = nil
 		if len(foundFields) == 0 {
