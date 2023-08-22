@@ -37,12 +37,22 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			rootNode, _, _ := vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
 			stack.Push(rootNode)
 		case *ast.Index:
+			indexValue, indexIsString := curr.Index.(*ast.LiteralString)
+			if !indexIsString {
+				continue
+			}
+
 			container := stack.Peek()
-			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
-				indexValue, indexIsString := curr.Index.(*ast.LiteralString)
-				if !indexIsString {
+			if varTarget, targetIsVar := curr.Target.(*ast.Var); container == nil && targetIsVar {
+				ref, err := FindVarReference(varTarget, vm)
+				if err != nil {
+					log.WithError(err).Errorf("Error finding var reference, ignoring this node")
 					continue
 				}
+				container = ref
+			}
+
+			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
 				objs := findObjectFieldsInObject(containerObj, indexValue.Value, false)
 				if len(objs) > 0 {
 					stack.Push(objs[0].Body)

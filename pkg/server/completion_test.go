@@ -454,28 +454,6 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
-		// TODO: This one doesn't work yet
-		// Issue: https://github.com/grafana/jsonnet-language-server/issues/113
-		// {
-		// 	name:            "autocomplete local at root 2",
-		// 	filename:        "testdata/local-at-root-2.jsonnet",
-		// 	replaceString:   "hello.to",
-		// 	replaceByString: "hello.",
-		// 	expected: protocol.CompletionList{
-		// 		IsIncomplete: false,
-		// 		Items: []protocol.CompletionItem{
-		// 			{
-		// 				Label:      "to",
-		// 				Kind:       protocol.FieldCompletion,
-		// 				Detail:     "hello.to",
-		// 				InsertText: "to",
-		// 				LabelDetails: protocol.CompletionItemLabelDetails{
-		// 					Description: "object",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
 		{
 			// This checks that we don't match on `hello.hello.*` if we autocomplete on `hello.hel.`
 			name:            "autocomplete local at root, no partial match if full match exists",
@@ -506,6 +484,46 @@ func TestCompletion(t *testing.T) {
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
 				Items:        nil,
+			},
+		},
+		{
+			name:            "autocomplete local at root 2",
+			filename:        "testdata/local-at-root-2.jsonnet",
+			replaceString:   "hello.to",
+			replaceByString: "hello.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "to",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello.to",
+						InsertText: "to",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete local at root 2, nested",
+			filename:        "testdata/local-at-root-2.jsonnet",
+			replaceString:   "hello.to",
+			replaceByString: "hello.to.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "the",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello.to.the",
+						InsertText: "the",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+				},
 			},
 		},
 	}
