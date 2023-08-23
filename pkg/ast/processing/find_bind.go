@@ -6,7 +6,9 @@ import (
 )
 
 func FindBindByIDViaStack(stack *nodestack.NodeStack, id ast.Identifier) *ast.LocalBind {
-	for _, node := range stack.Stack {
+	nodes := append([]ast.Node{}, stack.From)
+	nodes = append(nodes, stack.Stack...)
+	for _, node := range nodes {
 		switch curr := node.(type) {
 		case *ast.Local:
 			for _, bind := range curr.Binds {

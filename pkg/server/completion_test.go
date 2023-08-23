@@ -425,6 +425,89 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "autocomplete local at root",
+			filename:        "testdata/local-at-root.jsonnet",
+			replaceString:   "hello.hello",
+			replaceByString: "hello.hel",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "hel",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello.hel",
+						InsertText: "hel",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+					{
+						Label:      "hello",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello.hello",
+						InsertText: "hello",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		// TODO: This one doesn't work yet
+		// Issue: https://github.com/grafana/jsonnet-language-server/issues/113
+		// {
+		// 	name:            "autocomplete local at root 2",
+		// 	filename:        "testdata/local-at-root-2.jsonnet",
+		// 	replaceString:   "hello.to",
+		// 	replaceByString: "hello.",
+		// 	expected: protocol.CompletionList{
+		// 		IsIncomplete: false,
+		// 		Items: []protocol.CompletionItem{
+		// 			{
+		// 				Label:      "to",
+		// 				Kind:       protocol.FieldCompletion,
+		// 				Detail:     "hello.to",
+		// 				InsertText: "to",
+		// 				LabelDetails: protocol.CompletionItemLabelDetails{
+		// 					Description: "object",
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// },
+		{
+			// This checks that we don't match on `hello.hello.*` if we autocomplete on `hello.hel.`
+			name:            "autocomplete local at root, no partial match if full match exists",
+			filename:        "testdata/local-at-root.jsonnet",
+			replaceString:   "hello.hello",
+			replaceByString: "hello.hel.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "wel",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello.hel.wel",
+						InsertText: "wel",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+				},
+			},
+		},
+		{
+			// This checks that we don't match anything on `hello.hell.*`
+			name:            "autocomplete local at root, no match on unknown field",
+			filename:        "testdata/local-at-root.jsonnet",
+			replaceString:   "hello.hello",
+			replaceByString: "hello.hell.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items:        nil,
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -466,7 +549,7 @@ func TestCompletion(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
-			assert.Equal(t, &tc.expected, result)
+			assert.Equal(t, tc.expected, *result)
 		})
 	}
 }
