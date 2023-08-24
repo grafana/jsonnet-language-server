@@ -2,6 +2,7 @@ package processing
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
@@ -13,6 +14,36 @@ type ObjectRange struct {
 	FullRange      ast.LocationRange
 	FieldName      string
 	Node           ast.Node
+}
+
+func (r *ObjectRange) ReadFromFile(fullRange bool) (string, error) {
+	fileContent, err := os.ReadFile(r.Filename)
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(fileContent), "\n")
+
+	rangeToExtract := r.SelectionRange
+	if fullRange {
+		rangeToExtract = r.FullRange
+	}
+
+	// Extract the range from the file
+	// First line: Replace trimmed columns with spaces
+	// Middle lines: Keep all columns
+	// Last line: Trim columns after the end of the range
+	firstLine := lines[rangeToExtract.Begin.Line-1]
+	firstLine = strings.Repeat(" ", rangeToExtract.Begin.Column-1) + firstLine[rangeToExtract.Begin.Column-1:]
+	lastLine := lines[rangeToExtract.End.Line-1]
+	lastLine = lastLine[:rangeToExtract.End.Column-1]
+	rangeLines := []string{firstLine}
+	if rangeToExtract.End.Line > rangeToExtract.Begin.Line+1 {
+		rangeLines = append(rangeLines, lines[rangeToExtract.Begin.Line:rangeToExtract.End.Line-1]...)
+	}
+	if rangeToExtract.End.Line > rangeToExtract.Begin.Line {
+		rangeLines = append(rangeLines, lastLine)
+	}
+	return strings.Join(rangeLines, "\n"), nil
 }
 
 func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
@@ -59,6 +90,7 @@ func LocalBindToRange(bind ast.LocalBind) ObjectRange {
 	}
 	filename := locRange.FileName
 	return ObjectRange{
+		Node:      bind.Body,
 		Filename:  filename,
 		FullRange: locRange,
 		SelectionRange: ast.LocationRange{

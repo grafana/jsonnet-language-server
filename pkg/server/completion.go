@@ -75,8 +75,8 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 					if !strings.HasPrefix(label, indexes[0]) {
 						continue
 					}
-
-					items = append(items, createCompletionItem(label, label, protocol.VariableCompletion, bind.Body))
+					objRange := processing.LocalBindToRange(bind)
+					items = append(items, createCompletionItem(label, label, protocol.VariableCompletion, objRange))
 				}
 			}
 		}
@@ -152,7 +152,7 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 			continue
 		}
 
-		items = append(items, createCompletionItem(label, completionPrefix+"."+label, protocol.FieldCompletion, field.Node))
+		items = append(items, createCompletionItem(label, completionPrefix+"."+label, protocol.FieldCompletion, field))
 		labels[label] = true
 	}
 
@@ -163,8 +163,9 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 	return items
 }
 
-func createCompletionItem(label, detail string, kind protocol.CompletionItemKind, body ast.Node) protocol.CompletionItem {
+func createCompletionItem(label, detail string, kind protocol.CompletionItemKind, field processing.ObjectRange) protocol.CompletionItem {
 	insertText := label
+	body := field.Node
 	if asFunc, ok := body.(*ast.Function); ok {
 		kind = protocol.FunctionCompletion
 		params := []string{}
@@ -174,6 +175,13 @@ func createCompletionItem(label, detail string, kind protocol.CompletionItemKind
 		paramsString := "(" + strings.Join(params, ", ") + ")"
 		detail += paramsString
 		insertText += paramsString
+	}
+
+	data, err := field.ReadFromFile(true)
+	if err != nil {
+		detail += "\n\nError reading file: " + err.Error()
+	} else {
+		detail += "\n\nJsonnet:\n" + data + "\n"
 	}
 
 	return protocol.CompletionItem{
