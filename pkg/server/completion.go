@@ -205,6 +205,8 @@ func typeToString(t ast.Node) string {
 		return "string"
 	case *ast.Import, *ast.ImportStr:
 		return "import"
+	case *ast.Index:
+		return "object field"
 	}
 	return reflect.TypeOf(t).String()
 }
