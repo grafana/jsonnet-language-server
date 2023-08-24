@@ -37,6 +37,11 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			rootNode, _, _ := vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
 			stack.Push(rootNode)
 		case *ast.Index:
+			indexValue, indexIsString := curr.Index.(*ast.LiteralString)
+			if !indexIsString {
+				continue
+			}
+
 			var container ast.Node
 			// If our target is a var, the container for the index is the var ref
 			if varTarget, targetIsVar := curr.Target.(*ast.Var); targetIsVar {
@@ -53,14 +58,16 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 				container = stack.Peek()
 			}
 
+			var possibleObjects []*ast.DesugaredObject
 			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
-				indexValue, indexIsString := curr.Index.(*ast.LiteralString)
-				if !indexIsString {
-					continue
-				}
-				objs := findObjectFieldsInObject(containerObj, indexValue.Value, false)
-				if len(objs) > 0 {
-					stack.Push(objs[0].Body)
+				possibleObjects = []*ast.DesugaredObject{containerObj}
+			} else if containerImport, containerIsImport := container.(*ast.Import); containerIsImport {
+				possibleObjects = FindTopLevelObjectsInFile(vm, containerImport.File.Value, string(containerImport.Loc().File.DiagnosticFileName))
+			}
+
+			for _, obj := range possibleObjects {
+				for _, field := range findObjectFieldsInObject(obj, indexValue.Value, false) {
+					stack.Push(field.Body)
 				}
 			}
 		case *ast.Var:

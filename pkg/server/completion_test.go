@@ -520,6 +520,46 @@ func TestCompletion(t *testing.T) {
 						Detail:     "hello.to.the",
 						InsertText: "the",
 						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete local at root 3, import chain",
+			filename:        "testdata/local-at-root-3.jsonnet",
+			replaceString:   "hello2.the",
+			replaceByString: "hello2.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "the",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello2.the",
+						InsertText: "the",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "autocomplete local at root 4, import chain",
+			filename:        "testdata/local-at-root-4.jsonnet",
+			replaceString:   "hello3.world",
+			replaceByString: "hello3.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "world",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "hello3.world",
+						InsertText: "world",
+						LabelDetails: protocol.CompletionItemLabelDetails{
 							Description: "string",
 						},
 					},

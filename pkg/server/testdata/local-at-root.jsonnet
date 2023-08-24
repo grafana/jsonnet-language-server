@@ -5,7 +5,9 @@ local hello = {
   },
   hello: {
     to: {
-      the: 'world',
+      the: {
+        world: 'hello',
+      },
     },
   },
 };
