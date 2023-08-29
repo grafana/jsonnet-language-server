@@ -15,7 +15,6 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
-	sameFileOnly := false
 	switch {
 	case start == "super":
 		// Find the LHS desugared object of a binary node
@@ -36,7 +35,6 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	case start == "$":
-		sameFileOnly = true
 		foundDesugaredObjects = FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 	case strings.Contains(start, "."):
 		foundDesugaredObjects = FindTopLevelObjectsInFile(vm, start, "")
@@ -64,10 +62,8 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			tmpStack := nodestack.NewNodeStack(stack.From)
 			foundDesugaredObjects = FindTopLevelObjects(tmpStack, vm)
 		case *ast.Import:
-			if !sameFileOnly {
-				filename := bodyNode.File.Value
-				foundDesugaredObjects = FindTopLevelObjectsInFile(vm, filename, "")
-			}
+			filename := bodyNode.File.Value
+			foundDesugaredObjects = FindTopLevelObjectsInFile(vm, filename, "")
 
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
