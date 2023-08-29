@@ -87,8 +87,8 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 	for len(indexList) > 0 {
 		index := indexList[0]
 		indexList = indexList[1:]
-		partialMatchFields := partialMatchFields && len(indexList) == 0 // Only partial match on the last index. Others are considered complete
-		foundFields := findObjectFieldsInObjects(desugaredObjs, index, partialMatchFields)
+		partialMatchCurrentField := partialMatchFields && len(indexList) == 0 // Only partial match on the last index. Others are considered complete
+		foundFields := findObjectFieldsInObjects(desugaredObjs, index, partialMatchCurrentField)
 		desugaredObjs = nil
 		if len(foundFields) == 0 {
 			return nil, fmt.Errorf("field %s was not found in ast.DesugaredObject", index)
@@ -98,8 +98,8 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 				ranges = append(ranges, FieldToRange(*found))
 
 				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
-				// If partialMatchFields is true, we can continue to look for other fields
-				if !found.PlusSuper && !partialMatchFields {
+				// If partialMatchCurrentField is true, we can continue to look for other fields
+				if !found.PlusSuper && !partialMatchCurrentField {
 					break
 				}
 			}

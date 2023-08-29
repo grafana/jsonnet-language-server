@@ -566,6 +566,26 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "autocomplete fix doubled index bug",
+			filename:        "testdata/doubled-index-bug-3.jsonnet",
+			replaceString:   "a: g.hello",
+			replaceByString: "a: g.hello.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "to",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "g.hello.to",
+						InsertText: "to",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
