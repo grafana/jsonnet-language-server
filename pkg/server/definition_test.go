@@ -910,6 +910,22 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "test fix infinite recursion",
+		filename: "./testdata/goto-infinite-recursion-bug-1.jsonnet",
+		position: protocol.Position{Line: 2, Character: 26},
+		results: []definitionResult{{
+			targetFilename: "testdata/goto-infinite-recursion-bug-3.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 10},
+				End:   protocol.Position{Line: 5, Character: 36},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 5, Character: 10},
+				End:   protocol.Position{Line: 5, Character: 22},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {

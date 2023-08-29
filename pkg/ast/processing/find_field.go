@@ -15,7 +15,6 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
-	sameFileOnly := false
 	switch {
 	case start == "super":
 		// Find the LHS desugared object of a binary node
@@ -36,7 +35,6 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	case start == "$":
-		sameFileOnly = true
 		foundDesugaredObjects = FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
 	case strings.Contains(start, "."):
 		foundDesugaredObjects = FindTopLevelObjectsInFile(vm, start, "")
@@ -66,6 +64,7 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		case *ast.Import:
 			filename := bodyNode.File.Value
 			foundDesugaredObjects = FindTopLevelObjectsInFile(vm, filename, "")
+
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
@@ -80,10 +79,10 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 	}
 
-	return extractObjectRangesFromDesugaredObjs(stack, vm, foundDesugaredObjects, sameFileOnly, indexList, partialMatchFields)
+	return extractObjectRangesFromDesugaredObjs(vm, foundDesugaredObjects, indexList, partialMatchFields)
 }
 
-func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, sameFileOnly bool, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
+func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
 	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
@@ -135,10 +134,15 @@ func extractObjectRangesFromDesugaredObjs(stack *nodestack.NodeStack, vm *jsonne
 			case *ast.DesugaredObject:
 				desugaredObjs = append(desugaredObjs, fieldNode)
 			case *ast.Index:
-				additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
-				result, err := FindRangesFromIndexList(stack, additionalIndexList, vm, partialMatchFields)
-				if len(result) > 0 {
-					if !sameFileOnly || result[0].Filename == stack.From.Loc().FileName {
+				// if we're trying to find the a definition which is an index,
+				// we need to find it from itself, meaning that we need to create a stack
+				// from the index's target and search from there
+				rootNode, _, _ := vm.ImportAST("", fieldNode.LocRange.FileName)
+				stack, _ := FindNodeByPosition(rootNode, fieldNode.Target.Loc().Begin)
+				if stack != nil {
+					additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
+					result, _ := FindRangesFromIndexList(stack, additionalIndexList, vm, partialMatchFields)
+					if len(result) > 0 {
 						return result, err
 					}
 				}
