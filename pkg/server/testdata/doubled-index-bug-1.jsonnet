@@ -1,0 +1,7 @@
+{
+  hello: {
+    to: {
+      the: 'world',
+    },
+  },
+}
