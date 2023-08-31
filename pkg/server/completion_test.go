@@ -568,7 +568,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete fix doubled index bug",
-			filename:        "testdata/doubled-index-bug-3.jsonnet",
+			filename:        "testdata/doubled-index-bug-4.jsonnet",
 			replaceString:   "a: g.hello",
 			replaceByString: "a: g.hello.",
 			expected: protocol.CompletionList{
