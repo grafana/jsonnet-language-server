@@ -18,6 +18,11 @@
  (make-lsp-client
   :new-connection (lsp-stdio-connection (lambda () lsp-jsonnet-executable))
   :activation-fn (lsp-activate-on "jsonnet")
+  :initialized-fn (lambda (workspace)
+                    (with-lsp-workspace workspace
+                      (lsp--set-configuration
+                       ;; TODO: jsonnet-language-server settings should use a prefix
+                       (ht-get (lsp-configuration-section "jsonnet") "jsonnet"))))
   :server-id 'jsonnet))
 
 ;; Start the language server whenever jsonnet-mode is used.
