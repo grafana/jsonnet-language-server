@@ -161,6 +161,14 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 	return ranges, nil
 }
 
+func flattenBinary(node ast.Node) []ast.Node {
+	binary, nodeIsBinary := node.(*ast.Binary)
+	if !nodeIsBinary {
+		return []ast.Node{node}
+	}
+	return append(flattenBinary(binary.Right), flattenBinary(binary.Left)...)
+}
+
 // unpackFieldNodes extracts nodes from fields
 // - Binary nodes. A field could be either in the left or right side of the binary
 // - Self nodes. We want the object self refers to, not the self node itself
@@ -182,8 +190,7 @@ func unpackFieldNodes(vm *jsonnet.VM, fields []*ast.DesugaredObjectField) ([]ast
 				}
 			}
 		case *ast.Binary:
-			fieldNodes = append(fieldNodes, fieldNode.Right)
-			fieldNodes = append(fieldNodes, fieldNode.Left)
+			fieldNodes = append(fieldNodes, flattenBinary(fieldNode)...)
 		default:
 			fieldNodes = append(fieldNodes, fieldNode)
 		}
