@@ -2,7 +2,7 @@ local myfunc(arg1, arg2) = {
   arg1: arg1,
   arg2: arg2,
 
-  builderPattern(arg3):: self {
+  builderPattern(arg3):: self + {
     arg3: arg3,
   },
 };
