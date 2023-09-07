@@ -162,10 +162,10 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 }
 
 func flattenBinary(node ast.Node) []ast.Node {
-	if _, nodeIsBinary := node.(*ast.Binary); !nodeIsBinary {
+	binary, nodeIsBinary := node.(*ast.Binary)
+	if !nodeIsBinary {
 		return []ast.Node{node}
 	}
-	binary := node.(*ast.Binary)
 	return append(flattenBinary(binary.Right), flattenBinary(binary.Left)...)
 }
 
