@@ -1,4 +1,4 @@
-(import 'goto-overrides-base.jsonnet')  // 1. Initial definition from base file
+(import 'goto-overrides-base.jsonnet') +  // 1. Initial definition from base file
 {  // 2. Override nested string
   a+: {
     hello: 'world',

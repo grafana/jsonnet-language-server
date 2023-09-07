@@ -9,10 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Format
-        uses: docker://bitnami/jsonnet:latest
+      - uses: actions/setup-go@v2
         with:
-          entrypoint: ./scripts/jsonnetfmt.sh
+          go-version: 1.19
+      - name: Format
+        run: |
+          go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
+          ./scripts/jsonnetfmt.sh
       - run: |
           STATUS="$(git status --porcelain)"
           test -z "${STATUS}" || {
