@@ -3,6 +3,7 @@ package server
 import (
 	_ "embed"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
@@ -926,6 +927,22 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "grafonnet: eval variable selection options",
+		filename: "./testdata/grafonnet/eval-variable-options.jsonnet",
+		position: protocol.Position{Line: 5, Character: 54},
+		results: []definitionResult{{
+			targetFilename: "testdata/grafonnet/vendor/github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/custom/dashboard/variable.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 101, Character: 12},
+				End:   protocol.Position{Line: 103, Character: 13},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 101, Character: 12},
+				End:   protocol.Position{Line: 101, Character: 21},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
@@ -941,7 +958,7 @@ func TestDefinition(t *testing.T) {
 			}
 
 			server := NewServer("any", "test version", nil, Configuration{
-				JPaths: []string{"testdata"},
+				JPaths: []string{"testdata", filepath.Join(filepath.Dir(tc.filename), "vendor")},
 			})
 			serverOpenTestFile(t, server, tc.filename)
 			response, err := server.definitionLink(params)
