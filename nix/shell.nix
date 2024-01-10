@@ -7,6 +7,7 @@ mkShell {
     go_1_19
     golangci-lint
     gopls
+    jsonnet-language-server
     nix-prefetch
     snitch
   ];

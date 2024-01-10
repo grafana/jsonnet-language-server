@@ -11,7 +11,7 @@ buildGoModule rec {
     rev = version;
     sha256 = "sha256-bflHSWN/BH4TSTTP4M3DldVwkV8MUSVCO15eYJTtTi0=";
   };
-  vendorSha256 = "sha256-QAbxld0UY7jO9ommX7VrPKOWEiFPmD/xw02EZL6628A=";
+  vendorHash = "sha256-QAbxld0UY7jO9ommX7VrPKOWEiFPmD/xw02EZL6628A=";
 
   meta = with lib; {
     description = "Language agnostic tool that collects TODOs in the source code and reports them as Issues";
