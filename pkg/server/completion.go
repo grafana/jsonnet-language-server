@@ -251,7 +251,7 @@ func IsValidIdentifier(str string) bool {
 	}
 	// Ignore tokens for now, we should ask upstream to make the formatter a public package
 	// so we can use go-jsonnet/internal/formatter/pretty_field_names.go directly.
-	//return getTokenKindFromID(str) == tokenIdentifier
+	// return getTokenKindFromID(str) == tokenIdentifier
 	return true
 }
 
