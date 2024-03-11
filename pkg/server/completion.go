@@ -189,8 +189,10 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 	insertText := formatLabel("['" + label + "']" + paramsString)
 
 	concat := ""
+	characterStartPosition := position.Character - 1
 	if prefix != "" && !strings.HasPrefix(insertText, "[") {
 		concat = "."
+		characterStartPosition = position.Character
 	}
 	detail := prefix + concat + insertText
 
@@ -206,11 +208,12 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 
 	// Remove leading `.` character when quoting label
 	if !mustNotQuoteLabel {
+		log.Print(len(prefix))
 		item.TextEdit = &protocol.TextEdit{
 			Range: protocol.Range{
 				Start: protocol.Position{
 					Line:      position.Line,
-					Character: position.Character - 1,
+					Character: characterStartPosition,
 				},
 				End: protocol.Position{
 					Line:      position.Line,
