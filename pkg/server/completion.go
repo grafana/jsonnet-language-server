@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
@@ -163,29 +164,35 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 	return items
 }
 
+func formatLabel(str string) string {
+	interStr := "interimPath" + str
+	fmtStr, _ := formatter.Format("", interStr, formatter.DefaultOptions())
+	ret, _ := strings.CutPrefix(fmtStr, "interimPath")
+	ret, _ = strings.CutPrefix(ret, ".")
+	ret = strings.TrimRight(ret, "\n")
+	return ret
+}
+
 func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind, body ast.Node, position protocol.Position) protocol.CompletionItem {
 	mustNotQuoteLabel := IsValidIdentifier(label)
 
-	insertText := label
-	detail := label
-	if prefix != "" {
-		detail = prefix + "." + insertText
-	}
-	if !mustNotQuoteLabel {
-		insertText = "['" + label + "']"
-		detail = prefix + insertText
-	}
-
+	paramsString := ""
 	if asFunc, ok := body.(*ast.Function); ok {
 		kind = protocol.FunctionCompletion
 		params := []string{}
 		for _, param := range asFunc.Parameters {
 			params = append(params, string(param.Name))
 		}
-		paramsString := "(" + strings.Join(params, ", ") + ")"
-		detail += paramsString
-		insertText += paramsString
+		paramsString = "(" + strings.Join(params, ", ") + ")"
 	}
+
+	insertText := formatLabel("['" + label + "']" + paramsString)
+
+	concat := ""
+	if prefix != "" && !strings.HasPrefix(insertText, "[") {
+		concat = "."
+	}
+	detail := prefix + concat + insertText
 
 	item := protocol.CompletionItem{
 		Label:  label,
