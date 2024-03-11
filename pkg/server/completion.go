@@ -43,7 +43,7 @@ func (s *Server) Completion(_ context.Context, params *protocol.CompletionParams
 
 	vm := s.getVM(doc.item.URI.SpanURI().Filename())
 
-	items := s.completionFromStack(line, searchStack, vm)
+	items := s.completionFromStack(line, searchStack, vm, params.Position)
 	return &protocol.CompletionList{IsIncomplete: false, Items: items}, nil
 }
 
@@ -57,7 +57,7 @@ func getCompletionLine(fileContent string, position protocol.Position) string {
 	return line
 }
 
-func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM) []protocol.CompletionItem {
+func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM, position protocol.Position) []protocol.CompletionItem {
 	lineWords := strings.Split(line, " ")
 	lastWord := lineWords[len(lineWords)-1]
 	lastWord = strings.TrimRight(lastWord, ",;") // Ignore trailing commas and semicolons, they can present when someone is modifying an existing line
@@ -76,7 +76,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 						continue
 					}
 
-					items = append(items, createCompletionItem(label, label, protocol.VariableCompletion, bind.Body))
+					items = append(items, createCompletionItem(label, "", protocol.VariableCompletion, bind.Body, position))
 				}
 			}
 		}
@@ -90,7 +90,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	}
 
 	completionPrefix := strings.Join(indexes[:len(indexes)-1], ".")
-	return createCompletionItemsFromRanges(ranges, completionPrefix, line)
+	return createCompletionItemsFromRanges(ranges, completionPrefix, line, position)
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
@@ -132,7 +132,7 @@ func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
 	return items
 }
 
-func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string) []protocol.CompletionItem {
+func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string, position protocol.Position) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 	labels := make(map[string]bool)
 
@@ -152,7 +152,7 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 			continue
 		}
 
-		items = append(items, createCompletionItem(label, completionPrefix+"."+label, protocol.FieldCompletion, field.Node))
+		items = append(items, createCompletionItem(label, completionPrefix, protocol.FieldCompletion, field.Node, position))
 		labels[label] = true
 	}
 
@@ -163,8 +163,19 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 	return items
 }
 
-func createCompletionItem(label, detail string, kind protocol.CompletionItemKind, body ast.Node) protocol.CompletionItem {
+func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind, body ast.Node, position protocol.Position) protocol.CompletionItem {
+	mustNotQuoteLabel := IsValidIdentifier(label)
+
 	insertText := label
+	detail := label
+	if prefix != "" {
+		detail = prefix + "." + insertText
+	}
+	if !mustNotQuoteLabel {
+		insertText = "['" + label + "']"
+		detail = prefix + insertText
+	}
+
 	if asFunc, ok := body.(*ast.Function); ok {
 		kind = protocol.FunctionCompletion
 		params := []string{}
@@ -176,7 +187,7 @@ func createCompletionItem(label, detail string, kind protocol.CompletionItemKind
 		insertText += paramsString
 	}
 
-	return protocol.CompletionItem{
+	item := protocol.CompletionItem{
 		Label:  label,
 		Detail: detail,
 		Kind:   kind,
@@ -185,7 +196,66 @@ func createCompletionItem(label, detail string, kind protocol.CompletionItemKind
 		},
 		InsertText: insertText,
 	}
+
+	// Remove leading `.` character when quoting label
+	if !mustNotQuoteLabel {
+		item.TextEdit = &protocol.TextEdit{
+			Range: protocol.Range{
+				Start: protocol.Position{
+					Line:      position.Line,
+					Character: position.Character - 1,
+				},
+				End: protocol.Position{
+					Line:      position.Line,
+					Character: position.Character,
+				},
+			},
+			NewText: insertText,
+		}
+	}
+
+	return item
 }
+
+// Start - Copied from go-jsonnet/internal/parser/lexer.go
+
+func isUpper(r rune) bool {
+	return r >= 'A' && r <= 'Z'
+}
+func isLower(r rune) bool {
+	return r >= 'a' && r <= 'z'
+}
+func isNumber(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+func isIdentifierFirst(r rune) bool {
+	return isUpper(r) || isLower(r) || r == '_'
+}
+func isIdentifier(r rune) bool {
+	return isIdentifierFirst(r) || isNumber(r)
+}
+func IsValidIdentifier(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
+	for i, r := range str {
+		if i == 0 {
+			if !isIdentifierFirst(r) {
+				return false
+			}
+		} else {
+			if !isIdentifier(r) {
+				return false
+			}
+		}
+	}
+	// Ignore tokens for now, we should ask upstream to make the formatter a public package
+	// so we can use go-jsonnet/internal/formatter/pretty_field_names.go directly.
+	// return getTokenKindFromID(str) == tokenIdentifier
+	return true
+}
+
+// End - Copied from go-jsonnet/internal/parser/lexer.go
 
 func typeToString(t ast.Node) string {
 	switch t.(type) {

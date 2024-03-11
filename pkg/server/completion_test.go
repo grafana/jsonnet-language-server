@@ -586,6 +586,83 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "quote label",
+			filename:        "testdata/quote_label.jsonnet",
+			replaceString:   "lib",
+			replaceByString: "lib.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "1num",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "lib['1num']",
+						InsertText: "['1num']",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+						TextEdit: &protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      0,
+									Character: 9,
+								},
+								End: protocol.Position{
+									Line:      0,
+									Character: 10,
+								},
+							},
+							NewText: "['1num']",
+						},
+					},
+					{
+						Label:      "abc#func",
+						Kind:       protocol.FunctionCompletion,
+						Detail:     "lib['abc#func'](param)",
+						InsertText: "['abc#func'](param)",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "function",
+						},
+						TextEdit: &protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      0,
+									Character: 9,
+								},
+								End: protocol.Position{
+									Line:      0,
+									Character: 10,
+								},
+							},
+							NewText: "['abc#func'](param)",
+						},
+					},
+					{
+						Label:      "abc#var",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "lib['abc#var']",
+						InsertText: "['abc#var']",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+						TextEdit: &protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      0,
+									Character: 9,
+								},
+								End: protocol.Position{
+									Line:      0,
+									Character: 10,
+								},
+							},
+							NewText: "['abc#var']",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
