@@ -164,15 +164,14 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 }
 
 func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind, body ast.Node, position protocol.Position) protocol.CompletionItem {
-	runes := []rune(label)
-	mustQuoteLabel := !(hasOnlyLetter(runes[0:1]) && len(runes) > 1 && hasOnlyLettersAndNumber(runes[1:]))
+	mustNotQuoteLabel := IsValidIdentifier(label)
 
 	insertText := label
 	detail := label
 	if prefix != "" {
 		detail = prefix + "." + insertText
 	}
-	if mustQuoteLabel {
+	if !mustNotQuoteLabel {
 		insertText = "['" + label + "']"
 		detail = prefix + insertText
 	}
@@ -199,7 +198,7 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 	}
 
 	// Remove leading `.` character when quoting label
-	if mustQuoteLabel {
+	if !mustNotQuoteLabel {
 		item.TextEdit = &protocol.TextEdit{
 			Range: protocol.Range{
 				Start: protocol.Position{
@@ -218,22 +217,45 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 	return item
 }
 
-func hasOnlyLetter(s []rune) bool {
-	for _, c := range s {
-		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') {
-			return false
+// Start - Copied from go-jsonnet/internal/parser/lexer.go
+
+func isUpper(r rune) bool {
+	return r >= 'A' && r <= 'Z'
+}
+func isLower(r rune) bool {
+	return r >= 'a' && r <= 'z'
+}
+func isNumber(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+func isIdentifierFirst(r rune) bool {
+	return isUpper(r) || isLower(r) || r == '_'
+}
+func isIdentifier(r rune) bool {
+	return isIdentifierFirst(r) || isNumber(r)
+}
+func IsValidIdentifier(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
+	for i, r := range str {
+		if i == 0 {
+			if !isIdentifierFirst(r) {
+				return false
+			}
+		} else {
+			if !isIdentifier(r) {
+				return false
+			}
 		}
 	}
+	// Ignore tokens for now, we should ask upstream to make the formatter a public package
+	// so we can use go-jsonnet/internal/formatter/pretty_field_names.go directly.
+	//return getTokenKindFromID(str) == tokenIdentifier
 	return true
 }
-func hasOnlyLettersAndNumber(s []rune) bool {
-	for _, c := range s {
-		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') {
-			return false
-		}
-	}
-	return true
-}
+
+// End - Copied from go-jsonnet/internal/parser/lexer.go
 
 func typeToString(t ast.Node) string {
 	switch t.(type) {
