@@ -4,7 +4,7 @@ with pkgs;
 mkShell {
   buildInputs = [
     gnused
-    go_1_19
+    go_1_22
     golangci-lint
     gopls
     jsonnet-language-server
