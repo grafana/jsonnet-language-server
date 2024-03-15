@@ -20,8 +20,9 @@ type Configuration struct {
 	ExtCode               map[string]string
 	FormattingOptions     formatter.Options
 
-	EnableEvalDiagnostics bool
-	EnableLintDiagnostics bool
+	EnableEvalDiagnostics     bool
+	EnableLintDiagnostics     bool
+	ShowDocstringInCompletion bool
 }
 
 func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidChangeConfigurationParams) error {
@@ -69,6 +70,12 @@ func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidC
 				s.configuration.EnableLintDiagnostics = boolVal
 			} else {
 				return fmt.Errorf("%w: unsupported settings value for enable_lint_diagnostics. expected boolean. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
+		case "show_docstring_in_completion":
+			if boolVal, ok := sv.(bool); ok {
+				s.configuration.ShowDocstringInCompletion = boolVal
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for show_docstring_in_completion. expected boolean. got: %T", jsonrpc2.ErrInvalidParams, sv)
 			}
 		case "ext_vars":
 			newVars, err := s.parseExtVars(sv)

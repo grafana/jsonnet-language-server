@@ -90,7 +90,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	}
 
 	completionPrefix := strings.Join(indexes[:len(indexes)-1], ".")
-	return createCompletionItemsFromRanges(ranges, completionPrefix, line, position)
+	return s.createCompletionItemsFromRanges(ranges, completionPrefix, line, position)
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
@@ -132,7 +132,7 @@ func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
 	return items
 }
 
-func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string, position protocol.Position) []protocol.CompletionItem {
+func (s *Server) createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string, position protocol.Position) []protocol.CompletionItem {
 	var items []protocol.CompletionItem
 	labels := make(map[string]bool)
 
@@ -144,6 +144,10 @@ func createCompletionItemsFromRanges(ranges []processing.ObjectRange, completion
 		}
 
 		if labels[label] {
+			continue
+		}
+
+		if !s.configuration.ShowDocstringInCompletion && strings.HasPrefix(label, "#") {
 			continue
 		}
 
