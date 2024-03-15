@@ -55,8 +55,9 @@ Environment variables:
 
 func main() {
 	config := server.Configuration{
-		JPaths:            filepath.SplitList(os.Getenv("JSONNET_PATH")),
-		FormattingOptions: formatter.DefaultOptions(),
+		JPaths:                    filepath.SplitList(os.Getenv("JSONNET_PATH")),
+		FormattingOptions:         formatter.DefaultOptions(),
+		ShowDocstringInCompletion: false,
 	}
 	log.SetLevel(log.InfoLevel)
 
@@ -82,6 +83,8 @@ func main() {
 			config.EnableLintDiagnostics = true
 		case "--eval-diags":
 			config.EnableEvalDiagnostics = true
+		case "--show-docstrings":
+			config.ShowDocstringInCompletion = true
 		}
 	}
 
