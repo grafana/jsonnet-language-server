@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/google/go-jsonnet/formatter"
 	"github.com/grafana/jsonnet-language-server/pkg/ast/processing"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
@@ -167,29 +168,38 @@ func (s *Server) createCompletionItemsFromRanges(ranges []processing.ObjectRange
 	return items
 }
 
+func formatLabel(str string) string {
+	interStr := "interimPath" + str
+	fmtStr, _ := formatter.Format("", interStr, formatter.DefaultOptions())
+	ret, _ := strings.CutPrefix(fmtStr, "interimPath")
+	ret, _ = strings.CutPrefix(ret, ".")
+	ret = strings.TrimRight(ret, "\n")
+	return ret
+}
+
 func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind, body ast.Node, position protocol.Position) protocol.CompletionItem {
-	mustNotQuoteLabel := IsValidIdentifier(label)
-
-	insertText := label
-	detail := label
-	if prefix != "" {
-		detail = prefix + "." + insertText
-	}
-	if !mustNotQuoteLabel {
-		insertText = "['" + label + "']"
-		detail = prefix + insertText
-	}
-
+	paramsString := ""
 	if asFunc, ok := body.(*ast.Function); ok {
 		kind = protocol.FunctionCompletion
 		params := []string{}
 		for _, param := range asFunc.Parameters {
 			params = append(params, string(param.Name))
 		}
-		paramsString := "(" + strings.Join(params, ", ") + ")"
-		detail += paramsString
-		insertText += paramsString
+		paramsString = "(" + strings.Join(params, ", ") + ")"
 	}
+
+	insertText := formatLabel("['" + label + "']" + paramsString)
+
+	concat := ""
+	characterStartPosition := position.Character - 1
+	if prefix == "" {
+		characterStartPosition = position.Character
+	}
+	if prefix != "" && !strings.HasPrefix(insertText, "[") {
+		concat = "."
+		characterStartPosition = position.Character
+	}
+	detail := prefix + concat + insertText
 
 	item := protocol.CompletionItem{
 		Label:  label,
@@ -201,13 +211,12 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 		InsertText: insertText,
 	}
 
-	// Remove leading `.` character when quoting label
-	if !mustNotQuoteLabel {
+	if strings.HasPrefix(insertText, "[") {
 		item.TextEdit = &protocol.TextEdit{
 			Range: protocol.Range{
 				Start: protocol.Position{
 					Line:      position.Line,
-					Character: position.Character - 1,
+					Character: characterStartPosition,
 				},
 				End: protocol.Position{
 					Line:      position.Line,
@@ -220,46 +229,6 @@ func createCompletionItem(label, prefix string, kind protocol.CompletionItemKind
 
 	return item
 }
-
-// Start - Copied from go-jsonnet/internal/parser/lexer.go
-
-func isUpper(r rune) bool {
-	return r >= 'A' && r <= 'Z'
-}
-func isLower(r rune) bool {
-	return r >= 'a' && r <= 'z'
-}
-func isNumber(r rune) bool {
-	return r >= '0' && r <= '9'
-}
-func isIdentifierFirst(r rune) bool {
-	return isUpper(r) || isLower(r) || r == '_'
-}
-func isIdentifier(r rune) bool {
-	return isIdentifierFirst(r) || isNumber(r)
-}
-func IsValidIdentifier(str string) bool {
-	if len(str) == 0 {
-		return false
-	}
-	for i, r := range str {
-		if i == 0 {
-			if !isIdentifierFirst(r) {
-				return false
-			}
-		} else {
-			if !isIdentifier(r) {
-				return false
-			}
-		}
-	}
-	// Ignore tokens for now, we should ask upstream to make the formatter a public package
-	// so we can use go-jsonnet/internal/formatter/pretty_field_names.go directly.
-	// return getTokenKindFromID(str) == tokenIdentifier
-	return true
-}
-
-// End - Copied from go-jsonnet/internal/parser/lexer.go
 
 func typeToString(t ast.Node) string {
 	switch t.(type) {
