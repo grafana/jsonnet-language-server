@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-jsonnet/ast"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
-	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet"
+	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet/implementations/goimpl"
 	"github.com/grafana/tanka/pkg/jsonnet/jpath"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
@@ -53,10 +53,7 @@ func (s *Server) getVM(path string) *jsonnet.VM {
 			// nolint: gocritic
 			jpath = append(s.configuration.JPaths, filepath.Dir(path))
 		}
-		opts := tankaJsonnet.Opts{
-			ImportPaths: jpath,
-		}
-		vm = tankaJsonnet.MakeVM(opts)
+		vm = tankaJsonnet.MakeRawVM(jpath, nil, nil, 0)
 	} else {
 		// nolint: gocritic
 		jpath := append(s.configuration.JPaths, filepath.Dir(path))
