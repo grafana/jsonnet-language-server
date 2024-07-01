@@ -700,6 +700,15 @@ func TestCompletion(t *testing.T) {
 							Description: "object",
 						},
 					},
+					{
+						Label:      "step",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "newjob.step",
+						InsertText: "step",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
 				},
 			},
 		},

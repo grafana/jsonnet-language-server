@@ -74,6 +74,9 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
 				foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
 			}
+		case *ast.Binary:
+			tmpStack := nodestack.NewNodeStack(bodyNode)
+			foundDesugaredObjects = FindTopLevelObjects(tmpStack, vm)
 		case *ast.Var:
 			varReference, err := FindVarReference(bodyNode, vm)
 			if err != nil {
