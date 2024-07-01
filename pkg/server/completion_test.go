@@ -663,6 +663,55 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "local assigned",
+			filename:        "testdata/local_reassign.jsonnet",
+			replaceString:   "a: newjob",
+			replaceByString: "a: job.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "steps",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "job.steps",
+						InsertText: "steps",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "local reassigned",
+			filename:        "testdata/local_reassign.jsonnet",
+			replaceString:   "a: newjob",
+			replaceByString: "a: newjob.",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "steps",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "newjob.steps",
+						InsertText: "steps",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+					{
+						Label:      "step",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "newjob.step",
+						InsertText: "step",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "object",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
