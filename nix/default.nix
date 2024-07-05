@@ -5,9 +5,9 @@ buildGoModule rec {
   pname = "jsonnet-language-server";
   version = "0.13.1";
 
-  ldflags = ''
-    -X main.version=${version}
-  '';
+  ldflags = [
+    "-X main.version=${version}"
+  ];
   src = lib.cleanSource ../.;
   vendorHash = "sha256-+9Eh40kkyZc9mS4m6BqK5PweFRUA0iWgsG/h2jZJr5w=";
 

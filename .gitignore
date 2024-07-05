@@ -1,3 +1,4 @@
 /.direnv/
 /flake-profile*
 jsonnet-language-server
+result
