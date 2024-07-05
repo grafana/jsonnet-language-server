@@ -14,7 +14,7 @@ buildGoModule rec {
   meta = with lib; {
     description = "A Language Server Protocol server for Jsonnet";
     homepage = "https://github.com/grafana/jsonnet-language-server";
-    license = licenses.agpl3;
+    license = licenses.agpl3Only;
     maintainers = with maintainers; [ jdbaldry trevorwhitney ];
   };
 }
