@@ -943,6 +943,36 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto assert local var",
+		filename: "testdata/goto-assert-var.jsonnet",
+		position: protocol.Position{Line: 3, Character: 11},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 8},
+				End:   protocol.Position{Line: 1, Character: 19},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 8},
+				End:   protocol.Position{Line: 1, Character: 12},
+			},
+		}},
+	},
+	{
+		name:     "goto assert self var",
+		filename: "testdata/goto-assert-var.jsonnet",
+		position: protocol.Position{Line: 3, Character: 23},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 16},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 2, Character: 2},
+				End:   protocol.Position{Line: 2, Character: 6},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {

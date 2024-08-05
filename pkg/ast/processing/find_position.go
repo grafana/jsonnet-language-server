@@ -57,6 +57,9 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 			for _, local := range curr.Locals {
 				stack.Push(local.Body)
 			}
+			for _, assert := range curr.Asserts {
+				stack.Push(assert)
+			}
 		case *ast.Binary:
 			stack.Push(curr.Left)
 			stack.Push(curr.Right)
@@ -94,6 +97,9 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 			stack.Push(curr.Index)
 		case *ast.Unary:
 			stack.Push(curr.Expr)
+		case *ast.Assert:
+			stack.Push(curr.Cond)
+			stack.Push(curr.Message)
 		}
 	}
 	return searchStack.ReorderDesugaredObjects(), nil
