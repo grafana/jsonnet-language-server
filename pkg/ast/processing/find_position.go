@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/go-jsonnet/ast"
+	"github.com/google/go-jsonnet/toolutils"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 )
 
@@ -34,14 +35,8 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 		} else if curr.Loc().End.IsSet() {
 			continue
 		}
+
 		switch curr := curr.(type) {
-		case *ast.Local:
-			for _, bind := range curr.Binds {
-				stack.Push(bind.Body)
-			}
-			if curr.Body != nil {
-				stack.Push(curr.Body)
-			}
 		case *ast.DesugaredObject:
 			for _, field := range curr.Fields {
 				body := field.Body
@@ -60,46 +55,10 @@ func FindNodeByPosition(node ast.Node, location ast.Location) (*nodestack.NodeSt
 			for _, assert := range curr.Asserts {
 				stack.Push(assert)
 			}
-		case *ast.Binary:
-			stack.Push(curr.Left)
-			stack.Push(curr.Right)
-		case *ast.Array:
-			for _, element := range curr.Elements {
-				stack.Push(element.Expr)
+		default:
+			for _, c := range toolutils.Children(curr) {
+				stack.Push(c)
 			}
-		case *ast.Apply:
-			for _, posArg := range curr.Arguments.Positional {
-				stack.Push(posArg.Expr)
-			}
-			for _, namedArg := range curr.Arguments.Named {
-				stack.Push(namedArg.Arg)
-			}
-			stack.Push(curr.Target)
-		case *ast.Conditional:
-			stack.Push(curr.Cond)
-			stack.Push(curr.BranchTrue)
-			stack.Push(curr.BranchFalse)
-		case *ast.Error:
-			stack.Push(curr.Expr)
-		case *ast.Function:
-			for _, param := range curr.Parameters {
-				if param.DefaultArg != nil {
-					stack.Push(param.DefaultArg)
-				}
-			}
-			stack.Push(curr.Body)
-		case *ast.Index:
-			stack.Push(curr.Target)
-			stack.Push(curr.Index)
-		case *ast.InSuper:
-			stack.Push(curr.Index)
-		case *ast.SuperIndex:
-			stack.Push(curr.Index)
-		case *ast.Unary:
-			stack.Push(curr.Expr)
-		case *ast.Assert:
-			stack.Push(curr.Cond)
-			stack.Push(curr.Message)
 		}
 	}
 	return searchStack.ReorderDesugaredObjects(), nil
