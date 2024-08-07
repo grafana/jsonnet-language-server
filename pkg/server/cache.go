@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/google/go-jsonnet/ast"
@@ -43,8 +45,6 @@ type cache struct {
 }
 
 // put adds or replaces a document in the cache.
-// Documents are only replaced if the new document version is greater than the currently
-// cached version.
 func (c *cache) put(new *document) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -71,4 +71,50 @@ func (c *cache) get(uri protocol.DocumentURI) (*document, error) {
 	}
 
 	return doc, nil
+}
+
+func (c *cache) getContents(uri protocol.DocumentURI, position protocol.Range) (string, error) {
+	text := ""
+	doc, err := c.get(uri)
+	if err == nil {
+		text = doc.item.Text
+	} else {
+		// Read the file from disk (TODO: cache this)
+		bytes, err := os.ReadFile(uri.SpanURI().Filename())
+		if err != nil {
+			return "", err
+		}
+		text = string(bytes)
+	}
+
+	lines := strings.Split(text, "\n")
+	if int(position.Start.Line) >= len(lines) {
+		return "", fmt.Errorf("line %d out of range", position.Start.Line)
+	}
+	if int(position.Start.Character) >= len(lines[position.Start.Line]) {
+		return "", fmt.Errorf("character %d out of range", position.Start.Character)
+	}
+	if int(position.End.Line) >= len(lines) {
+		return "", fmt.Errorf("line %d out of range", position.End.Line)
+	}
+	if int(position.End.Character) >= len(lines[position.End.Line]) {
+		return "", fmt.Errorf("character %d out of range", position.End.Character)
+	}
+
+	contentBuilder := strings.Builder{}
+	for i := position.Start.Line; i <= position.End.Line; i++ {
+		switch i {
+		case position.Start.Line:
+			contentBuilder.WriteString(lines[i][position.Start.Character:])
+		case position.End.Line:
+			contentBuilder.WriteString(lines[i][:position.End.Character])
+		default:
+			contentBuilder.WriteString(lines[i])
+		}
+		if i != position.End.Line {
+			contentBuilder.WriteRune('\n')
+		}
+	}
+
+	return contentBuilder.String(), nil
 }
