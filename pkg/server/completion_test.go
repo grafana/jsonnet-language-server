@@ -175,7 +175,7 @@ func TestCompletion(t *testing.T) {
 			replaceByString: "self.h",
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
-				Items:        nil,
+				Items:        []protocol.CompletionItem{},
 			},
 		},
 		{
@@ -257,7 +257,7 @@ func TestCompletion(t *testing.T) {
 			replaceByString: "bar: bad",
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
-				Items:        nil,
+				Items:        []protocol.CompletionItem{},
 			},
 		},
 		{
@@ -483,7 +483,7 @@ func TestCompletion(t *testing.T) {
 			replaceByString: "hello.hell.",
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
-				Items:        nil,
+				Items:        []protocol.CompletionItem{},
 			},
 		},
 		{
