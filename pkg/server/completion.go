@@ -59,7 +59,7 @@ func getCompletionLine(fileContent string, position protocol.Position) string {
 }
 
 func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm *jsonnet.VM, position protocol.Position) []protocol.CompletionItem {
-	lineWords := strings.Split(line, " ")
+	lineWords := splitWords(line)
 	lastWord := lineWords[len(lineWords)-1]
 	lastWord = strings.TrimRight(lastWord, ",;") // Ignore trailing commas and semicolons, they can present when someone is modifying an existing line
 
@@ -250,6 +250,43 @@ func typeToString(t ast.Node) string {
 		return "import"
 	case *ast.Index:
 		return "object field"
+	case *ast.Var:
+		return "variable"
 	}
 	return reflect.TypeOf(t).String()
+}
+
+// splitWords splits the input string into words, respecting spaces within parentheses.
+func splitWords(input string) []string {
+	var words []string
+	var currentWord strings.Builder
+	var insideParentheses bool
+
+	for _, char := range input {
+		switch char {
+		case ' ':
+			if insideParentheses {
+				currentWord.WriteRune(char)
+			} else if currentWord.Len() > 0 {
+				words = append(words, currentWord.String())
+				currentWord.Reset()
+			}
+		case '(':
+			insideParentheses = true
+			currentWord.WriteRune(char)
+		case ')':
+			currentWord.WriteRune(char)
+			insideParentheses = false
+		default:
+			currentWord.WriteRune(char)
+		}
+	}
+
+	if currentWord.Len() > 0 {
+		words = append(words, currentWord.String())
+	} else if strings.HasSuffix(input, " ") {
+		words = append(words, "")
+	}
+
+	return words
 }

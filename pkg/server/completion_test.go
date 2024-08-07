@@ -663,6 +663,35 @@ func TestCompletion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "complete attribute from function",
+			filename:        "testdata/goto-functions.libsonnet",
+			replaceString:   "test: myfunc(arg1, arg2)",
+			replaceByString: "test: myfunc(arg1, arg2).",
+			expected: protocol.CompletionList{
+				IsIncomplete: false,
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "atb1",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "myfunc(arg1, arg2).atb1",
+						InsertText: "atb1",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "variable",
+						},
+					},
+					{
+						Label:      "atb2",
+						Kind:       protocol.FieldCompletion,
+						Detail:     "myfunc(arg1, arg2).atb2",
+						InsertText: "atb2",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "variable",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -1,6 +1,6 @@
 local myfunc(arg1, arg2) = {
-  arg1: arg1,
-  arg2: arg2,
+  atb1: arg1,
+  atb2: arg2,
 };
 
 {
