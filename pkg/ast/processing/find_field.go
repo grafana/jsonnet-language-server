@@ -40,6 +40,11 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		foundDesugaredObjects = FindTopLevelObjectsInFile(vm, start, "")
 
 	default:
+		if strings.Count(start, "(") == 1 && strings.Count(start, ")") == 1 {
+			// If the index is a function call, we need to find the function definition
+			// We can ignore the arguments. We'll only consider static attributes from the function's body
+			start = strings.Split(start, "(")[0]
+		}
 		// Get ast.DesugaredObject at variable definition by getting bind then setting ast.DesugaredObject
 		bind := FindBindByIDViaStack(stack, ast.Identifier(start))
 		if bind == nil {
