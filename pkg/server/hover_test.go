@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
@@ -66,7 +67,7 @@ var (
 	}
 )
 
-func TestHover(t *testing.T) {
+func TestHoverOnStdLib(t *testing.T) {
 	logrus.SetOutput(io.Discard)
 
 	var testCases = []struct {
@@ -238,6 +239,97 @@ func TestHover(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestHover(t *testing.T) {
+	logrus.SetOutput(io.Discard)
+
+	testCases := []struct {
+		name            string
+		filename        string
+		position        protocol.Position
+		expectedContent protocol.Hover
+	}{
+		{
+			name:     "hover on nested attribute",
+			filename: "testdata/goto-indexes.jsonnet",
+			position: protocol.Position{Line: 9, Character: 16},
+			expectedContent: protocol.Hover{
+				Contents: protocol.MarkupContent{
+					Kind:  protocol.Markdown,
+					Value: "```jsonnet\nbar: 'innerfoo',\n```\n",
+				},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 9, Character: 5},
+					End:   protocol.Position{Line: 9, Character: 18},
+				},
+			},
+		},
+		{
+			name:     "hover on multi-line string",
+			filename: "testdata/goto-indexes.jsonnet",
+			position: protocol.Position{Line: 8, Character: 9},
+			expectedContent: protocol.Hover{
+				Contents: protocol.MarkupContent{
+					Kind:  protocol.Markdown,
+					Value: "```jsonnet\nobj = {\n  foo: {\n    bar: 'innerfoo',\n  },\n  bar: 'foo',\n}\n```\n",
+				},
+				Range: protocol.Range{
+					Start: protocol.Position{Line: 8, Character: 8},
+					End:   protocol.Position{Line: 8, Character: 11},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			params := &protocol.HoverParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: protocol.URIFromPath(tc.filename),
+					},
+					Position: tc.position,
+				},
+			}
+
+			server := NewServer("any", "test version", nil, Configuration{
+				JPaths: []string{"testdata", filepath.Join(filepath.Dir(tc.filename), "vendor")},
+			})
+			serverOpenTestFile(t, server, tc.filename)
+			response, err := server.Hover(context.Background(), params)
+
+			require.NoError(t, err)
+			assert.Equal(t, &tc.expectedContent, response)
+		})
+	}
+}
+
+func TestHoverGoToDefinitionTests(t *testing.T) {
+	logrus.SetOutput(io.Discard)
+
+	for _, tc := range definitionTestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			params := &protocol.HoverParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: protocol.URIFromPath(tc.filename),
+					},
+					Position: tc.position,
+				},
+			}
+
+			server := NewServer("any", "test version", nil, Configuration{
+				JPaths: []string{"testdata", filepath.Join(filepath.Dir(tc.filename), "vendor")},
+			})
+			serverOpenTestFile(t, server, tc.filename)
+			response, err := server.Hover(context.Background(), params)
+
+			// We only want to check that it found something. In combination with other tests, we can assume the content is OK.
+			require.NoError(t, err)
+			require.NotNil(t, response)
 		})
 	}
 }

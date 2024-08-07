@@ -35,27 +35,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 		return nil, nil
 	}
 
-	node := stack.Pop()
-
-	// // DEBUG
-	// var node2 ast.Node
-	// if !stack.IsEmpty() {
-	// 	_, node2 = stack.Pop()
-	// }
-	// r := protocol.Range{
-	// 	Start: protocol.Position{
-	// 		Line:      uint32(node.Loc().Begin.Line) - 1,
-	// 		Character: uint32(node.Loc().Begin.Column) - 1,
-	// 	},
-	// 	End: protocol.Position{
-	// 		Line:      uint32(node.Loc().End.Line) - 1,
-	// 		Character: uint32(node.Loc().End.Column) - 1,
-	// 	},
-	// }
-	// return &protocol.Hover{Range: r,
-	// 	Contents: protocol.MarkupContent{Kind: protocol.PlainText,
-	// 		Value: fmt.Sprintf("%v: %+v\n\n%v: %+v", reflect.TypeOf(node), node, reflect.TypeOf(node2), node2)},
-	// }, nil
+	node := stack.Peek()
 
 	_, isIndex := node.(*ast.Index)
 	_, isVar := node.(*ast.Var)
@@ -84,5 +64,56 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 		}
 	}
 
-	return nil, nil
+	definitionParams := &protocol.DefinitionParams{
+		TextDocumentPositionParams: params.TextDocumentPositionParams,
+	}
+	definitions, err := findDefinition(doc.ast, definitionParams, s.getVM(doc.item.URI.SpanURI().Filename()))
+	if err != nil {
+		log.Debugf("Hover: error finding definition: %s", err)
+		return nil, nil
+	}
+
+	if len(definitions) == 0 {
+		return nil, nil
+	}
+
+	// Show the contents at the target range
+	// If there are multiple definitions, show the filenames+line numbers
+	contentBuilder := strings.Builder{}
+	for _, def := range definitions {
+		if len(definitions) > 1 {
+			header := fmt.Sprintf("%s:%d", def.TargetURI, def.TargetRange.Start.Line+1)
+			if def.TargetRange.Start.Line != def.TargetRange.End.Line {
+				header += fmt.Sprintf("-%d", def.TargetRange.End.Line+1)
+			}
+			contentBuilder.WriteString(fmt.Sprintf("## `%s`\n", header))
+		}
+
+		targetContent, err := s.cache.getContents(def.TargetURI, def.TargetRange)
+		if err != nil {
+			log.Debugf("Hover: error reading target content: %s", err)
+			return nil, nil
+		}
+		// Limit the content to 5 lines
+		if strings.Count(targetContent, "\n") > 5 {
+			targetContent = strings.Join(strings.Split(targetContent, "\n")[:5], "\n") + "\n..."
+		}
+		contentBuilder.WriteString(fmt.Sprintf("```jsonnet\n%s\n```\n", targetContent))
+
+		if len(definitions) > 1 {
+			contentBuilder.WriteString("\n")
+		}
+	}
+
+	result := &protocol.Hover{
+		Contents: protocol.MarkupContent{
+			Kind:  protocol.Markdown,
+			Value: contentBuilder.String(),
+		},
+	}
+	if loc := node.Loc(); loc != nil {
+		result.Range = position.RangeASTToProtocol(*loc)
+	}
+
+	return result, nil
 }
