@@ -1,6 +1,7 @@
 module github.com/grafana/jsonnet-language-server
 
-go 1.22
+go 1.22.4
+
 toolchain go1.22.5
 
 require (
