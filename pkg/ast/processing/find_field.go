@@ -74,6 +74,22 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
 				foundDesugaredObjects = append(foundDesugaredObjects, funcBody)
 			}
+		case *ast.Binary:
+			tmpStack := nodestack.NewNodeStack(bodyNode)
+			foundDesugaredObjects = FindTopLevelObjects(tmpStack, vm)
+		case *ast.Var:
+			varReference, err := FindVarReference(bodyNode, vm)
+			if err != nil {
+				return nil, err
+			}
+			// If the reference is an object, add it directly to the list of objects to look in
+			// Otherwise, add it back to the list for further processing
+			if varReferenceObj := findChildDesugaredObject(varReference); varReferenceObj != nil {
+				foundDesugaredObjects = append(foundDesugaredObjects, varReferenceObj)
+			}
+			//else {
+			//	fieldNodes = append(fieldNodes, varReference)
+			//}
 		default:
 			return nil, fmt.Errorf("unexpected node type when finding bind for '%s': %s", start, reflect.TypeOf(bind.Body))
 		}
