@@ -66,7 +66,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	indexes := strings.Split(lastWord, ".")
 
 	if len(indexes) == 1 {
-		var items []protocol.CompletionItem
+		items := []protocol.CompletionItem{}
 		// firstIndex is a variable (local) completion
 		for !stack.IsEmpty() {
 			if curr, ok := stack.Pop().(*ast.Local); ok {
@@ -87,7 +87,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	ranges, err := processing.FindRangesFromIndexList(stack, indexes, vm, true)
 	if err != nil {
 		log.Errorf("Completion: error finding ranges: %v", err)
-		return nil
+		return []protocol.CompletionItem{}
 	}
 
 	completionPrefix := strings.Join(indexes[:len(indexes)-1], ".")
@@ -95,7 +95,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 }
 
 func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
-	var items []protocol.CompletionItem
+	items := []protocol.CompletionItem{}
 
 	stdIndex := strings.LastIndex(line, "std.")
 	if stdIndex != -1 {
@@ -134,7 +134,7 @@ func (s *Server) completionStdLib(line string) []protocol.CompletionItem {
 }
 
 func (s *Server) createCompletionItemsFromRanges(ranges []processing.ObjectRange, completionPrefix, currentLine string, position protocol.Position) []protocol.CompletionItem {
-	var items []protocol.CompletionItem
+	items := []protocol.CompletionItem{}
 	labels := make(map[string]bool)
 
 	for _, field := range ranges {
