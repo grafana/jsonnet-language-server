@@ -103,11 +103,12 @@ func (c *cache) getContents(uri protocol.DocumentURI, position protocol.Range) (
 
 	contentBuilder := strings.Builder{}
 	for i := position.Start.Line; i <= position.End.Line; i++ {
-		if i == position.Start.Line {
+		switch i {
+		case position.Start.Line:
 			contentBuilder.WriteString(lines[i][position.Start.Character:])
-		} else if i == position.End.Line {
+		case position.End.Line:
 			contentBuilder.WriteString(lines[i][:position.End.Character])
-		} else {
+		default:
 			contentBuilder.WriteString(lines[i])
 		}
 		if i != position.End.Line {
