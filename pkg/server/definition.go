@@ -39,21 +39,21 @@ func (s *Server) Definition(_ context.Context, params *protocol.DefinitionParams
 }
 
 func (s *Server) definitionLink(params *protocol.DefinitionParams) ([]protocol.DefinitionLink, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Definition: %s: %w", errorRetrievingDocument, err)
 	}
 
 	// Only find definitions, if the the line we're trying to find a definition for hasn't changed since last successful AST parse
-	if doc.ast == nil {
+	if doc.AST == nil {
 		return nil, utils.LogErrorf("Definition: document was never successfully parsed, can't find definitions")
 	}
-	if doc.linesChangedSinceAST[int(params.Position.Line)] {
+	if doc.LinesChangedSinceAST[int(params.Position.Line)] {
 		return nil, utils.LogErrorf("Definition: document line %d was changed since last successful parse, can't find definitions", params.Position.Line)
 	}
 
-	vm := s.getVM(doc.item.URI.SpanURI().Filename())
-	responseDefLinks, err := findDefinition(doc.ast, params, vm)
+	vm := s.getVM(doc.Item.URI.SpanURI().Filename())
+	responseDefLinks, err := s.findDefinition(doc.AST, params, vm)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *Server) definitionLink(params *protocol.DefinitionParams) ([]protocol.D
 	return responseDefLinks, nil
 }
 
-func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) ([]protocol.DefinitionLink, error) {
+func (s *Server) findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) ([]protocol.DefinitionLink, error) {
 	var response []protocol.DefinitionLink
 
 	searchStack, _ := processing.FindNodeByPosition(root, position.ProtocolToAST(params.Position))
@@ -93,7 +93,7 @@ func findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonne
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
-		objectRanges, err := processing.FindRangesFromIndexList(&tempSearchStack, indexList, vm, false)
+		objectRanges, err := processing.FindRangesFromIndexList(s.cache, &tempSearchStack, indexList, vm, false)
 		if err != nil {
 			return nil, err
 		}

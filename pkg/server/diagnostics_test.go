@@ -57,7 +57,7 @@ local unused = 'test';
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			s, fileURI := testServerWithFile(t, nil, tc.fileContent)
-			doc, err := s.cache.get(fileURI)
+			doc, err := s.cache.Get(fileURI)
 			if err != nil {
 				t.Fatalf("%s: %v", errorRetrievingDocument, err)
 			}
@@ -145,7 +145,7 @@ func TestGetEvalDiags(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			s, fileURI := testServerWithFile(t, nil, tc.fileContent)
-			doc, err := s.cache.get(fileURI)
+			doc, err := s.cache.Get(fileURI)
 			if err != nil {
 				t.Fatalf("%s: %v", errorRetrievingDocument, err)
 			}

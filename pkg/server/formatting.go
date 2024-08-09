@@ -12,18 +12,18 @@ import (
 )
 
 func (s *Server) Formatting(_ context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Formatting: %s: %w", errorRetrievingDocument, err)
 	}
 
-	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.item.Text, s.configuration.FormattingOptions)
+	formatted, err := formatter.Format(params.TextDocument.URI.SpanURI().Filename(), doc.Item.Text, s.configuration.FormattingOptions)
 	if err != nil {
 		log.Errorf("error formatting document: %v", err)
 		return nil, nil
 	}
 
-	return getTextEdits(doc.item.Text, formatted), nil
+	return getTextEdits(doc.Item.Text, formatted), nil
 }
 
 func getTextEdits(before, after string) []protocol.TextEdit {

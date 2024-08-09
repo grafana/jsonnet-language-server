@@ -7,11 +7,12 @@ import (
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/grafana/jsonnet-language-server/pkg/cache"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	log "github.com/sirupsen/logrus"
 )
 
-func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM, partialMatchFields bool) ([]ObjectRange, error) {
+func FindRangesFromIndexList(cache *cache.Cache, stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM, partialMatchFields bool) ([]ObjectRange, error) {
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
@@ -31,13 +32,13 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		if _, ok := tmpStack.Peek().(*ast.Binary); ok {
 			tmpStack.Pop()
 		}
-		foundDesugaredObjects = filterSelfScope(FindTopLevelObjects(tmpStack, vm))
+		foundDesugaredObjects = filterSelfScope(FindTopLevelObjects(cache, tmpStack, vm))
 	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	case start == "$":
-		foundDesugaredObjects = FindTopLevelObjects(nodestack.NewNodeStack(stack.From), vm)
+		foundDesugaredObjects = FindTopLevelObjects(cache, nodestack.NewNodeStack(stack.From), vm)
 	case strings.Contains(start, "."):
-		foundDesugaredObjects = FindTopLevelObjectsInFile(vm, start, "")
+		foundDesugaredObjects = FindTopLevelObjectsInFile(cache, vm, start, "")
 
 	default:
 		if strings.Count(start, "(") == 1 && strings.Count(start, ")") == 1 {
@@ -65,15 +66,15 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
 		case *ast.Self:
 			tmpStack := nodestack.NewNodeStack(stack.From)
-			foundDesugaredObjects = FindTopLevelObjects(tmpStack, vm)
+			foundDesugaredObjects = FindTopLevelObjects(cache, tmpStack, vm)
 		case *ast.Import:
 			filename := bodyNode.File.Value
-			foundDesugaredObjects = FindTopLevelObjectsInFile(vm, filename, "")
+			foundDesugaredObjects = FindTopLevelObjectsInFile(cache, vm, filename, "")
 
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
-			return FindRangesFromIndexList(stack, indexList, vm, partialMatchFields)
+			return FindRangesFromIndexList(cache, stack, indexList, vm, partialMatchFields)
 		case *ast.Function:
 			// If the function's body is an object, it means we can look for indexes within the function
 			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
@@ -84,10 +85,10 @@ func FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, vm 
 		}
 	}
 
-	return extractObjectRangesFromDesugaredObjs(vm, foundDesugaredObjects, indexList, partialMatchFields)
+	return extractObjectRangesFromDesugaredObjs(cache, vm, foundDesugaredObjects, indexList, partialMatchFields)
 }
 
-func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
+func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
 	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
@@ -146,7 +147,7 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 				stack, _ := FindNodeByPosition(rootNode, fieldNode.Target.Loc().Begin)
 				if stack != nil {
 					additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
-					result, _ := FindRangesFromIndexList(stack, additionalIndexList, vm, partialMatchFields)
+					result, _ := FindRangesFromIndexList(cache, stack, additionalIndexList, vm, partialMatchFields)
 					if len(result) > 0 {
 						return result, err
 					}
@@ -157,7 +158,7 @@ func extractObjectRangesFromDesugaredObjs(vm *jsonnet.VM, desugaredObjs []*ast.D
 				desugaredObjs = append(desugaredObjs, findChildDesugaredObject(fieldNode.Body))
 			case *ast.Import:
 				filename := fieldNode.File.Value
-				newObjs := FindTopLevelObjectsInFile(vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
+				newObjs := FindTopLevelObjectsInFile(cache, vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
 				desugaredObjs = append(desugaredObjs, newObjs...)
 			}
 			i++

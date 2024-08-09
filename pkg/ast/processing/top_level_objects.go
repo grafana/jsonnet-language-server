@@ -3,24 +3,23 @@ package processing
 import (
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/grafana/jsonnet-language-server/pkg/cache"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	log "github.com/sirupsen/logrus"
 )
 
-var fileTopLevelObjectsCache = make(map[string][]*ast.DesugaredObject)
-
-func FindTopLevelObjectsInFile(vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
-	cacheKey := importedFrom + ":" + filename
-	if _, ok := fileTopLevelObjectsCache[cacheKey]; !ok {
+func FindTopLevelObjectsInFile(cache *cache.Cache, vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
+	v, ok := cache.GetTopLevelObject(filename, importedFrom)
+	if !ok {
 		rootNode, _, _ := vm.ImportAST(importedFrom, filename)
-		fileTopLevelObjectsCache[cacheKey] = FindTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+		v = FindTopLevelObjects(cache, nodestack.NewNodeStack(rootNode), vm)
+		cache.PutTopLevelObject(filename, importedFrom, v)
 	}
-
-	return fileTopLevelObjectsCache[cacheKey]
+	return v
 }
 
 // Find all ast.DesugaredObject's from NodeStack
-func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
+func FindTopLevelObjects(cache *cache.Cache, stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
 	var objects []*ast.DesugaredObject
 	for !stack.IsEmpty() {
 		curr := stack.Pop()
@@ -62,7 +61,7 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
 				possibleObjects = []*ast.DesugaredObject{containerObj}
 			} else if containerImport, containerIsImport := container.(*ast.Import); containerIsImport {
-				possibleObjects = FindTopLevelObjectsInFile(vm, containerImport.File.Value, string(containerImport.Loc().File.DiagnosticFileName))
+				possibleObjects = FindTopLevelObjectsInFile(cache, vm, containerImport.File.Value, string(containerImport.Loc().File.DiagnosticFileName))
 			}
 
 			for _, obj := range possibleObjects {

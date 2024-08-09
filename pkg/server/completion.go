@@ -18,12 +18,12 @@ import (
 )
 
 func (s *Server) Completion(_ context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Completion: %s: %w", errorRetrievingDocument, err)
 	}
 
-	line := getCompletionLine(doc.item.Text, params.Position)
+	line := getCompletionLine(doc.Item.Text, params.Position)
 
 	// Short-circuit if it's a stdlib completion
 	if items := s.completionStdLib(line); len(items) > 0 {
@@ -31,18 +31,18 @@ func (s *Server) Completion(_ context.Context, params *protocol.CompletionParams
 	}
 
 	// Otherwise, parse the AST and search for completions
-	if doc.ast == nil {
+	if doc.AST == nil {
 		log.Errorf("Completion: document was never successfully parsed, can't autocomplete")
 		return nil, nil
 	}
 
-	searchStack, err := processing.FindNodeByPosition(doc.ast, position.ProtocolToAST(params.Position))
+	searchStack, err := processing.FindNodeByPosition(doc.AST, position.ProtocolToAST(params.Position))
 	if err != nil {
 		log.Errorf("Completion: error computing node: %v", err)
 		return nil, nil
 	}
 
-	vm := s.getVM(doc.item.URI.SpanURI().Filename())
+	vm := s.getVM(doc.Item.URI.SpanURI().Filename())
 
 	items := s.completionFromStack(line, searchStack, vm, params.Position)
 	return &protocol.CompletionList{IsIncomplete: false, Items: items}, nil
@@ -84,7 +84,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 		return items
 	}
 
-	ranges, err := processing.FindRangesFromIndexList(stack, indexes, vm, true)
+	ranges, err := processing.FindRangesFromIndexList(s.cache, stack, indexes, vm, true)
 	if err != nil {
 		log.Errorf("Completion: error finding ranges: %v", err)
 		return []protocol.CompletionItem{}

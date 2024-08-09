@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-jsonnet/linter"
+	"github.com/grafana/jsonnet-language-server/pkg/cache"
 	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	log "github.com/sirupsen/logrus"
@@ -74,25 +75,25 @@ func parseErrRegexpMatch(match []string) (string, protocol.Range) {
 }
 
 func (s *Server) queueDiagnostics(uri protocol.DocumentURI) {
-	s.cache.diagMutex.Lock()
-	defer s.cache.diagMutex.Unlock()
-	s.cache.diagQueue[uri] = struct{}{}
+	s.diagMutex.Lock()
+	defer s.diagMutex.Unlock()
+	s.diagQueue[uri] = struct{}{}
 }
 
 func (s *Server) diagnosticsLoop() {
 	go func() {
 		for {
-			s.cache.diagMutex.Lock()
-			for uri := range s.cache.diagQueue {
-				if _, ok := s.cache.diagRunning.Load(uri); ok {
+			s.diagMutex.Lock()
+			for uri := range s.diagQueue {
+				if _, ok := s.diagRunning.Load(uri); ok {
 					continue
 				}
 
 				go func() {
-					s.cache.diagRunning.Store(uri, true)
+					s.diagRunning.Store(uri, true)
 
 					log.Debug("Publishing diagnostics for ", uri)
-					doc, err := s.cache.get(uri)
+					doc, err := s.cache.Get(uri)
 					if err != nil {
 						log.Errorf("publishDiagnostics: %s: %v\n", errorRetrievingDocument, err)
 						return
@@ -133,30 +134,30 @@ func (s *Server) diagnosticsLoop() {
 						log.Errorf("publishDiagnostics: unable to publish diagnostics: %v\n", err)
 					}
 
-					doc.diagnostics = diags
+					doc.Diagnostics = diags
 
 					log.Debug("Done publishing diagnostics for ", uri)
 
-					s.cache.diagRunning.Delete(uri)
+					s.diagRunning.Delete(uri)
 				}()
-				delete(s.cache.diagQueue, uri)
+				delete(s.diagQueue, uri)
 			}
-			s.cache.diagMutex.Unlock()
+			s.diagMutex.Unlock()
 
 			time.Sleep(1 * time.Second)
 		}
 	}()
 }
 
-func (s *Server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
-	if doc.err == nil && s.configuration.EnableEvalDiagnostics {
-		vm := s.getVM(doc.item.URI.SpanURI().Filename())
-		doc.val, doc.err = vm.EvaluateAnonymousSnippet(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+func (s *Server) getEvalDiags(doc *cache.Document) (diags []protocol.Diagnostic) {
+	if doc.Err == nil && s.configuration.EnableEvalDiagnostics {
+		vm := s.getVM(doc.Item.URI.SpanURI().Filename())
+		doc.Val, doc.Err = vm.EvaluateAnonymousSnippet(doc.Item.URI.SpanURI().Filename(), doc.Item.Text)
 	}
 
-	if doc.err != nil {
+	if doc.Err != nil {
 		diag := protocol.Diagnostic{Source: "jsonnet evaluation"}
-		lines := strings.Split(doc.err.Error(), "\n")
+		lines := strings.Split(doc.Err.Error(), "\n")
 		if len(lines) == 0 {
 			log.Errorf("publishDiagnostics: expected at least two lines of Jsonnet evaluation error output, got: %v\n", lines)
 			return diags
@@ -173,7 +174,7 @@ func (s *Server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 
 		message, rang := parseErrRegexpMatch(match)
 		if runtimeErr {
-			diag.Message = doc.err.Error()
+			diag.Message = doc.Err.Error()
 			diag.Severity = protocol.SeverityWarning
 		} else {
 			diag.Message = message
@@ -187,7 +188,7 @@ func (s *Server) getEvalDiags(doc *document) (diags []protocol.Diagnostic) {
 	return diags
 }
 
-func (s *Server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
+func (s *Server) getLintDiags(doc *cache.Document) (diags []protocol.Diagnostic) {
 	result, err := s.lintWithRecover(doc)
 	if err != nil {
 		log.Errorf("getLintDiags: %s: %v\n", errorRetrievingDocument, err)
@@ -202,18 +203,18 @@ func (s *Server) getLintDiags(doc *document) (diags []protocol.Diagnostic) {
 	return diags
 }
 
-func (s *Server) lintWithRecover(doc *document) (result string, err error) {
+func (s *Server) lintWithRecover(doc *cache.Document) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error linting: %v", r)
 		}
 	}()
 
-	vm := s.getVM(doc.item.URI.SpanURI().Filename())
+	vm := s.getVM(doc.Item.URI.SpanURI().Filename())
 
 	buf := &bytes.Buffer{}
 	linter.LintSnippet(vm, buf, []linter.Snippet{
-		{FileName: doc.item.URI.SpanURI().Filename(), Code: doc.item.Text},
+		{FileName: doc.Item.URI.SpanURI().Filename(), Code: doc.Item.Text},
 	})
 	result = buf.String()
 
