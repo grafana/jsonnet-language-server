@@ -63,6 +63,7 @@ func (s *Server) definitionLink(params *protocol.DefinitionParams) ([]protocol.D
 
 func (s *Server) findDefinition(root ast.Node, params *protocol.DefinitionParams, vm *jsonnet.VM) ([]protocol.DefinitionLink, error) {
 	var response []protocol.DefinitionLink
+	processor := processing.NewProcessor(s.cache, vm)
 
 	searchStack, _ := processing.FindNodeByPosition(root, position.ProtocolToAST(params.Position))
 	deepestNode := searchStack.Pop()
@@ -93,7 +94,7 @@ func (s *Server) findDefinition(root ast.Node, params *protocol.DefinitionParams
 		indexSearchStack := nodestack.NewNodeStack(deepestNode)
 		indexList := indexSearchStack.BuildIndexList()
 		tempSearchStack := *searchStack
-		objectRanges, err := processing.FindRangesFromIndexList(s.cache, &tempSearchStack, indexList, vm, false)
+		objectRanges, err := processor.FindRangesFromIndexList(&tempSearchStack, indexList, false)
 		if err != nil {
 			return nil, err
 		}

@@ -84,7 +84,8 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 		return items
 	}
 
-	ranges, err := processing.FindRangesFromIndexList(s.cache, stack, indexes, vm, true)
+	processor := processing.NewProcessor(s.cache, vm)
+	ranges, err := processor.FindRangesFromIndexList(stack, indexes, true)
 	if err != nil {
 		log.Errorf("Completion: error finding ranges: %v", err)
 		return []protocol.CompletionItem{}
