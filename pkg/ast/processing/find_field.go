@@ -5,14 +5,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
-	"github.com/grafana/jsonnet-language-server/pkg/cache"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	log "github.com/sirupsen/logrus"
 )
 
-func FindRangesFromIndexList(cache *cache.Cache, stack *nodestack.NodeStack, indexList []string, vm *jsonnet.VM, partialMatchFields bool) ([]ObjectRange, error) {
+func (p *Processor) FindRangesFromIndexList(stack *nodestack.NodeStack, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
 	var foundDesugaredObjects []*ast.DesugaredObject
 	// First element will be super, self, or var name
 	start, indexList := indexList[0], indexList[1:]
@@ -32,13 +30,13 @@ func FindRangesFromIndexList(cache *cache.Cache, stack *nodestack.NodeStack, ind
 		if _, ok := tmpStack.Peek().(*ast.Binary); ok {
 			tmpStack.Pop()
 		}
-		foundDesugaredObjects = filterSelfScope(FindTopLevelObjects(cache, tmpStack, vm))
+		foundDesugaredObjects = filterSelfScope(p.FindTopLevelObjects(tmpStack))
 	case start == "std":
 		return nil, fmt.Errorf("cannot get definition of std lib")
 	case start == "$":
-		foundDesugaredObjects = FindTopLevelObjects(cache, nodestack.NewNodeStack(stack.From), vm)
+		foundDesugaredObjects = p.FindTopLevelObjects(nodestack.NewNodeStack(stack.From))
 	case strings.Contains(start, "."):
-		foundDesugaredObjects = FindTopLevelObjectsInFile(cache, vm, start, "")
+		foundDesugaredObjects = p.FindTopLevelObjectsInFile(start, "")
 
 	default:
 		if strings.Count(start, "(") == 1 && strings.Count(start, ")") == 1 {
@@ -66,15 +64,15 @@ func FindRangesFromIndexList(cache *cache.Cache, stack *nodestack.NodeStack, ind
 			foundDesugaredObjects = append(foundDesugaredObjects, bodyNode)
 		case *ast.Self:
 			tmpStack := nodestack.NewNodeStack(stack.From)
-			foundDesugaredObjects = FindTopLevelObjects(cache, tmpStack, vm)
+			foundDesugaredObjects = p.FindTopLevelObjects(tmpStack)
 		case *ast.Import:
 			filename := bodyNode.File.Value
-			foundDesugaredObjects = FindTopLevelObjectsInFile(cache, vm, filename, "")
+			foundDesugaredObjects = p.FindTopLevelObjectsInFile(filename, "")
 
 		case *ast.Index, *ast.Apply:
 			tempStack := nodestack.NewNodeStack(bodyNode)
 			indexList = append(tempStack.BuildIndexList(), indexList...)
-			return FindRangesFromIndexList(cache, stack, indexList, vm, partialMatchFields)
+			return p.FindRangesFromIndexList(stack, indexList, partialMatchFields)
 		case *ast.Function:
 			// If the function's body is an object, it means we can look for indexes within the function
 			if funcBody := findChildDesugaredObject(bodyNode.Body); funcBody != nil {
@@ -85,10 +83,10 @@ func FindRangesFromIndexList(cache *cache.Cache, stack *nodestack.NodeStack, ind
 		}
 	}
 
-	return extractObjectRangesFromDesugaredObjs(cache, vm, foundDesugaredObjects, indexList, partialMatchFields)
+	return p.extractObjectRangesFromDesugaredObjs(foundDesugaredObjects, indexList, partialMatchFields)
 }
 
-func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, desugaredObjs []*ast.DesugaredObject, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
+func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.DesugaredObject, indexList []string, partialMatchFields bool) ([]ObjectRange, error) {
 	var ranges []ObjectRange
 	for len(indexList) > 0 {
 		index := indexList[0]
@@ -112,7 +110,7 @@ func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, de
 			return ranges, nil
 		}
 
-		fieldNodes, err := unpackFieldNodes(vm, foundFields)
+		fieldNodes, err := p.unpackFieldNodes(foundFields)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +124,7 @@ func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, de
 				// The target is a function and will be found by FindVarReference on the next loop
 				fieldNodes = append(fieldNodes, fieldNode.Target)
 			case *ast.Var:
-				varReference, err := FindVarReference(fieldNode, vm)
+				varReference, err := p.FindVarReference(fieldNode)
 				if err != nil {
 					return nil, err
 				}
@@ -143,11 +141,11 @@ func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, de
 				// if we're trying to find the a definition which is an index,
 				// we need to find it from itself, meaning that we need to create a stack
 				// from the index's target and search from there
-				rootNode, _, _ := vm.ImportAST("", fieldNode.LocRange.FileName)
+				rootNode, _, _ := p.vm.ImportAST("", fieldNode.LocRange.FileName)
 				stack, _ := FindNodeByPosition(rootNode, fieldNode.Target.Loc().Begin)
 				if stack != nil {
 					additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
-					result, _ := FindRangesFromIndexList(cache, stack, additionalIndexList, vm, partialMatchFields)
+					result, _ := p.FindRangesFromIndexList(stack, additionalIndexList, partialMatchFields)
 					if len(result) > 0 {
 						return result, err
 					}
@@ -158,7 +156,7 @@ func extractObjectRangesFromDesugaredObjs(cache *cache.Cache, vm *jsonnet.VM, de
 				desugaredObjs = append(desugaredObjs, findChildDesugaredObject(fieldNode.Body))
 			case *ast.Import:
 				filename := fieldNode.File.Value
-				newObjs := FindTopLevelObjectsInFile(cache, vm, filename, string(fieldNode.Loc().File.DiagnosticFileName))
+				newObjs := p.FindTopLevelObjectsInFile(filename, string(fieldNode.Loc().File.DiagnosticFileName))
 				desugaredObjs = append(desugaredObjs, newObjs...)
 			}
 			i++
@@ -178,13 +176,13 @@ func flattenBinary(node ast.Node) []ast.Node {
 // unpackFieldNodes extracts nodes from fields
 // - Binary nodes. A field could be either in the left or right side of the binary
 // - Self nodes. We want the object self refers to, not the self node itself
-func unpackFieldNodes(vm *jsonnet.VM, fields []*ast.DesugaredObjectField) ([]ast.Node, error) {
+func (p *Processor) unpackFieldNodes(fields []*ast.DesugaredObjectField) ([]ast.Node, error) {
 	var fieldNodes []ast.Node
 	for _, foundField := range fields {
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Self:
 			filename := fieldNode.LocRange.FileName
-			rootNode, _, _ := vm.ImportAST("", filename)
+			rootNode, _, _ := p.vm.ImportAST("", filename)
 			tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
 			if err != nil {
 				return nil, err
@@ -254,8 +252,8 @@ func findChildDesugaredObject(node ast.Node) *ast.DesugaredObject {
 
 // FindVarReference finds the object that the variable is referencing
 // To do so, we get the stack where the var is used and search that stack for the var's definition
-func FindVarReference(varNode *ast.Var, vm *jsonnet.VM) (ast.Node, error) {
-	varFileNode, _, _ := vm.ImportAST("", varNode.LocRange.FileName)
+func (p *Processor) FindVarReference(varNode *ast.Var) (ast.Node, error) {
+	varFileNode, _, _ := p.vm.ImportAST("", varNode.LocRange.FileName)
 	varStack, err := FindNodeByPosition(varFileNode, varNode.Loc().Begin)
 	if err != nil {
 		return nil, fmt.Errorf("got the following error when finding the bind for %s: %w", varNode.Id, err)
