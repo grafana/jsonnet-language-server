@@ -15,19 +15,19 @@ import (
 )
 
 func (s *Server) DocumentSymbol(_ context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("DocumentSymbol: %s: %w", errorRetrievingDocument, err)
 	}
 
-	if doc.err != nil {
+	if doc.Err != nil {
 		// Returning an error too often can lead to the client killing the language server
 		// Logging the errors is sufficient
 		log.Errorf("DocumentSymbol: %s", errorParsingDocument)
 		return nil, nil
 	}
 
-	symbols := buildDocumentSymbols(doc.ast)
+	symbols := buildDocumentSymbols(doc.AST)
 
 	result := make([]interface{}, len(symbols))
 	for i, symbol := range symbols {

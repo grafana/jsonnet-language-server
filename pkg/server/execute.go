@@ -43,12 +43,12 @@ func (s *Server) evalItem(params *protocol.ExecuteCommandParams) (interface{}, e
 		return nil, fmt.Errorf("failed to unmarshal position: %v", err)
 	}
 
-	doc, err := s.cache.get(protocol.URIFromPath(fileName))
+	doc, err := s.cache.Get(protocol.URIFromPath(fileName))
 	if err != nil {
 		return nil, utils.LogErrorf("evalItem: %s: %w", errorRetrievingDocument, err)
 	}
 
-	stack, err := processing.FindNodeByPosition(doc.ast, position.ProtocolToAST(p))
+	stack, err := processing.FindNodeByPosition(doc.AST, position.ProtocolToAST(p))
 	if err != nil {
 		return nil, err
 	}

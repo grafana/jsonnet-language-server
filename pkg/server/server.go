@@ -4,9 +4,11 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
+	"github.com/grafana/jsonnet-language-server/pkg/cache"
 	"github.com/grafana/jsonnet-language-server/pkg/stdlib"
 	"github.com/grafana/jsonnet-language-server/pkg/utils"
 	tankaJsonnet "github.com/grafana/tanka/pkg/jsonnet/implementations/goimpl"
@@ -25,9 +27,11 @@ func NewServer(name, version string, client protocol.ClientCloser, configuration
 	server := &Server{
 		name:          name,
 		version:       version,
-		cache:         newCache(),
+		cache:         cache.New(),
 		client:        client,
 		configuration: configuration,
+
+		diagQueue: make(map[protocol.DocumentURI]struct{}),
 	}
 
 	return server
@@ -38,10 +42,15 @@ type Server struct {
 	name, version string
 
 	stdlib []stdlib.Function
-	cache  *cache
+	cache  *cache.Cache
 	client protocol.ClientCloser
 
 	configuration Configuration
+
+	// Diagnostics
+	diagMutex   sync.RWMutex
+	diagQueue   map[protocol.DocumentURI]struct{}
+	diagRunning sync.Map
 }
 
 func (s *Server) getVM(path string) *jsonnet.VM {
@@ -69,29 +78,29 @@ func (s *Server) getVM(path string) *jsonnet.VM {
 func (s *Server) DidChange(_ context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return utils.LogErrorf("DidChange: %s: %w", errorRetrievingDocument, err)
 	}
 
-	if params.TextDocument.Version > doc.item.Version && len(params.ContentChanges) != 0 {
-		oldText := doc.item.Text
-		doc.item.Text = params.ContentChanges[len(params.ContentChanges)-1].Text
+	if params.TextDocument.Version > doc.Item.Version && len(params.ContentChanges) != 0 {
+		oldText := doc.Item.Text
+		doc.Item.Text = params.ContentChanges[len(params.ContentChanges)-1].Text
 
 		var ast ast.Node
-		ast, doc.err = jsonnet.SnippetToAST(doc.item.URI.SpanURI().Filename(), doc.item.Text)
+		ast, doc.Err = jsonnet.SnippetToAST(doc.Item.URI.SpanURI().Filename(), doc.Item.Text)
 
 		// If the AST parsed correctly, set it on the document
 		// Otherwise, keep the old AST, and find all the lines that have changed since last AST
 		if ast != nil {
-			doc.ast = ast
-			doc.linesChangedSinceAST = map[int]bool{}
+			doc.AST = ast
+			doc.LinesChangedSinceAST = map[int]bool{}
 		} else {
 			splitOldText := strings.Split(oldText, "\n")
-			splitNewText := strings.Split(doc.item.Text, "\n")
+			splitNewText := strings.Split(doc.Item.Text, "\n")
 			for index, oldLine := range splitOldText {
 				if index >= len(splitNewText) || oldLine != splitNewText[index] {
-					doc.linesChangedSinceAST[index] = true
+					doc.LinesChangedSinceAST[index] = true
 				}
 			}
 		}
@@ -102,11 +111,11 @@ func (s *Server) DidChange(_ context.Context, params *protocol.DidChangeTextDocu
 func (s *Server) DidOpen(_ context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
 	defer s.queueDiagnostics(params.TextDocument.URI)
 
-	doc := &document{item: params.TextDocument, linesChangedSinceAST: map[int]bool{}}
+	doc := &cache.Document{Item: params.TextDocument, LinesChangedSinceAST: map[int]bool{}}
 	if params.TextDocument.Text != "" {
-		doc.ast, doc.err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
+		doc.AST, doc.Err = jsonnet.SnippetToAST(params.TextDocument.URI.SpanURI().Filename(), params.TextDocument.Text)
 	}
-	return s.cache.put(doc)
+	return s.cache.Put(doc)
 }
 
 func (s *Server) Initialize(_ context.Context, _ *protocol.ParamInitialize) (*protocol.InitializeResult, error) {

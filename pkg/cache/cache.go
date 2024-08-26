@@ -1,9 +1,10 @@
-package server
+package cache
 
 import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -11,59 +12,63 @@ import (
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
-type document struct {
+type Document struct {
 	// From DidOpen and DidChange
-	item protocol.TextDocumentItem
+	Item protocol.TextDocumentItem
 
 	// Contains the last successfully parsed AST. If doc.err is not nil, it's out of date.
-	ast                  ast.Node
-	linesChangedSinceAST map[int]bool
+	AST                  ast.Node
+	LinesChangedSinceAST map[int]bool
 
 	// From diagnostics
-	val         string
-	err         error
-	diagnostics []protocol.Diagnostic
+	Val         string
+	Err         error
+	Diagnostics []protocol.Diagnostic
 }
 
-// newCache returns a document cache.
-func newCache() *cache {
-	return &cache{
-		mu:        sync.RWMutex{},
-		docs:      make(map[protocol.DocumentURI]*document),
-		diagQueue: make(map[protocol.DocumentURI]struct{}),
+// Cache caches documents.
+type Cache struct {
+	mu              sync.RWMutex
+	docs            map[protocol.DocumentURI]*Document
+	topLevelObjects map[string][]*ast.DesugaredObject
+}
+
+// New returns a document cache.
+func New() *Cache {
+	return &Cache{
+		mu:              sync.RWMutex{},
+		docs:            make(map[protocol.DocumentURI]*Document),
+		topLevelObjects: make(map[string][]*ast.DesugaredObject),
 	}
 }
 
-// cache caches documents.
-type cache struct {
-	mu   sync.RWMutex
-	docs map[protocol.DocumentURI]*document
-
-	diagMutex   sync.RWMutex
-	diagQueue   map[protocol.DocumentURI]struct{}
-	diagRunning sync.Map
-}
-
-// put adds or replaces a document in the cache.
-func (c *cache) put(new *document) error {
+// Put adds or replaces a document in the cache.
+func (c *Cache) Put(new *Document) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	uri := new.item.URI
+	uri := new.Item.URI
 	if old, ok := c.docs[uri]; ok {
-		if old.item.Version > new.item.Version {
+		if old.Item.Version > new.Item.Version {
 			return errors.New("newer version of the document is already in the cache")
 		}
 	}
 	c.docs[uri] = new
 
+	// Invalidate the TopLevelObject cache
+	for k := range c.topLevelObjects {
+		if strings.HasSuffix(k, filepath.Base(uri.SpanURI().Filename())) {
+			delete(c.topLevelObjects, k)
+		}
+	}
+
 	return nil
 }
 
-// get retrieves a document from the cache.
-func (c *cache) get(uri protocol.DocumentURI) (*document, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Get retrieves a document from the cache.
+func (c *Cache) Get(uri protocol.DocumentURI) (*Document, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	doc, ok := c.docs[uri]
 	if !ok {
@@ -73,11 +78,11 @@ func (c *cache) get(uri protocol.DocumentURI) (*document, error) {
 	return doc, nil
 }
 
-func (c *cache) getContents(uri protocol.DocumentURI, position protocol.Range) (string, error) {
+func (c *Cache) GetContents(uri protocol.DocumentURI, position protocol.Range) (string, error) {
 	text := ""
-	doc, err := c.get(uri)
+	doc, err := c.Get(uri)
 	if err == nil {
-		text = doc.item.Text
+		text = doc.Item.Text
 	} else {
 		// Read the file from disk (TODO: cache this)
 		bytes, err := os.ReadFile(uri.SpanURI().Filename())
@@ -117,4 +122,21 @@ func (c *cache) getContents(uri protocol.DocumentURI, position protocol.Range) (
 	}
 
 	return contentBuilder.String(), nil
+}
+
+func (c *Cache) GetTopLevelObject(filename, importedFrom string) ([]*ast.DesugaredObject, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	cacheKey := importedFrom + ":" + filename
+	v, ok := c.topLevelObjects[cacheKey]
+	return v, ok
+}
+
+func (c *Cache) PutTopLevelObject(filename, importedFrom string, objects []*ast.DesugaredObject) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	cacheKey := importedFrom + ":" + filename
+	c.topLevelObjects[cacheKey] = objects
 }

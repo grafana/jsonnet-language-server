@@ -14,18 +14,18 @@ import (
 )
 
 func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
-	doc, err := s.cache.get(params.TextDocument.URI)
+	doc, err := s.cache.Get(params.TextDocument.URI)
 	if err != nil {
 		return nil, utils.LogErrorf("Hover: %s: %w", errorRetrievingDocument, err)
 	}
 
-	if doc.err != nil {
+	if doc.Err != nil {
 		// Hover triggers often. Throwing an error on each request is noisy
 		log.Errorf("Hover: %s", errorParsingDocument)
 		return nil, nil
 	}
 
-	stack, err := processing.FindNodeByPosition(doc.ast, position.ProtocolToAST(params.Position))
+	stack, err := processing.FindNodeByPosition(doc.AST, position.ProtocolToAST(params.Position))
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 	_, isVar := node.(*ast.Var)
 	lineIndex := uint32(node.Loc().Begin.Line) - 1
 	startIndex := uint32(node.Loc().Begin.Column) - 1
-	line := strings.Split(doc.item.Text, "\n")[lineIndex]
+	line := strings.Split(doc.Item.Text, "\n")[lineIndex]
 	if (isIndex || isVar) && strings.HasPrefix(line[startIndex:], "std") {
 		functionNameIndex := startIndex + 4
 		if functionNameIndex < uint32(len(line)) {
@@ -67,7 +67,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 	definitionParams := &protocol.DefinitionParams{
 		TextDocumentPositionParams: params.TextDocumentPositionParams,
 	}
-	definitions, err := findDefinition(doc.ast, definitionParams, s.getVM(doc.item.URI.SpanURI().Filename()))
+	definitions, err := s.findDefinition(doc.AST, definitionParams, s.getVM(doc.Item.URI.SpanURI().Filename()))
 	if err != nil {
 		log.Debugf("Hover: error finding definition: %s", err)
 		return nil, nil
@@ -89,7 +89,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 			contentBuilder.WriteString(fmt.Sprintf("## `%s`\n", header))
 		}
 
-		targetContent, err := s.cache.getContents(def.TargetURI, def.TargetRange)
+		targetContent, err := s.cache.GetContents(def.TargetURI, def.TargetRange)
 		if err != nil {
 			log.Debugf("Hover: error reading target content: %s", err)
 			return nil, nil

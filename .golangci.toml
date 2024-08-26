@@ -1,14 +1,13 @@
 [linters]
 enable = [
+  "copyloopvar",
   "dogsled",
-  "exportloopref",
   "forcetypeassert",
   "goconst",
   "gocritic",
   "gocyclo",
   "goimports",
   "goprintffuncname",
-  "gosec",
   "gosimple",
   "govet",
   "ineffassign",

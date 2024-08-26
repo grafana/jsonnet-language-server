@@ -1,26 +1,23 @@
 package processing
 
 import (
-	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 	"github.com/grafana/jsonnet-language-server/pkg/nodestack"
 	log "github.com/sirupsen/logrus"
 )
 
-var fileTopLevelObjectsCache = make(map[string][]*ast.DesugaredObject)
-
-func FindTopLevelObjectsInFile(vm *jsonnet.VM, filename, importedFrom string) []*ast.DesugaredObject {
-	cacheKey := importedFrom + ":" + filename
-	if _, ok := fileTopLevelObjectsCache[cacheKey]; !ok {
-		rootNode, _, _ := vm.ImportAST(importedFrom, filename)
-		fileTopLevelObjectsCache[cacheKey] = FindTopLevelObjects(nodestack.NewNodeStack(rootNode), vm)
+func (p *Processor) FindTopLevelObjectsInFile(filename, importedFrom string) []*ast.DesugaredObject {
+	v, ok := p.cache.GetTopLevelObject(filename, importedFrom)
+	if !ok {
+		rootNode, _, _ := p.vm.ImportAST(importedFrom, filename)
+		v = p.FindTopLevelObjects(nodestack.NewNodeStack(rootNode))
+		p.cache.PutTopLevelObject(filename, importedFrom, v)
 	}
-
-	return fileTopLevelObjectsCache[cacheKey]
+	return v
 }
 
 // Find all ast.DesugaredObject's from NodeStack
-func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.DesugaredObject {
+func (p *Processor) FindTopLevelObjects(stack *nodestack.NodeStack) []*ast.DesugaredObject {
 	var objects []*ast.DesugaredObject
 	for !stack.IsEmpty() {
 		curr := stack.Pop()
@@ -34,7 +31,7 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			stack.Push(curr.Body)
 		case *ast.Import:
 			filename := curr.File.Value
-			rootNode, _, _ := vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
+			rootNode, _, _ := p.vm.ImportAST(string(curr.Loc().File.DiagnosticFileName), filename)
 			stack.Push(rootNode)
 		case *ast.Index:
 			indexValue, indexIsString := curr.Index.(*ast.LiteralString)
@@ -45,7 +42,7 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			var container ast.Node
 			// If our target is a var, the container for the index is the var ref
 			if varTarget, targetIsVar := curr.Target.(*ast.Var); targetIsVar {
-				ref, err := FindVarReference(varTarget, vm)
+				ref, err := p.FindVarReference(varTarget)
 				if err != nil {
 					log.WithError(err).Errorf("Error finding var reference, ignoring this node")
 					continue
@@ -62,7 +59,7 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 			if containerObj, containerIsObj := container.(*ast.DesugaredObject); containerIsObj {
 				possibleObjects = []*ast.DesugaredObject{containerObj}
 			} else if containerImport, containerIsImport := container.(*ast.Import); containerIsImport {
-				possibleObjects = FindTopLevelObjectsInFile(vm, containerImport.File.Value, string(containerImport.Loc().File.DiagnosticFileName))
+				possibleObjects = p.FindTopLevelObjectsInFile(containerImport.File.Value, string(containerImport.Loc().File.DiagnosticFileName))
 			}
 
 			for _, obj := range possibleObjects {
@@ -71,7 +68,7 @@ func FindTopLevelObjects(stack *nodestack.NodeStack, vm *jsonnet.VM) []*ast.Desu
 				}
 			}
 		case *ast.Var:
-			varReference, err := FindVarReference(curr, vm)
+			varReference, err := p.FindVarReference(curr)
 			if err != nil {
 				log.WithError(err).Errorf("Error finding var reference, ignoring this node")
 				continue

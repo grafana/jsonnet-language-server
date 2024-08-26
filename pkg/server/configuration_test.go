@@ -141,10 +141,10 @@ func TestConfiguration(t *testing.T) {
 
 			vm := s.getVM("any")
 
-			doc, err := s.cache.get(fileURI)
+			doc, err := s.cache.Get(fileURI)
 			assert.NoError(t, err)
 
-			json, err := vm.Evaluate(doc.ast)
+			json, err := vm.Evaluate(doc.AST)
 			assert.NoError(t, err)
 			assert.JSONEq(t, tc.expectedFileOutput, json)
 		})
