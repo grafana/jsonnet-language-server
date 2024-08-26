@@ -219,7 +219,6 @@ func findObjectFieldsInObject(objectNode *ast.DesugaredObject, index string, par
 
 	var matchingFields []*ast.DesugaredObjectField
 	for _, field := range objectNode.Fields {
-		field := field
 		literalString, isString := field.Name.(*ast.LiteralString)
 		if !isString {
 			continue
