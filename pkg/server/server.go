@@ -105,7 +105,8 @@ func (s *Server) DidChange(_ context.Context, params *protocol.DidChangeTextDocu
 			}
 		}
 	}
-	return nil
+
+	return s.cache.Put(doc)
 }
 
 func (s *Server) DidOpen(_ context.Context, params *protocol.DidOpenTextDocumentParams) (err error) {
