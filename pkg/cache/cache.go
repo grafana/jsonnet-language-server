@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -56,11 +55,9 @@ func (c *Cache) Put(new *Document) error {
 	c.docs[uri] = new
 
 	// Invalidate the TopLevelObject cache
-	for k := range c.topLevelObjects {
-		if strings.HasSuffix(k, filepath.Base(uri.SpanURI().Filename())) {
-			delete(c.topLevelObjects, k)
-		}
-	}
+	// We can't easily invalidate the cache for a single file (hard to figure out where the import actually leads),
+	// so we just clear the whole thing
+	c.topLevelObjects = make(map[string][]*ast.DesugaredObject)
 
 	return nil
 }
