@@ -973,6 +973,21 @@ var definitionTestCases = []definitionTestCase{
 			},
 		}},
 	},
+	{
+		name:     "goto builder pattern function",
+		filename: "testdata/goto-builder-pattern.jsonnet",
+		position: protocol.Position{Line: 21, Character: 62},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 16, Character: 6},
+				End:   protocol.Position{Line: 16, Character: 51},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 16, Character: 6},
+				End:   protocol.Position{Line: 16, Character: 11},
+			},
+		}},
+	},
 }
 
 func TestDefinition(t *testing.T) {
