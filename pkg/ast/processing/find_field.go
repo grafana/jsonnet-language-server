@@ -159,19 +159,7 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 			case *ast.Binary:
 				fieldNodes = append(fieldNodes, flattenBinary(fieldNode)...)
 			case *ast.Self:
-				filename := fieldNode.LocRange.FileName
-				rootNode, _, _ := p.vm.ImportAST("", filename)
-				tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
-				if err != nil {
-					return nil, err
-				}
-				for !tmpStack.IsEmpty() {
-					node := tmpStack.Pop()
-					if castNode, ok := node.(*ast.DesugaredObject); ok {
-						desugaredObjs = append(desugaredObjs, castNode)
-						break
-					}
-				}
+				desugaredObjs = append(desugaredObjs, p.findSelfObject(fieldNode))
 			}
 			i++
 		}
@@ -195,18 +183,7 @@ func (p *Processor) unpackFieldNodes(fields []*ast.DesugaredObjectField) ([]ast.
 	for _, foundField := range fields {
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Self:
-			filename := fieldNode.LocRange.FileName
-			rootNode, _, _ := p.vm.ImportAST("", filename)
-			tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
-			if err != nil {
-				return nil, err
-			}
-			for !tmpStack.IsEmpty() {
-				node := tmpStack.Pop()
-				if _, ok := node.(*ast.DesugaredObject); ok {
-					fieldNodes = append(fieldNodes, node)
-				}
-			}
+			fieldNodes = append(fieldNodes, p.findSelfObject(fieldNode))
 		case *ast.Binary:
 			fieldNodes = append(fieldNodes, flattenBinary(fieldNode)...)
 		default:
@@ -303,4 +280,20 @@ func (p *Processor) findLHSDesugaredObject(stack *nodestack.NodeStack) (*ast.Des
 		}
 	}
 	return nil, fmt.Errorf("could not find a lhs object")
+}
+
+func (p *Processor) findSelfObject(self *ast.Self) *ast.DesugaredObject {
+	filename := self.LocRange.FileName
+	rootNode, _, _ := p.vm.ImportAST("", filename)
+	tmpStack, err := FindNodeByPosition(rootNode, self.LocRange.Begin)
+	if err != nil {
+		return nil
+	}
+	for !tmpStack.IsEmpty() {
+		node := tmpStack.Pop()
+		if castNode, ok := node.(*ast.DesugaredObject); ok {
+			return castNode
+		}
+	}
+	return nil
 }
