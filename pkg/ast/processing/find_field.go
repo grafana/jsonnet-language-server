@@ -167,8 +167,8 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 				}
 				for !tmpStack.IsEmpty() {
 					node := tmpStack.Pop()
-					if _, ok := node.(*ast.DesugaredObject); ok {
-						desugaredObjs = append(desugaredObjs, node.(*ast.DesugaredObject))
+					if castNode, ok := node.(*ast.DesugaredObject); ok {
+						desugaredObjs = append(desugaredObjs, castNode)
 						break
 					}
 				}
