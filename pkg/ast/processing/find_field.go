@@ -107,11 +107,7 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 			return ranges, nil
 		}
 
-		fieldNodes, err := p.unpackFieldNodes(foundFields)
-		if err != nil {
-			return nil, err
-		}
-
+		fieldNodes := p.unpackFieldNodes(foundFields)
 		i := 0
 		for i < len(fieldNodes) {
 			fieldNode := fieldNodes[i]
@@ -145,7 +141,7 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 					additionalIndexList := append(nodestack.NewNodeStack(fieldNode).BuildIndexList(), indexList...)
 					result, _ := p.FindRangesFromIndexList(stack, additionalIndexList, partialMatchFields)
 					if len(result) > 0 {
-						return result, err
+						return result, nil
 					}
 				}
 
@@ -159,19 +155,7 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 			case *ast.Binary:
 				fieldNodes = append(fieldNodes, flattenBinary(fieldNode)...)
 			case *ast.Self:
-				filename := fieldNode.LocRange.FileName
-				rootNode, _, _ := p.vm.ImportAST("", filename)
-				tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
-				if err != nil {
-					return nil, err
-				}
-				for !tmpStack.IsEmpty() {
-					node := tmpStack.Pop()
-					if castNode, ok := node.(*ast.DesugaredObject); ok {
-						desugaredObjs = append(desugaredObjs, castNode)
-						break
-					}
-				}
+				desugaredObjs = append(desugaredObjs, p.findSelfObject(fieldNode))
 			}
 			i++
 		}
@@ -190,23 +174,12 @@ func flattenBinary(node ast.Node) []ast.Node {
 // unpackFieldNodes extracts nodes from fields
 // - Binary nodes. A field could be either in the left or right side of the binary
 // - Self nodes. We want the object self refers to, not the self node itself
-func (p *Processor) unpackFieldNodes(fields []*ast.DesugaredObjectField) ([]ast.Node, error) {
+func (p *Processor) unpackFieldNodes(fields []*ast.DesugaredObjectField) []ast.Node {
 	var fieldNodes []ast.Node
 	for _, foundField := range fields {
 		switch fieldNode := foundField.Body.(type) {
 		case *ast.Self:
-			filename := fieldNode.LocRange.FileName
-			rootNode, _, _ := p.vm.ImportAST("", filename)
-			tmpStack, err := FindNodeByPosition(rootNode, fieldNode.LocRange.Begin)
-			if err != nil {
-				return nil, err
-			}
-			for !tmpStack.IsEmpty() {
-				node := tmpStack.Pop()
-				if _, ok := node.(*ast.DesugaredObject); ok {
-					fieldNodes = append(fieldNodes, node)
-				}
-			}
+			fieldNodes = append(fieldNodes, p.findSelfObject(fieldNode))
 		case *ast.Binary:
 			fieldNodes = append(fieldNodes, flattenBinary(fieldNode)...)
 		default:
@@ -214,7 +187,7 @@ func (p *Processor) unpackFieldNodes(fields []*ast.DesugaredObjectField) ([]ast.
 		}
 	}
 
-	return fieldNodes, nil
+	return fieldNodes
 }
 
 func findObjectFieldsInObjects(objectNodes []*ast.DesugaredObject, index string, partialMatchFields bool) []*ast.DesugaredObjectField {
@@ -303,4 +276,20 @@ func (p *Processor) findLHSDesugaredObject(stack *nodestack.NodeStack) (*ast.Des
 		}
 	}
 	return nil, fmt.Errorf("could not find a lhs object")
+}
+
+func (p *Processor) findSelfObject(self *ast.Self) *ast.DesugaredObject {
+	filename := self.LocRange.FileName
+	rootNode, _, _ := p.vm.ImportAST("", filename)
+	tmpStack, err := FindNodeByPosition(rootNode, self.LocRange.Begin)
+	if err != nil {
+		return nil
+	}
+	for !tmpStack.IsEmpty() {
+		node := tmpStack.Pop()
+		if castNode, ok := node.(*ast.DesugaredObject); ok {
+			return castNode
+		}
+	}
+	return nil
 }
