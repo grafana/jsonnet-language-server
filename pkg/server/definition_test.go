@@ -232,12 +232,12 @@ var definitionTestCases = []definitionTestCase{
 		results: []definitionResult{{
 			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 2},
-				End:   protocol.Position{Line: 5, Character: 12},
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 6, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 2},
-				End:   protocol.Position{Line: 5, Character: 5},
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 6, Character: 5},
 			},
 		}},
 	},
@@ -248,12 +248,12 @@ var definitionTestCases = []definitionTestCase{
 		results: []definitionResult{{
 			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 2},
-				End:   protocol.Position{Line: 5, Character: 12},
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 6, Character: 12},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 5, Character: 2},
-				End:   protocol.Position{Line: 5, Character: 5},
+				Start: protocol.Position{Line: 6, Character: 2},
+				End:   protocol.Position{Line: 6, Character: 5},
 			},
 		}},
 	},
