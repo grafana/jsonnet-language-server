@@ -82,14 +82,19 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 		items := []protocol.CompletionItem{}
 		// firstIndex is a variable (local) completion
 		for !stack.IsEmpty() {
-			if curr, ok := stack.Pop().(*ast.Local); ok {
-				for _, bind := range curr.Binds {
-					label := string(bind.Variable)
-
-					if !strings.HasPrefix(label, indexes[0]) {
-						continue
-					}
-
+			curr := stack.Pop()
+			var binds ast.LocalBinds
+			switch typedCurr := curr.(type) {
+			case *ast.DesugaredObject:
+				binds = typedCurr.Locals
+			case *ast.Local:
+				binds = typedCurr.Binds
+			default:
+				continue
+			}
+			for _, bind := range binds {
+				label := string(bind.Variable)
+				if strings.HasPrefix(label, indexes[0]) && label != "$" {
 					items = append(items, createCompletionItem(label, "", protocol.VariableCompletion, bind.Body, position))
 				}
 			}
