@@ -165,7 +165,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test goto local obj field from 'self.attr' from other obj",
-		filename: "./testdata/goto-indexes.jsonnet",
+		filename: "./testdata/indexes.jsonnet",
 		position: protocol.Position{Line: 9, Character: 16},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -180,7 +180,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test goto local object 'obj' via obj index 'obj.foo'",
-		filename: "./testdata/goto-indexes.jsonnet",
+		filename: "./testdata/indexes.jsonnet",
 		position: protocol.Position{Line: 8, Character: 13},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -195,10 +195,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test goto imported file",
-		filename: "./testdata/goto-imported-file.jsonnet",
+		filename: "./testdata/imported-file.jsonnet",
 		position: protocol.Position{Line: 0, Character: 22},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 0, Character: 0},
 				End:   protocol.Position{Line: 0, Character: 0},
@@ -211,10 +211,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test goto imported file at lhs index",
-		filename: "./testdata/goto-imported-file.jsonnet",
+		filename: "./testdata/imported-file.jsonnet",
 		position: protocol.Position{Line: 3, Character: 16},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 3, Character: 2},
 				End:   protocol.Position{Line: 3, Character: 12},
@@ -227,10 +227,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test goto imported file at rhs index",
-		filename: "./testdata/goto-imported-file.jsonnet",
+		filename: "./testdata/imported-file.jsonnet",
 		position: protocol.Position{Line: 4, Character: 16},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 5, Character: 2},
 				End:   protocol.Position{Line: 5, Character: 12},
@@ -243,10 +243,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto import index",
-		filename: "testdata/goto-import-attribute.jsonnet",
-		position: protocol.Position{Line: 0, Character: 48},
+		filename: "testdata/import-attribute.jsonnet",
+		position: protocol.Position{Line: 0, Character: 43},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 5, Character: 2},
 				End:   protocol.Position{Line: 5, Character: 12},
@@ -259,10 +259,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto attribute of nested import",
-		filename: "testdata/goto-nested-imported-file.jsonnet",
+		filename: "testdata/nested-imported-file.jsonnet",
 		position: protocol.Position{Line: 2, Character: 13},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 3, Character: 2},
 				End:   protocol.Position{Line: 3, Character: 12},
@@ -275,7 +275,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto dollar attribute",
-		filename: "testdata/goto-dollar-simple.jsonnet",
+		filename: "testdata/dollar-simple.jsonnet",
 		position: protocol.Position{Line: 7, Character: 17},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -290,7 +290,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto dollar sub attribute",
-		filename: "testdata/goto-dollar-simple.jsonnet",
+		filename: "testdata/dollar-simple.jsonnet",
 		position: protocol.Position{Line: 8, Character: 28},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -305,7 +305,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto dollar doesn't follow to imports",
-		filename: "testdata/goto-dollar-no-follow.jsonnet",
+		filename: "testdata/dollar-no-follow.jsonnet",
 		position: protocol.Position{Line: 7, Character: 13},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -320,10 +320,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto attribute of nested import no object intermediary",
-		filename: "testdata/goto-nested-import-file-no-inter-obj.jsonnet",
+		filename: "testdata/nested-import-file-no-inter-obj.jsonnet",
 		position: protocol.Position{Line: 2, Character: 13},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 3, Character: 2},
 				End:   protocol.Position{Line: 3, Character: 12},
@@ -336,10 +336,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto self in import in binary",
-		filename: "testdata/goto-self-within-binary.jsonnet",
+		filename: "testdata/self-within-binary.jsonnet",
 		position: protocol.Position{Line: 4, Character: 13},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-basic-object.jsonnet",
+			targetFilename: "testdata/basic-object.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 3, Character: 2},
 				End:   protocol.Position{Line: 3, Character: 12},
@@ -352,7 +352,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto self attribute from local",
-		filename: "testdata/goto-self-in-local.jsonnet",
+		filename: "testdata/self-in-local.jsonnet",
 		position: protocol.Position{Line: 3, Character: 23},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -367,7 +367,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto function parameter from inside function",
-		filename: "testdata/goto-functions.libsonnet",
+		filename: "testdata/functions.libsonnet",
 		position: protocol.Position{Line: 7, Character: 10},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -378,7 +378,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto local func param",
-		filename: "testdata/goto-local-function.libsonnet",
+		filename: "testdata/local-function.libsonnet",
 		position: protocol.Position{Line: 2, Character: 25},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -389,7 +389,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto self complex scope 1",
-		filename: "testdata/goto-self-complex-scoping.jsonnet",
+		filename: "testdata/self-complex-scoping.jsonnet",
 		position: protocol.Position{Line: 10, Character: 15},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -404,7 +404,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto self complex scope 2",
-		filename: "testdata/goto-self-complex-scoping.jsonnet",
+		filename: "testdata/self-complex-scoping.jsonnet",
 		position: protocol.Position{Line: 11, Character: 19},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -419,7 +419,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: clobber string",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 41, Character: 30},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -434,7 +434,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: clobber nested string",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 42, Character: 44},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -449,7 +449,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: clobber map",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 43, Character: 28},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -464,7 +464,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: map (multiple definitions)",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 32, Character: 22},
 		results: []definitionResult{
 			{
@@ -498,10 +498,10 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetFilename: "testdata/overrides-base.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 19, Character: 2},
-					End:   protocol.Position{Line: 19, Character: 94},
+					End:   protocol.Position{Line: 19, Character: 84},
 				},
 				targetSelectionRange: protocol.Range{
 					Start: protocol.Position{Line: 19, Character: 2},
@@ -509,7 +509,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetFilename: "testdata/overrides-base.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 16, Character: 2},
 					End:   protocol.Position{Line: 16, Character: 24},
@@ -520,7 +520,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetFilename: "testdata/overrides-base.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 1, Character: 2},
 					End:   protocol.Position{Line: 7, Character: 3},
@@ -534,7 +534,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: nested map (multiple definitions)",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 33, Character: 34},
 		results: []definitionResult{
 			{
@@ -568,7 +568,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-imported2.jsonnet",
+				targetFilename: "testdata/overrides-imported2.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 1, Character: 2},
 					End:   protocol.Position{Line: 3, Character: 3},
@@ -579,7 +579,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-imported.jsonnet",
+				targetFilename: "testdata/overrides-imported.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 1, Character: 2},
 					End:   protocol.Position{Line: 3, Character: 3},
@@ -590,7 +590,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetFilename: "testdata/overrides-base.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 12, Character: 4},
 					End:   protocol.Position{Line: 14, Character: 5},
@@ -601,7 +601,7 @@ var definitionTestCases = []definitionTestCase{
 				},
 			},
 			{
-				targetFilename: "testdata/goto-overrides-base.jsonnet",
+				targetFilename: "testdata/overrides-base.jsonnet",
 				targetRange: protocol.Range{
 					Start: protocol.Position{Line: 3, Character: 4},
 					End:   protocol.Position{Line: 5, Character: 5},
@@ -615,7 +615,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: string carried from super",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 35, Character: 27},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -630,7 +630,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: nested string carried from super",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 36, Character: 44},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -645,10 +645,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: string carried from local",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 37, Character: 57},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-overrides-base.jsonnet",
+			targetFilename: "testdata/overrides-base.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 13, Character: 6},
 				End:   protocol.Position{Line: 13, Character: 24},
@@ -661,10 +661,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: string carried from import",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 38, Character: 57},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-overrides-imported.jsonnet",
+			targetFilename: "testdata/overrides-imported.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 2, Character: 4},
 				End:   protocol.Position{Line: 2, Character: 23},
@@ -677,10 +677,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto with overrides: string carried from second import",
-		filename: "testdata/goto-overrides.jsonnet",
+		filename: "testdata/overrides.jsonnet",
 		position: protocol.Position{Line: 39, Character: 67},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-overrides-imported2.jsonnet",
+			targetFilename: "testdata/overrides-imported2.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 2, Character: 4},
 				End:   protocol.Position{Line: 2, Character: 30},
@@ -693,10 +693,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto deeply nested imported attribute",
-		filename: "testdata/goto-import-nested-main.jsonnet",
+		filename: "testdata/import-nested-main.jsonnet",
 		position: protocol.Position{Line: 6, Character: 14},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-import-nested-obj.libsonnet",
+			targetFilename: "testdata/import-nested-obj.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 2, Character: 2},
 				End:   protocol.Position{Line: 2, Character: 26},
@@ -709,10 +709,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto deeply nested imported attribute through self",
-		filename: "testdata/goto-import-nested-main.jsonnet",
+		filename: "testdata/import-nested-main.jsonnet",
 		position: protocol.Position{Line: 7, Character: 27},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-import-nested-obj.libsonnet",
+			targetFilename: "testdata/import-nested-obj.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 2, Character: 2},
 				End:   protocol.Position{Line: 2, Character: 26},
@@ -725,10 +725,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto computed field name object field",
-		filename: "testdata/goto-computed-field-names.jsonnet",
+		filename: "testdata/computed-field-names.jsonnet",
 		position: protocol.Position{Line: 3, Character: 9},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-computed-field-names.jsonnet",
+			targetFilename: "testdata/computed-field-names.jsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 0, Character: 14},
 				End:   protocol.Position{Line: 0, Character: 26},
@@ -741,7 +741,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto field through function",
-		filename: "testdata/goto-functions-advanced.libsonnet",
+		filename: "testdata/functions-advanced.libsonnet",
 		position: protocol.Position{Line: 15, Character: 48},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -756,7 +756,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto field through function-created object",
-		filename: "testdata/goto-functions-advanced.libsonnet",
+		filename: "testdata/functions-advanced.libsonnet",
 		position: protocol.Position{Line: 16, Character: 54},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -771,7 +771,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto field through builder pattern attribute",
-		filename: "testdata/goto-functions-advanced.libsonnet",
+		filename: "testdata/functions-advanced.libsonnet",
 		position: protocol.Position{Line: 17, Character: 67},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -786,7 +786,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto field through mixin attribute",
-		filename: "testdata/goto-functions-advanced.libsonnet",
+		filename: "testdata/functions-advanced.libsonnet",
 		position: protocol.Position{Line: 18, Character: 58},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -801,10 +801,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto attribute of root-function library",
-		filename: "testdata/goto-root-function.jsonnet",
-		position: protocol.Position{Line: 5, Character: 70},
+		filename: "testdata/root-function.jsonnet",
+		position: protocol.Position{Line: 5, Character: 65},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 1, Character: 2},
 				End:   protocol.Position{Line: 1, Character: 22},
@@ -817,10 +817,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto attribute of root-function library through local import",
-		filename: "testdata/goto-root-function.jsonnet",
+		filename: "testdata/root-function.jsonnet",
 		position: protocol.Position{Line: 6, Character: 28},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 1, Character: 2},
 				End:   protocol.Position{Line: 1, Character: 22},
@@ -833,10 +833,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto attribute of root-function library through local resolved import",
-		filename: "testdata/goto-root-function.jsonnet",
+		filename: "testdata/root-function.jsonnet",
 		position: protocol.Position{Line: 7, Character: 36},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 1, Character: 2},
 				End:   protocol.Position{Line: 1, Character: 22},
@@ -849,10 +849,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto nested attribute of root-function library",
-		filename: "testdata/goto-root-function.jsonnet",
+		filename: "testdata/root-function.jsonnet",
 		position: protocol.Position{Line: 9, Character: 98},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 4, Character: 4},
 				End:   protocol.Position{Line: 4, Character: 36},
@@ -865,10 +865,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto nested attribute of root-function library through local import",
-		filename: "testdata/goto-root-function.jsonnet",
+		filename: "testdata/root-function.jsonnet",
 		position: protocol.Position{Line: 10, Character: 55},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 4, Character: 4},
 				End:   protocol.Position{Line: 4, Character: 36},
@@ -881,10 +881,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto nested attribute of root-function library through local resolved import",
-		filename: "testdata/goto-root-function.jsonnet",
+		filename: "testdata/root-function.jsonnet",
 		position: protocol.Position{Line: 11, Character: 64},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-root-function-lib.libsonnet",
+			targetFilename: "testdata/root-function-lib.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 4, Character: 4},
 				End:   protocol.Position{Line: 4, Character: 36},
@@ -897,10 +897,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto function nested multiple times in different ways",
-		filename: "testdata/goto-multilevel-library-main.jsonnet",
+		filename: "testdata/multilevel-library-main.jsonnet",
 		position: protocol.Position{Line: 2, Character: 34},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-multilevel-library-sub-1.1.libsonnet",
+			targetFilename: "testdata/multilevel-library-sub-1.1.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 1, Character: 2},
 				End:   protocol.Position{Line: 1, Character: 28},
@@ -913,10 +913,10 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "test fix infinite recursion",
-		filename: "./testdata/goto-infinite-recursion-bug-1.jsonnet",
+		filename: "./testdata/infinite-recursion-bug-1.jsonnet",
 		position: protocol.Position{Line: 2, Character: 26},
 		results: []definitionResult{{
-			targetFilename: "testdata/goto-infinite-recursion-bug-3.libsonnet",
+			targetFilename: "testdata/infinite-recursion-bug-3.libsonnet",
 			targetRange: protocol.Range{
 				Start: protocol.Position{Line: 5, Character: 10},
 				End:   protocol.Position{Line: 5, Character: 36},
@@ -945,7 +945,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto assert local var",
-		filename: "testdata/goto-assert-var.jsonnet",
+		filename: "testdata/assert-var.jsonnet",
 		position: protocol.Position{Line: 3, Character: 11},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -960,7 +960,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto assert self var",
-		filename: "testdata/goto-assert-var.jsonnet",
+		filename: "testdata/assert-var.jsonnet",
 		position: protocol.Position{Line: 3, Character: 23},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -975,7 +975,7 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "goto builder pattern function",
-		filename: "testdata/goto-builder-pattern.jsonnet",
+		filename: "testdata/builder-pattern.jsonnet",
 		position: protocol.Position{Line: 21, Character: 62},
 		results: []definitionResult{{
 			targetRange: protocol.Range{
@@ -1064,32 +1064,32 @@ func TestDefinitionFail(t *testing.T) {
 	}{
 		{
 			name:     "goto local keyword fails",
-			filename: "testdata/goto-basic-object.jsonnet",
+			filename: "testdata/basic-object.jsonnet",
 			position: protocol.Position{Line: 0, Character: 3},
 			expected: fmt.Errorf("cannot find definition"),
 		},
 
 		{
 			name:     "goto index of std fails",
-			filename: "testdata/goto-std.jsonnet",
+			filename: "testdata/std.jsonnet",
 			position: protocol.Position{Line: 1, Character: 20},
 			expected: fmt.Errorf("cannot get definition of std lib"),
 		},
 		{
 			name:     "goto comment fails",
-			filename: "testdata/goto-comment.jsonnet",
+			filename: "testdata/comment.jsonnet",
 			position: protocol.Position{Line: 0, Character: 1},
 			expected: fmt.Errorf("cannot find definition"),
 		},
 		{
 			name:     "goto super fails as no LHS object exists",
-			filename: "testdata/goto-local-function.libsonnet",
+			filename: "testdata/local-function.libsonnet",
 			position: protocol.Position{Line: 33, Character: 23},
 			expected: fmt.Errorf("could not find a lhs object"),
 		},
 		{
 			name:     "goto self fails when out of scope",
-			filename: "testdata/goto-self-complex-scoping.jsonnet",
+			filename: "testdata/self-complex-scoping.jsonnet",
 			position: protocol.Position{Line: 3, Character: 18},
 			expected: fmt.Errorf("field test was not found in ast.DesugaredObject"),
 		},

@@ -1,4 +1,4 @@
-(import 'goto-basic-object.jsonnet') +
+(import 'basic-object.jsonnet') +
 {
   aaa: 'hello',
 } + {

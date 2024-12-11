@@ -198,7 +198,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete through binary",
-			filename:        "testdata/goto-basic-object.jsonnet",
+			filename:        "testdata/basic-object.jsonnet",
 			replaceString:   "bar: 'foo',",
 			replaceByString: "bar: self.",
 			expected: protocol.CompletionList{
@@ -216,7 +216,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete locals",
-			filename:        "testdata/goto-basic-object.jsonnet",
+			filename:        "testdata/basic-object.jsonnet",
 			replaceString:   "bar: 'foo',",
 			replaceByString: "bar: ",
 			expected: protocol.CompletionList{
@@ -234,7 +234,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete locals: good prefix",
-			filename:        "testdata/goto-basic-object.jsonnet",
+			filename:        "testdata/basic-object.jsonnet",
 			replaceString:   "bar: 'foo',",
 			replaceByString: "bar: some",
 			expected: protocol.CompletionList{
@@ -252,7 +252,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete locals: bad prefix",
-			filename:        "testdata/goto-basic-object.jsonnet",
+			filename:        "testdata/basic-object.jsonnet",
 			replaceString:   "bar: 'foo',",
 			replaceByString: "bar: bad",
 			expected: protocol.CompletionList{
@@ -262,7 +262,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete through import",
-			filename:        "testdata/goto-imported-file.jsonnet",
+			filename:        "testdata/imported-file.jsonnet",
 			replaceString:   "b: otherfile.bar,",
 			replaceByString: "b: otherfile.",
 			expected: protocol.CompletionList{
@@ -291,7 +291,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete through import with prefix",
-			filename:        "testdata/goto-imported-file.jsonnet",
+			filename:        "testdata/imported-file.jsonnet",
 			replaceString:   "b: otherfile.bar,",
 			replaceByString: "b: otherfile.b",
 			expected: protocol.CompletionList{
@@ -311,7 +311,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete dollar sign",
-			filename:        "testdata/goto-dollar-simple.jsonnet",
+			filename:        "testdata/dollar-simple.jsonnet",
 			replaceString:   "test: $.attribute,",
 			replaceByString: "test: $.",
 			expected: protocol.CompletionList{
@@ -340,7 +340,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete dollar sign, end with comma",
-			filename:        "testdata/goto-dollar-simple.jsonnet",
+			filename:        "testdata/dollar-simple.jsonnet",
 			replaceString:   "test: $.attribute,",
 			replaceByString: "test: $.,",
 			expected: protocol.CompletionList{
@@ -369,7 +369,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete nested imported file",
-			filename:        "testdata/goto-nested-imported-file.jsonnet",
+			filename:        "testdata/nested-imported-file.jsonnet",
 			replaceString:   "foo: file.foo,",
 			replaceByString: "foo: file.",
 			expected: protocol.CompletionList{
@@ -398,7 +398,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "autocomplete multiple fields within local",
-			filename:        "testdata/goto-indexes.jsonnet",
+			filename:        "testdata/indexes.jsonnet",
 			replaceString:   "attr: obj.foo",
 			replaceByString: "attr: obj.",
 			expected: protocol.CompletionList{
@@ -665,7 +665,7 @@ func TestCompletion(t *testing.T) {
 		},
 		{
 			name:            "complete attribute from function",
-			filename:        "testdata/goto-functions.libsonnet",
+			filename:        "testdata/functions.libsonnet",
 			replaceString:   "test: myfunc(arg1, arg2)",
 			replaceByString: "test: myfunc(arg1, arg2).",
 			expected: protocol.CompletionList{

@@ -17,7 +17,7 @@ func TestSymbols(t *testing.T) {
 	}{
 		{
 			name:     "One field",
-			filename: "testdata/goto-comment.jsonnet",
+			filename: "testdata/comment.jsonnet",
 			expectSymbols: []interface{}{
 				protocol.DocumentSymbol{
 					Name:   "foo",
@@ -48,7 +48,7 @@ func TestSymbols(t *testing.T) {
 		},
 		{
 			name:     "local var + two fields from plus root objects",
-			filename: "testdata/goto-basic-object.jsonnet",
+			filename: "testdata/basic-object.jsonnet",
 			expectSymbols: []interface{}{
 				protocol.DocumentSymbol{
 					Name:   "somevar",
@@ -129,7 +129,7 @@ func TestSymbols(t *testing.T) {
 		},
 		{
 			name:     "Functions",
-			filename: "testdata/goto-functions.libsonnet",
+			filename: "testdata/functions.libsonnet",
 			expectSymbols: []interface{}{
 				protocol.DocumentSymbol{
 					Name:   "myfunc",
@@ -186,7 +186,7 @@ func TestSymbols(t *testing.T) {
 		},
 		{
 			name:     "Computed fields",
-			filename: "testdata/goto-computed-field-names.jsonnet",
+			filename: "testdata/computed-field-names.jsonnet",
 			expectSymbols: []interface{}{
 				protocol.DocumentSymbol{
 					Name:   "obj",

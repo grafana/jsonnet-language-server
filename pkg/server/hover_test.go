@@ -254,7 +254,7 @@ func TestHover(t *testing.T) {
 	}{
 		{
 			name:     "hover on nested attribute",
-			filename: "testdata/goto-indexes.jsonnet",
+			filename: "testdata/indexes.jsonnet",
 			position: protocol.Position{Line: 9, Character: 16},
 			expectedContent: protocol.Hover{
 				Contents: protocol.MarkupContent{
@@ -269,7 +269,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name:     "hover on multi-line string",
-			filename: "testdata/goto-indexes.jsonnet",
+			filename: "testdata/indexes.jsonnet",
 			position: protocol.Position{Line: 8, Character: 9},
 			expectedContent: protocol.Hover{
 				Contents: protocol.MarkupContent{

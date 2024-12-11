@@ -1,4 +1,4 @@
-local imported = import 'goto-import-nested3.libsonnet';
+local imported = import 'import-nested3.libsonnet';
 local obj = imported.api.v1.obj;
 
 {

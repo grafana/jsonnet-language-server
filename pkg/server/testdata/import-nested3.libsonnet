@@ -1,4 +1,4 @@
-(import 'goto-import-nested2.libsonnet')
+(import 'import-nested2.libsonnet')
 + {
   local this = self,
   _config+:: {

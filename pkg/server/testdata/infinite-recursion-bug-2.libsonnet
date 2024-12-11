@@ -1,4 +1,4 @@
-local drone = import './goto-infinite-recursion-bug-3.libsonnet';
+local drone = import './infinite-recursion-bug-3.libsonnet';
 {
   pipeline:
     drone.pipeline.docker {
