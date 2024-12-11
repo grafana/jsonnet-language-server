@@ -17,6 +17,15 @@ func TestFunctions(t *testing.T) {
 	}
 	contains(t, functions, minFunc)
 
+	// Check std.objectHas
+	objectHasFunc := Function{
+		Name:                "objectHas",
+		Params:              []string{"o", "f"},
+		MarkdownDescription: "Returns `true` if the given object has the field (given as a string), otherwise\n`false`. Raises an error if the arguments are not object and string\nrespectively. Returns false if the field is hidden.",
+		AvailableSince:      "0.10.0",
+	}
+	contains(t, functions, objectHasFunc)
+
 	// Check std.ceil
 	ceilFunc := Function{
 		Name:   "ceil",

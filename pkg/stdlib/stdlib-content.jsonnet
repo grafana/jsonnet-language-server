@@ -29,7 +29,7 @@ local html = import 'html.libsonnet';
           name: 'extVar',
           params: ['x'],
           availableSince: '0.10.0',
-          description: 'If an external variable with the given name was defined, return its string value. Otherwise, raise an error.',
+          description: 'If an external variable with the given name was defined, return its value. Otherwise, raise an error.',
         },
       ],
     },
@@ -71,83 +71,6 @@ local html = import 'html.libsonnet';
           |||,
         },
         {
-          name: 'get',
-          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
-          availableSince: '0.18.0',
-          description: |||
-            Returns the object's field if it exists or default value otherwise.
-            <code>inc_hidden</code> controls whether to include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectHas',
-          params: ['o', 'f'],
-          availableSince: '0.10.0',
-          description: |||
-            Returns <code>true</code> if the given object has the field (given as a string), otherwise
-            <code>false</code>. Raises an error if the arguments are not object and string
-            respectively. Returns false if the field is hidden.
-          |||,
-        },
-        {
-          name: 'objectFields',
-          params: ['o'],
-          availableSince: '0.10.0',
-          description: |||
-            Returns an array of strings, each element being a field from the given object. Does not include
-            hidden fields.
-          |||,
-        },
-        {
-          name: 'objectValues',
-          params: ['o'],
-          availableSince: '0.17.0',
-          description: |||
-            Returns an array of the values in the given object. Does not include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectKeysValues',
-          params: ['o'],
-          availableSince: '0.20.0',
-          description: |||
-            Returns an array of objects from the given object, each object having two fields: 
-            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
-          |||,
-        },
-        {
-          name: 'objectHasAll',
-          params: ['o', 'f'],
-          availableSince: '0.10.0',
-          description: |||
-            As <code>std.objectHas</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectFieldsAll',
-          params: ['o'],
-          availableSince: '0.10.0',
-          description: |||
-            As <code>std.objectFields</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectValuesAll',
-          params: ['o'],
-          availableSince: '0.17.0',
-          description: |||
-            As <code>std.objectValues</code> but also includes hidden fields.
-          |||,
-        },
-        {
-          name: 'objectKeysValuesAll',
-          params: ['o'],
-          availableSince: '0.20.0',
-          description: |||
-            As <code>std.objectKeysValues</code> but also includes hidden fields.
-          |||,
-        },
-        {
           name: 'prune',
           params: ['a'],
           availableSince: '0.10.0',
@@ -155,16 +78,6 @@ local html = import 'html.libsonnet';
             Recursively remove all "empty" members of <code>a</code>. "Empty" is defined as zero
             length `arrays`, zero length `objects`, or `null` values.
             The argument <code>a</code> may have any type.
-          |||,
-        },
-        {
-          name: 'mapWithKey',
-          params: ['func', 'obj'],
-          availableSince: '0.10.0',
-          description: |||
-            Apply the given function to all fields of the given object, also passing
-            the field name. The function <code>func</code> is expected to take the
-            field name as the first parameter and the field value as the second.
           |||,
         },
       ],
@@ -197,11 +110,19 @@ local html = import 'html.libsonnet';
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
               <ul><code>std.round(x)</code></ul>
+              <ul><code>std.isEven(x)</code></ul>
+              <ul><code>std.isOdd(x)</code></ul>
+              <ul><code>std.isInteger(x)</code></ul>
+              <ul><code>std.isDecimal(x)</code></ul>
           </ul>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
               modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
               it does Python-style string formatting with <code>std.format()</code>.
+          </p>
+          <p>
+              The functions <code>std.isEven(x)</code> and <code>std.isOdd(x)</code> use integral part of a
+              floating number to test for even or odd.
           </p>
         |||,
       ],
@@ -455,7 +376,23 @@ local html = import 'html.libsonnet';
           params: ['str'],
           availableSince: '0.20.0',
           description: |||
-            Returns true if the the given string is of zero length.
+            Returns true if the given string is of zero length.
+          |||,
+        },
+        {
+          name: 'trim',
+          params: ['str'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a copy of string after eliminating leading and trailing whitespaces.
+          |||,
+        },
+        {
+          name: 'equalsIgnoreCase',
+          params: ['str1', 'str2'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
           |||,
         },
         {
@@ -870,12 +807,48 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'manifestJson',
+          params: ['value'],
+          availableSince: '0.10.0',
+          description: |||
+            Convert the given object to a JSON form. Under the covers,
+            it calls <code>std.manifestJsonEx</code> with a 4-space indent:
+          |||,
+          examples: [
+            {
+              input: |||
+                std.manifestJson(
+                {
+                    x: [1, 2, 3, true, false, null,
+                        "string\nstring"],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                })
+              |||,
+              output:
+                std.manifestJson(
+                  {
+                    x: [
+                      1,
+                      2,
+                      3,
+                      true,
+                      false,
+                      null,
+                      'string\nstring',
+                    ],
+                    y: { a: 1, b: 2, c: [1, 2] },
+                  }
+                ),
+            },
+          ],
+        },
+        {
           name: 'manifestJsonMinified',
           params: ['value'],
           availableSince: '0.18.0',
           description: |||
             Convert the given object to a minified JSON form. Under the covers,
-            it calls <code>std.manifestJsonEx:')</code>:
+            it calls <code>std.manifestJsonEx</code>:
           |||,
           examples: [
             {
@@ -1303,6 +1276,10 @@ local html = import 'html.libsonnet';
               input: 'std.slice("jsonnet", 0, 4, 1)',
               output: std.slice('jsonnet', 0, 4, 1),
             },
+            {
+              input: 'std.slice("jsonnet", -3, null, null)',
+              output: std.slice('jsonnet', -3, null, null),
+            },
           ],
         },
         {
@@ -1346,6 +1323,20 @@ local html = import 'html.libsonnet';
             {
               input: 'std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])',
               output: std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]]),
+            },
+          ],
+        },
+        {
+          name: 'flattenDeepArray',
+          params: ['value'],
+          availableSince: 'upcoming',
+          description: |||
+            Concatenate an array containing values and arrays into a single flattened array.
+          |||,
+          examples: [
+            {
+              input: 'std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])',
+              output: std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]]),
             },
           ],
         },
@@ -1418,6 +1409,66 @@ local html = import 'html.libsonnet';
           description: html.paragraphs([
             |||
               Return sum of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'minArray',
+          params: ['arr', 'keyF', 'onEmpty'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return the min of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'maxArray',
+          params: ['arr', 'keyF', 'onEmpty'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return the max of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'contains',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
+            |||,
+          ]),
+        },
+        {
+          name: 'avg',
+          params: ['arr'],
+          availableSince: '0.20.0',
+          description: html.paragraphs([
+            |||
+              Return average of all element in <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'remove',
+          params: ['arr', 'elem'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove first occurrence of <code>elem</code> from <code>arr</code>.
+            |||,
+          ]),
+        },
+        {
+          name: 'removeAt',
+          params: ['arr', 'idx'],
+          availableSince: 'upcoming',
+          description: html.paragraphs([
+            |||
+              Remove element at <code>idx</code> index from <code>arr</code>.
             |||,
           ]),
         },
@@ -1498,6 +1549,107 @@ local html = import 'html.libsonnet';
       ],
     },
     {
+      name: 'Objects',
+      id: 'objects',
+      fields: [
+        {
+          name: 'get',
+          params: ['o', 'f', 'default=null', 'inc_hidden=true'],
+          availableSince: '0.18.0',
+          description: |||
+            Returns the object's field if it exists or default value otherwise.
+            <code>inc_hidden</code> controls whether to include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectHas',
+          params: ['o', 'f'],
+          availableSince: '0.10.0',
+          description: |||
+            Returns <code>true</code> if the given object has the field (given as a string), otherwise
+            <code>false</code>. Raises an error if the arguments are not object and string
+            respectively. Returns false if the field is hidden.
+          |||,
+        },
+        {
+          name: 'objectFields',
+          params: ['o'],
+          availableSince: '0.10.0',
+          description: |||
+            Returns an array of strings, each element being a field from the given object. Does not include
+            hidden fields.
+          |||,
+        },
+        {
+          name: 'objectValues',
+          params: ['o'],
+          availableSince: '0.17.0',
+          description: |||
+            Returns an array of the values in the given object. Does not include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectKeysValues',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            Returns an array of objects from the given object, each object having two fields: 
+            <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
+          |||,
+        },
+        {
+          name: 'objectHasAll',
+          params: ['o', 'f'],
+          availableSince: '0.10.0',
+          description: |||
+            As <code>std.objectHas</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectFieldsAll',
+          params: ['o'],
+          availableSince: '0.10.0',
+          description: |||
+            As <code>std.objectFields</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectValuesAll',
+          params: ['o'],
+          availableSince: '0.17.0',
+          description: |||
+            As <code>std.objectValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectKeysValuesAll',
+          params: ['o'],
+          availableSince: '0.20.0',
+          description: |||
+            As <code>std.objectKeysValues</code> but also includes hidden fields.
+          |||,
+        },
+        {
+          name: 'objectRemoveKey',
+          params: ['obj', 'key'],
+          availableSince: 'upcoming',
+          description: |||
+            Returns a new object after removing the given key from object.
+          |||,
+        },
+        {
+          name: 'mapWithKey',
+          params: ['func', 'obj'],
+          availableSince: '0.10.0',
+          description: |||
+            Apply the given function to all fields of the given object, also passing
+            the field name. The function <code>func</code> is expected to take the
+            field name as the first parameter and the field value as the second.
+          |||,
+        },
+      ],
+    },
+    {
       name: 'Encoding',
       id: 'encoding',
       fields: [
@@ -1543,6 +1695,58 @@ local html = import 'html.libsonnet';
           description: |||
             Encodes the given value into an MD5 string.
           |||,
+        },
+        {
+          name: 'sha1',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA1 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha256',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA256 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha512',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA512 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
+        },
+        {
+          name: 'sha3',
+          params: ['s'],
+          availableSince: 'upcoming',
+          description: [
+            html.p({}, |||
+              Encodes the given value into an SHA3 string.
+            |||),
+            html.p({}, |||
+              This function is only available in Go version of jsonnet.
+            |||),
+          ],
         },
       ],
     },
