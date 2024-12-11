@@ -1,4 +1,4 @@
-local imported = import 'goto-dollar-simple.jsonnet';
+local imported = import 'dollar-simple.jsonnet';
 
 {
   test: imported.attribute.sub,

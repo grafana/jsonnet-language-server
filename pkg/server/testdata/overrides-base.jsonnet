@@ -17,5 +17,5 @@
   a+: extensionFromLocal,
 }
 + {
-  a+: (import 'goto-overrides-imported.jsonnet') + (import 'goto-overrides-imported2.jsonnet'),
+  a+: (import 'overrides-imported.jsonnet') + (import 'overrides-imported2.jsonnet'),
 }

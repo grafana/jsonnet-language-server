@@ -1,4 +1,4 @@
-local base = import 'goto-import-nested1.libsonnet';
+local base = import 'import-nested1.libsonnet';
 
 base {
   api+:: {
