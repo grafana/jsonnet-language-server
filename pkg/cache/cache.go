@@ -42,17 +42,17 @@ func New() *Cache {
 }
 
 // Put adds or replaces a document in the cache.
-func (c *Cache) Put(new *Document) error {
+func (c *Cache) Put(doc *Document) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	uri := new.Item.URI
+	uri := doc.Item.URI
 	if old, ok := c.docs[uri]; ok {
-		if old.Item.Version > new.Item.Version {
+		if old.Item.Version > doc.Item.Version {
 			return errors.New("newer version of the document is already in the cache")
 		}
 	}
-	c.docs[uri] = new
+	c.docs[uri] = doc
 
 	// Invalidate the TopLevelObject cache
 	// We can't easily invalidate the cache for a single file (hard to figure out where the import actually leads),
