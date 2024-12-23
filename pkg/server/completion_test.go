@@ -221,15 +221,26 @@ func TestCompletion(t *testing.T) {
 			replaceByString: "bar: ",
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
-				Items: []protocol.CompletionItem{{
-					Label:      "somevar",
-					Kind:       protocol.VariableCompletion,
-					Detail:     "somevar",
-					InsertText: "somevar",
-					LabelDetails: protocol.CompletionItemLabelDetails{
-						Description: "string",
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "somevar2",
+						Kind:       protocol.VariableCompletion,
+						Detail:     "somevar2",
+						InsertText: "somevar2",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
 					},
-				}},
+					{
+						Label:      "somevar",
+						Kind:       protocol.VariableCompletion,
+						Detail:     "somevar",
+						InsertText: "somevar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -239,15 +250,26 @@ func TestCompletion(t *testing.T) {
 			replaceByString: "bar: some",
 			expected: protocol.CompletionList{
 				IsIncomplete: false,
-				Items: []protocol.CompletionItem{{
-					Label:      "somevar",
-					Kind:       protocol.VariableCompletion,
-					Detail:     "somevar",
-					InsertText: "somevar",
-					LabelDetails: protocol.CompletionItemLabelDetails{
-						Description: "string",
+				Items: []protocol.CompletionItem{
+					{
+						Label:      "somevar2",
+						Kind:       protocol.VariableCompletion,
+						Detail:     "somevar2",
+						InsertText: "somevar2",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
 					},
-				}},
+					{
+						Label:      "somevar",
+						Kind:       protocol.VariableCompletion,
+						Detail:     "somevar",
+						InsertText: "somevar",
+						LabelDetails: protocol.CompletionItemLabelDetails{
+							Description: "string",
+						},
+					},
+				},
 			},
 		},
 		{
