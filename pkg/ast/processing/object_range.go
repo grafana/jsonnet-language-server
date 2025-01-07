@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet/ast"
+	position "github.com/grafana/jsonnet-language-server/pkg/position_conversion"
+	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 )
 
 type ObjectRange struct {
@@ -15,7 +17,7 @@ type ObjectRange struct {
 	Node           ast.Node
 }
 
-func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
+func (p *Processor) FieldToRange(field ast.DesugaredObjectField) ObjectRange {
 	selectionRange := ast.LocationRange{
 		Begin: ast.Location{
 			Line:   field.LocRange.Begin.Line,
@@ -23,33 +25,48 @@ func FieldToRange(field ast.DesugaredObjectField) ObjectRange {
 		},
 		End: ast.Location{
 			Line:   field.LocRange.Begin.Line,
-			Column: field.LocRange.Begin.Column + len(FieldNameToString(field.Name)),
+			Column: field.LocRange.Begin.Column + len(p.FieldNameToString(field.Name)),
 		},
 	}
 	return ObjectRange{
 		Filename:       field.LocRange.FileName,
 		SelectionRange: selectionRange,
 		FullRange:      field.LocRange,
-		FieldName:      FieldNameToString(field.Name),
+		FieldName:      p.FieldNameToString(field.Name),
 		Node:           field.Body,
 	}
 }
 
-func FieldNameToString(fieldName ast.Node) string {
-	if fieldName, ok := fieldName.(*ast.LiteralString); ok {
+func (p *Processor) FieldNameToString(fieldName ast.Node) string {
+	const unknown = "<unknown>"
+
+	switch fieldName := fieldName.(type) {
+	case *ast.LiteralString:
 		return fieldName.Value
-	}
-	if fieldName, ok := fieldName.(*ast.Index); ok {
+	case *ast.Index:
 		// We only want to wrap in brackets at the top level, so we trim at all step and then rewrap
 		return fmt.Sprintf("[%s.%s]",
-			strings.Trim(FieldNameToString(fieldName.Target), "[]"),
-			strings.Trim(FieldNameToString(fieldName.Index), "[]"),
+			strings.Trim(p.FieldNameToString(fieldName.Target), "[]"),
+			strings.Trim(p.FieldNameToString(fieldName.Index), "[]"),
 		)
-	}
-	if fieldName, ok := fieldName.(*ast.Var); ok {
+	case *ast.Var:
 		return string(fieldName.Id)
+	default:
+		loc := fieldName.Loc()
+		if loc == nil {
+			return unknown
+		}
+		fname := loc.FileName
+		if fname == "" {
+			return unknown
+		}
+
+		content, err := p.cache.GetContents(protocol.URIFromPath(fname), position.RangeASTToProtocol(*loc))
+		if err != nil {
+			return unknown
+		}
+		return content
 	}
-	return ""
 }
 
 func LocalBindToRange(bind ast.LocalBind) ObjectRange {

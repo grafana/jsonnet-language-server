@@ -96,7 +96,7 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 		}
 		if len(indexList) == 0 {
 			for _, found := range foundFields {
-				ranges = append(ranges, FieldToRange(*found))
+				ranges = append(ranges, p.FieldToRange(*found))
 
 				// If the field is not PlusSuper (field+: value), we stop there. Other previous values are not relevant
 				// If partialMatchCurrentField is true, we can continue to look for other fields
