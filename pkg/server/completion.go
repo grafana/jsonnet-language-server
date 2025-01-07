@@ -44,6 +44,18 @@ func (s *Server) Completion(_ context.Context, params *protocol.CompletionParams
 
 	vm := s.getVM(doc.Item.URI.SpanURI().Filename())
 
+	// Inside parentheses, search for completions as if the content was on a separate line
+	// e.g., this enables completion in function arguments
+	if strings.LastIndex(line, "(") > strings.LastIndex(line, ")") {
+		argsPart := line[strings.LastIndex(line, "(")+1:]
+		// Only consider the last argument for completion
+		arguments := strings.Split(argsPart, ",")
+		lastArg := arguments[len(arguments)-1]
+		lastArg = strings.TrimSpace(lastArg)
+		lastArg = strings.TrimLeft(lastArg, "{[") // Ignore leading array or object tokens
+		line = lastArg
+	}
+
 	items := s.completionFromStack(line, searchStack, vm, params.Position)
 	return &protocol.CompletionList{IsIncomplete: false, Items: items}, nil
 }
@@ -62,6 +74,7 @@ func (s *Server) completionFromStack(line string, stack *nodestack.NodeStack, vm
 	lineWords := splitWords(line)
 	lastWord := lineWords[len(lineWords)-1]
 	lastWord = strings.TrimRight(lastWord, ",;") // Ignore trailing commas and semicolons, they can present when someone is modifying an existing line
+	lastWord = strings.TrimSpace(lastWord)
 
 	indexes := strings.Split(lastWord, ".")
 
@@ -286,6 +299,10 @@ func splitWords(input string) []string {
 	if currentWord.Len() > 0 {
 		words = append(words, currentWord.String())
 	} else if strings.HasSuffix(input, " ") {
+		words = append(words, "")
+	}
+
+	if len(words) == 0 {
 		words = append(words, "")
 	}
 
