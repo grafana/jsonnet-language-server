@@ -106,21 +106,21 @@ func TestSymbols(t *testing.T) {
 					Kind:   protocol.Field,
 					Range: protocol.Range{
 						Start: protocol.Position{
-							Line:      5,
+							Line:      6,
 							Character: 2,
 						},
 						End: protocol.Position{
-							Line:      5,
+							Line:      6,
 							Character: 12,
 						},
 					},
 					SelectionRange: protocol.Range{
 						Start: protocol.Position{
-							Line:      5,
+							Line:      6,
 							Character: 2,
 						},
 						End: protocol.Position{
-							Line:      5,
+							Line:      6,
 							Character: 5,
 						},
 					},
