@@ -107,7 +107,11 @@ func (c *Cache) GetContents(uri protocol.DocumentURI, position protocol.Range) (
 	for i := position.Start.Line; i <= position.End.Line; i++ {
 		switch i {
 		case position.Start.Line:
-			contentBuilder.WriteString(lines[i][position.Start.Character:])
+			if i == position.End.Line {
+				contentBuilder.WriteString(lines[i][position.Start.Character:position.End.Character])
+			} else {
+				contentBuilder.WriteString(lines[i][position.Start.Character:])
+			}
 		case position.End.Line:
 			contentBuilder.WriteString(lines[i][:position.End.Character])
 		default:

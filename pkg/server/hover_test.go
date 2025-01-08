@@ -259,7 +259,7 @@ func TestHover(t *testing.T) {
 			expectedContent: protocol.Hover{
 				Contents: protocol.MarkupContent{
 					Kind:  protocol.Markdown,
-					Value: "```jsonnet\nbar: 'innerfoo',\n```\n",
+					Value: "```jsonnet\nbar: 'innerfoo'\n```\n",
 				},
 				Range: protocol.Range{
 					Start: protocol.Position{Line: 9, Character: 5},

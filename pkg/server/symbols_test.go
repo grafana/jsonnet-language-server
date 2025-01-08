@@ -266,6 +266,112 @@ func TestSymbols(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "Conditional fields",
+			filename: "testdata/conditional-fields.jsonnet",
+			expectSymbols: []interface{}{
+				protocol.DocumentSymbol{
+					Name:   "flag",
+					Detail: "Boolean",
+					Kind:   protocol.Variable,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      0,
+							Character: 6,
+						},
+						End: protocol.Position{
+							Line:      0,
+							Character: 17,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      0,
+							Character: 6,
+						},
+						End: protocol.Position{
+							Line:      0,
+							Character: 10,
+						},
+					},
+				},
+				protocol.DocumentSymbol{
+					Name:   "if flag then 'hello'",
+					Detail: "String",
+					Kind:   protocol.Field,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      2,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      2,
+							Character: 34,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      2,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      2,
+							Character: 22,
+						},
+					},
+				},
+				protocol.DocumentSymbol{
+					Name:   "if flag then 'hello1' else 'hello2'",
+					Detail: "String",
+					Kind:   protocol.Field,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      3,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      3,
+							Character: 49,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      3,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      3,
+							Character: 37,
+						},
+					},
+				},
+				protocol.DocumentSymbol{
+					Name:   "if false == flag then 'hello3' else (function() 'test')()",
+					Detail: "String",
+					Kind:   protocol.Field,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      4,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      4,
+							Character: 71,
+						},
+					},
+					SelectionRange: protocol.Range{
+						Start: protocol.Position{
+							Line:      4,
+							Character: 2,
+						},
+						End: protocol.Position{
+							Line:      4,
+							Character: 59,
+						},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			params := &protocol.DocumentSymbolParams{

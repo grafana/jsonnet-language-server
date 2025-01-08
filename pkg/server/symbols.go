@@ -27,7 +27,8 @@ func (s *Server) DocumentSymbol(_ context.Context, params *protocol.DocumentSymb
 		return nil, nil
 	}
 
-	symbols := buildDocumentSymbols(doc.AST)
+	processor := processing.NewProcessor(s.cache, nil)
+	symbols := s.buildDocumentSymbols(processor, doc.AST)
 
 	result := make([]interface{}, len(symbols))
 	for i, symbol := range symbols {
@@ -37,13 +38,13 @@ func (s *Server) DocumentSymbol(_ context.Context, params *protocol.DocumentSymb
 	return result, nil
 }
 
-func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
+func (s *Server) buildDocumentSymbols(processor *processing.Processor, node ast.Node) []protocol.DocumentSymbol {
 	var symbols []protocol.DocumentSymbol
 
 	switch node := node.(type) {
 	case *ast.Binary:
-		symbols = append(symbols, buildDocumentSymbols(node.Left)...)
-		symbols = append(symbols, buildDocumentSymbols(node.Right)...)
+		symbols = append(symbols, s.buildDocumentSymbols(processor, node.Left)...)
+		symbols = append(symbols, s.buildDocumentSymbols(processor, node.Right)...)
 	case *ast.Local:
 		for _, bind := range node.Binds {
 			objectRange := processing.LocalBindToRange(bind)
@@ -55,21 +56,21 @@ func buildDocumentSymbols(node ast.Node) []protocol.DocumentSymbol {
 				Detail:         symbolDetails(bind.Body),
 			})
 		}
-		symbols = append(symbols, buildDocumentSymbols(node.Body)...)
+		symbols = append(symbols, s.buildDocumentSymbols(processor, node.Body)...)
 	case *ast.DesugaredObject:
 		for _, field := range node.Fields {
 			kind := protocol.Field
 			if field.Hide == ast.ObjectFieldHidden {
 				kind = protocol.Property
 			}
-			fieldRange := processing.FieldToRange(field)
+			fieldRange := processor.FieldToRange(field)
 			symbols = append(symbols, protocol.DocumentSymbol{
-				Name:           processing.FieldNameToString(field.Name),
+				Name:           processor.FieldNameToString(field.Name),
 				Kind:           kind,
 				Range:          position.RangeASTToProtocol(fieldRange.FullRange),
 				SelectionRange: position.RangeASTToProtocol(fieldRange.SelectionRange),
 				Detail:         symbolDetails(field.Body),
-				Children:       buildDocumentSymbols(field.Body),
+				Children:       s.buildDocumentSymbols(processor, field.Body),
 			})
 		}
 	}
