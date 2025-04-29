@@ -1,24 +1,46 @@
+version = '2'
+
 [linters]
 enable = [
-  "copyloopvar",
-  "dogsled",
-  "forcetypeassert",
-  "goconst",
-  "gocritic",
-  "gocyclo",
-  "goimports",
-  "goprintffuncname",
-  "gosimple",
-  "govet",
-  "ineffassign",
-  "misspell",
-  "nakedret",
-  "revive",
-  "staticcheck",
-  "stylecheck",
-  "typecheck",
-  "unconvert",
-  "unparam",
-  "unused",
-  "whitespace"
+  'copyloopvar',
+  'dogsled',
+  'forcetypeassert',
+  'goconst',
+  'gocritic',
+  'gocyclo',
+  'goprintffuncname',
+  'misspell',
+  'nakedret',
+  'revive',
+  'staticcheck',
+  'unconvert',
+  'unparam',
+  'whitespace'
+]
+
+[linters.exclusions]
+generated = 'lax'
+presets = [
+  'comments',
+  'common-false-positives',
+  'legacy',
+  'std-error-handling'
+]
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
+]
+
+[formatters]
+enable = [
+  'goimports'
+]
+
+[formatters.exclusions]
+generated = 'lax'
+paths = [
+  'third_party$',
+  'builtin$',
+  'examples$'
 ]

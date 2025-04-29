@@ -34,7 +34,12 @@ func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidC
 	for sk, sv := range settingsMap {
 		switch sk {
 		case "log_level":
-			level, err := log.ParseLevel(sv.(string))
+			svStr, ok := sv.(string)
+			if !ok {
+				return fmt.Errorf("%w: unsupported settings value for log_level. expected string. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
+
+			level, err := log.ParseLevel(svStr)
 			if err != nil {
 				return fmt.Errorf("%w: %v", jsonrpc2.ErrInvalidParams, err)
 			}
