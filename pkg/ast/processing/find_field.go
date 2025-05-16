@@ -117,6 +117,20 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 			case *ast.Apply:
 				// Add the target of the Apply to the list of field nodes to look for
 				// The target is a function and will be found by FindVarReference on the next loop
+				if idx, ok := fieldNode.Target.(*ast.Index); ok { // Builder pattern, run the function within the index
+					if importNode, ok := idx.Target.(*ast.Import); ok {
+						// If the index is a builder pattern, we need to run the function within the index
+						// We need to import the file first
+						objs := p.FindTopLevelObjectsInFile(importNode.File.Value, string(importNode.Loc().File.DiagnosticFileName))
+						for _, obj := range objs {
+							if idxField := findObjectFieldsInObject(obj, idx.Index.(*ast.LiteralString).Value, false); len(idxField) > 0 {
+								fieldNodes = append(fieldNodes, idxField[0].Body)
+							}
+						}
+						i++
+						continue
+					}
+				}
 				fieldNodes = append(fieldNodes, fieldNode.Target)
 			case *ast.Var:
 				varReference, err := p.FindVarReference(fieldNode)

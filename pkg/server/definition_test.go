@@ -929,17 +929,17 @@ var definitionTestCases = []definitionTestCase{
 	},
 	{
 		name:     "grafonnet: eval variable selection options",
-		filename: "./testdata/grafonnet/eval-variable-options.jsonnet",
+		filename: "./testdata/grafonnet-eval-variable-options.jsonnet",
 		position: protocol.Position{Line: 5, Character: 54},
 		results: []definitionResult{{
-			targetFilename: "testdata/grafonnet/vendor/github.com/grafana/grafonnet/gen/grafonnet-v10.0.0/custom/dashboard/variable.libsonnet",
+			targetFilename: "testdata/vendor/github.com/grafana/grafonnet/gen/grafonnet-v11.4.0/custom/dashboard/variable.libsonnet",
 			targetRange: protocol.Range{
-				Start: protocol.Position{Line: 101, Character: 12},
-				End:   protocol.Position{Line: 103, Character: 13},
+				Start: protocol.Position{Line: 122, Character: 12},
+				End:   protocol.Position{Line: 124, Character: 13},
 			},
 			targetSelectionRange: protocol.Range{
-				Start: protocol.Position{Line: 101, Character: 12},
-				End:   protocol.Position{Line: 101, Character: 21},
+				Start: protocol.Position{Line: 122, Character: 12},
+				End:   protocol.Position{Line: 122, Character: 21},
 			},
 		}},
 	},
@@ -985,6 +985,22 @@ var definitionTestCases = []definitionTestCase{
 			targetSelectionRange: protocol.Range{
 				Start: protocol.Position{Line: 16, Character: 6},
 				End:   protocol.Position{Line: 16, Character: 11},
+			},
+		}},
+	},
+	{
+		name:     "goto ksonnet util",
+		filename: "testdata/use-ksonnet-util.jsonnet",
+		position: protocol.Position{Line: 11, Character: 30},
+		results: []definitionResult{{
+			targetFilename: "testdata/vendor/ksonnet-util/util.libsonnet",
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 243, Character: 2},
+				End:   protocol.Position{Line: 251, Character: 5},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 243, Character: 2},
+				End:   protocol.Position{Line: 243, Character: 24},
 			},
 		}},
 	},
