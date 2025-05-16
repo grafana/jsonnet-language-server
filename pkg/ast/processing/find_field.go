@@ -123,7 +123,11 @@ func (p *Processor) extractObjectRangesFromDesugaredObjs(desugaredObjs []*ast.De
 						// We need to import the file first
 						objs := p.FindTopLevelObjectsInFile(importNode.File.Value, string(importNode.Loc().File.DiagnosticFileName))
 						for _, obj := range objs {
-							if idxField := findObjectFieldsInObject(obj, idx.Index.(*ast.LiteralString).Value, false); len(idxField) > 0 {
+							fieldString, ok := idx.Index.(*ast.LiteralString)
+							if !ok {
+								continue
+							}
+							if idxField := findObjectFieldsInObject(obj, fieldString.Value, false); len(idxField) > 0 {
 								fieldNodes = append(fieldNodes, idxField[0].Body)
 							}
 						}
