@@ -312,19 +312,14 @@ func (p *Processor) findSelfObject(self *ast.Self) *ast.DesugaredObject {
 	return nil
 }
 
-// FindUsages finds all usages of a symbol in the given files
-func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, error) {
-	var ranges []ObjectRange
-	symbolID := ast.Identifier(symbol)
-
-	// Create a visitor to find all usages
-	var visitor func(node ast.Node)
-	visitor = func(node ast.Node) {
+// findUsagesVisitor creates a visitor function that finds all usages of a given symbol
+func (p *Processor) findUsagesVisitor(symbolID ast.Identifier, symbol string, ranges *[]ObjectRange) func(node ast.Node) {
+	return func(node ast.Node) {
 		switch node := node.(type) {
 		case *ast.Var:
 			// For variables, check if the ID matches
 			if node.Id == symbolID {
-				ranges = append(ranges, ObjectRange{
+				*ranges = append(*ranges, ObjectRange{
 					Filename:       node.LocRange.FileName,
 					SelectionRange: node.LocRange,
 					FullRange:      node.LocRange,
@@ -334,7 +329,7 @@ func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, er
 			// For field access, check if the index matches
 			if litStr, ok := node.Index.(*ast.LiteralString); ok {
 				if litStr.Value == symbol {
-					ranges = append(ranges, ObjectRange{
+					*ranges = append(*ranges, ObjectRange{
 						Filename:       node.LocRange.FileName,
 						SelectionRange: node.LocRange,
 						FullRange:      node.LocRange,
@@ -344,7 +339,7 @@ func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, er
 		case *ast.Apply:
 			if litStr, ok := node.Target.(*ast.LiteralString); ok {
 				if litStr.Value == symbol {
-					ranges = append(ranges, ObjectRange{
+					*ranges = append(*ranges, ObjectRange{
 						Filename:       node.LocRange.FileName,
 						SelectionRange: node.LocRange,
 						FullRange:      node.LocRange,
@@ -356,59 +351,68 @@ func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, er
 		// Visit all children
 		switch node := node.(type) {
 		case *ast.Apply:
-			visitor(node.Target)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Target)
 			for _, arg := range node.Arguments.Positional {
-				visitor(arg.Expr)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(arg.Expr)
 			}
 			for _, arg := range node.Arguments.Named {
-				visitor(arg.Arg)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(arg.Arg)
 			}
 		case *ast.Array:
 			for _, element := range node.Elements {
-				visitor(element.Expr)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(element.Expr)
 			}
 		case *ast.Binary:
-			visitor(node.Left)
-			visitor(node.Right)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Left)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Right)
 		case *ast.Conditional:
-			visitor(node.Cond)
-			visitor(node.BranchTrue)
-			visitor(node.BranchFalse)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Cond)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.BranchTrue)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.BranchFalse)
 		case *ast.DesugaredObject:
 			for _, field := range node.Fields {
-				visitor(field.Name)
-				visitor(field.Body)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(field.Name)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(field.Body)
 			}
 		case *ast.Error:
-			visitor(node.Expr)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Expr)
 		case *ast.Function:
 			for _, param := range node.Parameters {
 				if param.DefaultArg != nil {
-					visitor(param.DefaultArg)
+					p.findUsagesVisitor(symbolID, symbol, ranges)(param.DefaultArg)
 				}
 			}
-			visitor(node.Body)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Body)
 		case *ast.Index:
-			visitor(node.Target)
-			visitor(node.Index)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Target)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Index)
 		case *ast.Local:
 			for _, bind := range node.Binds {
-				visitor(bind.Body)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(bind.Body)
 			}
-			visitor(node.Body)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Body)
 		case *ast.Object:
 			for _, field := range node.Fields {
-				visitor(field.Expr1)
-				visitor(field.Expr2)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(field.Expr1)
+				p.findUsagesVisitor(symbolID, symbol, ranges)(field.Expr2)
 			}
 		case *ast.SuperIndex:
-			visitor(node.Index)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Index)
 		case *ast.Unary:
-			visitor(node.Expr)
+			p.findUsagesVisitor(symbolID, symbol, ranges)(node.Expr)
 		default:
 			// No children to visit
 		}
 	}
+}
+
+// FindUsages finds all usages of a symbol in the given files
+func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, error) {
+	var ranges []ObjectRange
+	symbolID := ast.Identifier(symbol)
+
+	// Create a visitor to find all usages
+	visitor := p.findUsagesVisitor(symbolID, symbol, &ranges)
 
 	// Process each file
 	for _, file := range files {
