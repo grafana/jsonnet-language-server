@@ -311,3 +311,113 @@ func (p *Processor) findSelfObject(self *ast.Self) *ast.DesugaredObject {
 	}
 	return nil
 }
+
+// FindUsages finds all usages of a symbol in the given files
+func (p *Processor) FindUsages(files []string, symbol string) ([]ObjectRange, error) {
+	var ranges []ObjectRange
+	symbolID := ast.Identifier(symbol)
+
+	// Create a visitor to find all usages
+	var visitor func(node ast.Node)
+	visitor = func(node ast.Node) {
+		switch node := node.(type) {
+		case *ast.Var:
+			// For variables, check if the ID matches
+			if node.Id == symbolID {
+				ranges = append(ranges, ObjectRange{
+					Filename:       node.LocRange.FileName,
+					SelectionRange: node.LocRange,
+					FullRange:      node.LocRange,
+				})
+			}
+		case *ast.Index:
+			// For field access, check if the index matches
+			if litStr, ok := node.Index.(*ast.LiteralString); ok {
+				if litStr.Value == symbol {
+					ranges = append(ranges, ObjectRange{
+						Filename:       node.LocRange.FileName,
+						SelectionRange: node.LocRange,
+						FullRange:      node.LocRange,
+					})
+				}
+			}
+		case *ast.Apply:
+			if litStr, ok := node.Target.(*ast.LiteralString); ok {
+				if litStr.Value == symbol {
+					ranges = append(ranges, ObjectRange{
+						Filename:       node.LocRange.FileName,
+						SelectionRange: node.LocRange,
+						FullRange:      node.LocRange,
+					})
+				}
+			}
+		}
+
+		// Visit all children
+		switch node := node.(type) {
+		case *ast.Apply:
+			visitor(node.Target)
+			for _, arg := range node.Arguments.Positional {
+				visitor(arg.Expr)
+			}
+			for _, arg := range node.Arguments.Named {
+				visitor(arg.Arg)
+			}
+		case *ast.Array:
+			for _, element := range node.Elements {
+				visitor(element.Expr)
+			}
+		case *ast.Binary:
+			visitor(node.Left)
+			visitor(node.Right)
+		case *ast.Conditional:
+			visitor(node.Cond)
+			visitor(node.BranchTrue)
+			visitor(node.BranchFalse)
+		case *ast.DesugaredObject:
+			for _, field := range node.Fields {
+				visitor(field.Name)
+				visitor(field.Body)
+			}
+		case *ast.Error:
+			visitor(node.Expr)
+		case *ast.Function:
+			for _, param := range node.Parameters {
+				if param.DefaultArg != nil {
+					visitor(param.DefaultArg)
+				}
+			}
+			visitor(node.Body)
+		case *ast.Index:
+			visitor(node.Target)
+			visitor(node.Index)
+		case *ast.Local:
+			for _, bind := range node.Binds {
+				visitor(bind.Body)
+			}
+			visitor(node.Body)
+		case *ast.Object:
+			for _, field := range node.Fields {
+				visitor(field.Expr1)
+				visitor(field.Expr2)
+			}
+		case *ast.SuperIndex:
+			visitor(node.Index)
+		case *ast.Unary:
+			visitor(node.Expr)
+		default:
+			// No children to visit
+		}
+	}
+
+	// Process each file
+	for _, file := range files {
+		rootNode, _, err := p.vm.ImportAST("", file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to import AST for file %s: %w", file, err)
+		}
+		visitor(rootNode)
+	}
+
+	return ranges, nil
+}
