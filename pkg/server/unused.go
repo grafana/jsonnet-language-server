@@ -104,10 +104,6 @@ func (s *Server) RangeFormatting(context.Context, *protocol.DocumentRangeFormatt
 	return nil, notImplemented("RangeFormatting")
 }
 
-func (s *Server) References(context.Context, *protocol.ReferenceParams) ([]protocol.Location, error) {
-	return nil, notImplemented("References")
-}
-
 func (s *Server) Rename(context.Context, *protocol.RenameParams) (*protocol.WorkspaceEdit, error) {
 	return nil, notImplemented("Rename")
 }

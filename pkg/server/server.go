@@ -148,6 +148,7 @@ func (s *Server) Initialize(_ context.Context, _ *protocol.ParamInitialize) (*pr
 					IncludeText: false,
 				},
 			},
+			ReferencesProvider: true,
 		},
 		ServerInfo: struct {
 			Name    string `json:"name"`
