@@ -1,13 +1,13 @@
 module github.com/grafana/jsonnet-language-server
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.2
+toolchain go1.24.2
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
-	github.com/google/go-jsonnet v0.20.0
-	github.com/grafana/tanka v0.32.0
+	github.com/google/go-jsonnet v0.21.0
+	github.com/grafana/tanka v0.32.1-0.20250521123240-fa219d35d24f
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
 	github.com/mitchellh/mapstructure v1.5.0
@@ -24,6 +24,7 @@ require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/color v1.18.0 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -36,9 +37,9 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
