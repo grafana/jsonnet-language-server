@@ -1,5 +1,14 @@
 local html = import 'html.libsonnet';
 
+local exampleDocMultiline(mid, ex) =
+  html.spaceless([
+    html.p({}, 'Example:'),
+    html.pre({}, ex.input),
+    html.p({}, mid),
+    html.pre({}, ex.output),
+  ])
+;
+
 {
   intro: html.paragraphs([
     |||
@@ -98,6 +107,8 @@ local html = import 'html.libsonnet';
               <ul><code>std.pow(x, n)</code></ul>
               <ul><code>std.exp(x)</code></ul>
               <ul><code>std.log(x)</code></ul>
+              <ul><code>std.log2(x)</code></ul>
+              <ul><code>std.log10(x)</code></ul>
               <ul><code>std.exponent(x)</code></ul>
               <ul><code>std.mantissa(x)</code></ul>
               <ul><code>std.floor(x)</code></ul>
@@ -109,12 +120,19 @@ local html = import 'html.libsonnet';
               <ul><code>std.asin(x)</code></ul>
               <ul><code>std.acos(x)</code></ul>
               <ul><code>std.atan(x)</code></ul>
+              <ul><code>std.atan2(y, x)</code></ul>
+              <ul><code>std.deg2rad(x)</code></ul>
+              <ul><code>std.rad2deg(x)</code></ul>
+              <ul><code>std.hypot(a, b)</code></ul>
               <ul><code>std.round(x)</code></ul>
               <ul><code>std.isEven(x)</code></ul>
               <ul><code>std.isOdd(x)</code></ul>
               <ul><code>std.isInteger(x)</code></ul>
               <ul><code>std.isDecimal(x)</code></ul>
           </ul>
+          <p>
+              The constant <code>std.pi</code> is also available.
+          </p>
           <p>
               The function <code>std.mod(a, b)</code> is what the % operator is desugared to. It performs
               modulo arithmetic if the left hand side is a number, or if the left hand side is a string,
@@ -199,11 +217,18 @@ local html = import 'html.libsonnet';
           name: 'substr',
           params: ['str', 'from', 'len'],
           availableSince: '0.10.0',
-          description: |||
-            Returns a string that is the part of <code>s</code> that starts at offset <code>from</code>
-            and is <code>len</code> codepoints long. If the string <code>s</code> is shorter than
-            <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
-          |||,
+          description: html.paragraphs([
+            |||
+              Returns a string that is the part of <code>str</code> that starts at offset <code>from</code>
+              and is <code>len</code> codepoints long. If the string <code>str</code> is shorter than
+              <code>from+len</code>, the suffix starting at position <code>from</code> will be returned.
+            |||,
+            |||
+              The slice operator (e.g., <code>str[from:to]</code>) can also be used on strings, as an
+              alternative to this function. However, note that the slice operator takes a start and an
+              end index, but <code>std.substr</code> takes a start index and a length.
+            |||,
+          ]),
         },
         {
           name: 'findSubstr',
@@ -382,7 +407,7 @@ local html = import 'html.libsonnet';
         {
           name: 'trim',
           params: ['str'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns a copy of string after eliminating leading and trailing whitespaces.
           |||,
@@ -390,7 +415,7 @@ local html = import 'html.libsonnet';
         {
           name: 'equalsIgnoreCase',
           params: ['str1', 'str2'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns true if the the given <code>str1</code> is equal to <code>str2</code> by doing case insensitive comparison, false otherwise.
           |||,
@@ -763,7 +788,7 @@ local html = import 'html.libsonnet';
             |||),
           ],
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonEx(
                 {
@@ -787,8 +812,8 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }, '    '
                 ),
-            },
-            {
+            }),
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonEx(
                 {
@@ -803,7 +828,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: [1, 2] },
                   }, '', ' ', ' : '
                 ),
-            },
+            }),
           ],
         },
         {
@@ -815,7 +840,7 @@ local html = import 'html.libsonnet';
             it calls <code>std.manifestJsonEx</code> with a 4-space indent:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJson(
                 {
@@ -839,7 +864,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }
                 ),
-            },
+            }),
           ],
         },
         {
@@ -851,7 +876,7 @@ local html = import 'html.libsonnet';
             it calls <code>std.manifestJsonEx</code>:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this JSON:', {
               input: |||
                 std.manifestJsonMinified(
                 {
@@ -875,7 +900,7 @@ local html = import 'html.libsonnet';
                     y: { a: 1, b: 2, c: [1, 2] },
                   }
                 ),
-            },
+            }),
           ],
         },
         {
@@ -1046,7 +1071,7 @@ local html = import 'html.libsonnet';
             one or more whitespaces that are used for indentation:
           |||,
           examples: [
-            {
+            exampleDocMultiline('Yields a string containing this TOML file:', {
               input: |||
                 std.manifestTomlEx({
                   key1: "value",
@@ -1085,7 +1110,7 @@ local html = import 'html.libsonnet';
                   ],
                 }, '  ')
               ),
-            },
+            }),
           ],
         },
       ],
@@ -1209,21 +1234,31 @@ local html = import 'html.libsonnet';
           name: 'foldl',
           params: ['func', 'arr', 'init'],
           availableSince: '0.10.0',
-          description: |||
-            Classic foldl function. Calls the function on the result of the previous function call and
-            each array element, or <code>init</code> in the case of the initial element. Traverses the
-            array from left to right.
-          |||,
+          description: html.paragraphs([
+            |||
+              Classic foldl function. Calls the function for each array element, passing the result from
+              the previous call (or <code>init</code> for the first call), and the array element. Traverses
+              the array from left to right.
+            |||,
+            |||
+              For example: <code>foldl(f, [1,2,3], 0)</code> is equivalent to <code>f(f(f(0, 1), 2), 3)</code>.
+            |||,
+          ]),
         },
         {
           name: 'foldr',
           params: ['func', 'arr', 'init'],
           availableSince: '0.10.0',
-          description: |||
-            Classic foldr function. Calls the function on the result of the previous function call and
-            each array element, or <code>init</code> in the case of the initial element. Traverses the
-            array from right to left.
-          |||,
+          description: html.paragraphs([
+            |||
+              Classic foldr function. Calls the function for each array element, passing the array element
+              and the result from the previous call (or <code>init</code> for the first call). Traverses
+              the array from right to left.
+            |||,
+            |||
+              For example: <code>foldr(f, [1,2,3], 0)</code> is equivalent to <code>f(1, f(2, f(3, 0)))</code>.
+            |||,
+          ]),
         },
         {
           name: 'range',
@@ -1304,6 +1339,26 @@ local html = import 'html.libsonnet';
           ],
         },
         {
+          name: 'deepJoin',
+          params: ['arr'],
+          availableSince: '0.10.0',
+          description: |||
+            Concatenate an array containing strings and arrays to form a single string. If <code>arr</code> is
+            a string, it is returned unchanged. If it is an array, it is flattened and the string elements are
+            concatenated together with no separator.
+          |||,
+          examples: [
+            {
+              input: 'std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]])',
+              output: std.deepJoin(['one ', ['two ', 'three ', ['four '], []], 'five ', ['six']]),
+            },
+            {
+              input: 'std.deepJoin("hello")',
+              output: std.deepJoin('hello'),
+            },
+          ],
+        },
+        {
           name: 'lines',
           params: ['arr'],
           availableSince: '0.10.0',
@@ -1329,7 +1384,7 @@ local html = import 'html.libsonnet';
         {
           name: 'flattenDeepArray',
           params: ['value'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Concatenate an array containing values and arrays into a single flattened array.
           |||,
@@ -1415,27 +1470,35 @@ local html = import 'html.libsonnet';
         {
           name: 'minArray',
           params: ['arr', 'keyF', 'onEmpty'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
-              Return the min of all element in <code>arr</code>.
+              Return the minimum of all elements in <code>arr</code>. If <code>keyF</code> is provided, it is called on each element
+              of the array and should return a comparator value, and in this case <code>minArray</code> will return an element
+              with the minimum comparator value. If <code>onEmpty</code> is provided, and <code>arr</code> is empty, then
+              <code>minArray</code> will return the provided <code>onEmpty</code> value. If <code>onEmpty</code> is not provided,
+              then an empty <code>arr</code> will raise an error.
             |||,
           ]),
         },
         {
           name: 'maxArray',
           params: ['arr', 'keyF', 'onEmpty'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
-              Return the max of all element in <code>arr</code>.
+              Return the maximum of all elements in <code>arr</code>. If <code>keyF</code> is provided, it is called on each element
+              of the array and should return a comparator value, and in this case <code>maxArray</code> will return an element
+              with the maximum comparator value. If <code>onEmpty</code> is provided, and <code>arr</code> is empty, then
+              <code>maxArray</code> will return the provided <code>onEmpty</code> value. If <code>onEmpty</code> is not provided,
+              then an empty <code>arr</code> will raise an error.
             |||,
           ]),
         },
         {
           name: 'contains',
           params: ['arr', 'elem'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Return true if given <code>elem</code> is present in <code>arr</code>, false otherwise.
@@ -1455,7 +1518,7 @@ local html = import 'html.libsonnet';
         {
           name: 'remove',
           params: ['arr', 'elem'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Remove first occurrence of <code>elem</code> from <code>arr</code>.
@@ -1465,7 +1528,7 @@ local html = import 'html.libsonnet';
         {
           name: 'removeAt',
           params: ['arr', 'idx'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: html.paragraphs([
             |||
               Remove element at <code>idx</code> index from <code>arr</code>.
@@ -1593,7 +1656,7 @@ local html = import 'html.libsonnet';
           params: ['o'],
           availableSince: '0.20.0',
           description: |||
-            Returns an array of objects from the given object, each object having two fields: 
+            Returns an array of objects from the given object, each object having two fields:
             <code>key</code> (string) and <code>value</code> (object). Does not include hidden fields.
           |||,
         },
@@ -1632,7 +1695,7 @@ local html = import 'html.libsonnet';
         {
           name: 'objectRemoveKey',
           params: ['obj', 'key'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: |||
             Returns a new object after removing the given key from object.
           |||,
@@ -1699,7 +1762,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sha1',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA1 string.
@@ -1712,7 +1775,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sha256',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA256 string.
@@ -1725,7 +1788,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sha512',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA512 string.
@@ -1738,7 +1801,7 @@ local html = import 'html.libsonnet';
         {
           name: 'sha3',
           params: ['s'],
-          availableSince: 'upcoming',
+          availableSince: '0.21.0',
           description: [
             html.p({}, |||
               Encodes the given value into an SHA3 string.
