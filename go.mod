@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/google/go-jsonnet v0.21.0
-	github.com/grafana/tanka v0.32.1-0.20250520010918-83986d527049
+	github.com/grafana/tanka v0.32.1-0.20250521123240-fa219d35d24f
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
 	github.com/mitchellh/mapstructure v1.5.0
