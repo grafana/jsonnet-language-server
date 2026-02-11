@@ -23,6 +23,9 @@ type Configuration struct {
 	EnableEvalDiagnostics     bool
 	EnableLintDiagnostics     bool
 	ShowDocstringInCompletion bool
+
+	// EvalBinary is the external command for evaluation (e.g. "jsonnet"). When non-empty, jsonnet.evalFile and jsonnet.evalExpression use it instead of the in-process VM.
+	EvalBinary string
 }
 
 func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidChangeConfigurationParams) error {
@@ -101,6 +104,12 @@ func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidC
 				return fmt.Errorf("%w: ext_code parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
 			}
 			s.configuration.ExtCode = newCode
+		case "eval_binary":
+			if cmd, ok := sv.(string); ok {
+				s.configuration.EvalBinary = cmd
+			} else {
+				return fmt.Errorf("%w: unsupported settings value for eval_binary. expected string. got: %T", jsonrpc2.ErrInvalidParams, sv)
+			}
 
 		default:
 			return fmt.Errorf("%w: unsupported settings key: %q", jsonrpc2.ErrInvalidParams, sk)
