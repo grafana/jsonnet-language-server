@@ -1,3 +1,4 @@
+//revive:disable-next-line:var-naming package name is a project convention
 package utils
 
 import "regexp"

@@ -142,7 +142,9 @@ func (s *Server) runEvalJsonnet(absPath, expression string) (string, error) {
 	if expression != "" {
 		script += "." + expression
 	}
-	jpaths := append(s.configuration.JPaths, filepath.Dir(absPath))
+	jpaths := make([]string, 0, len(s.configuration.JPaths)+1)
+	jpaths = append(jpaths, s.configuration.JPaths...)
+	jpaths = append(jpaths, filepath.Dir(absPath))
 	args := make([]string, 0, 4+len(jpaths)*2+len(s.configuration.ExtVars)*2+len(s.configuration.ExtCode)*2+2)
 	for _, p := range jpaths {
 		args = append(args, "-J", p)
