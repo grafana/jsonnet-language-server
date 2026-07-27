@@ -1,12 +1,10 @@
 module github.com/grafana/jsonnet-language-server
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.24.5
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
-	github.com/google/go-jsonnet v0.21.0
+	github.com/google/go-jsonnet v0.22.0
 	github.com/grafana/tanka v0.32.1-0.20250521123240-fa219d35d24f
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2
