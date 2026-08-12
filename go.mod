@@ -1,8 +1,6 @@
 module github.com/grafana/jsonnet-language-server
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.24.3
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
