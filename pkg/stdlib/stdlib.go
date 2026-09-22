@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	md "github.com/JohannesKaufmann/html-to-markdown"
+	md "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/google/go-jsonnet"
 )
 
@@ -76,7 +76,6 @@ func Functions() ([]Function, error) {
 		return nil, err
 	}
 
-	converter := md.NewConverter("", true, nil)
 	allFunctions := []Function{}
 	for _, group := range lib.Groups {
 		// Add math library functions
@@ -98,7 +97,7 @@ func Functions() ([]Function, error) {
 			if field.AvailableSince == "upcoming" {
 				continue
 			}
-			field.MarkdownDescription, err = converter.ConvertString(field.RenderedDescription)
+			field.MarkdownDescription, err = md.ConvertString(field.RenderedDescription)
 			if err != nil {
 				return nil, err
 			}

@@ -86,7 +86,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 			if def.TargetRange.Start.Line != def.TargetRange.End.Line {
 				header += fmt.Sprintf("-%d", def.TargetRange.End.Line+1)
 			}
-			contentBuilder.WriteString(fmt.Sprintf("## `%s`\n", header))
+			fmt.Fprintf(&contentBuilder, "## `%s`\n", header)
 		}
 
 		targetContent, err := s.cache.GetContents(def.TargetURI, def.TargetRange)
@@ -98,7 +98,7 @@ func (s *Server) Hover(_ context.Context, params *protocol.HoverParams) (*protoc
 		if strings.Count(targetContent, "\n") > 5 {
 			targetContent = strings.Join(strings.Split(targetContent, "\n")[:5], "\n") + "\n..."
 		}
-		contentBuilder.WriteString(fmt.Sprintf("```jsonnet\n%s\n```\n", targetContent))
+		fmt.Fprintf(&contentBuilder, "```jsonnet\n%s\n```\n", targetContent)
 
 		if len(definitions) > 1 {
 			contentBuilder.WriteString("\n")

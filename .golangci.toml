@@ -32,6 +32,11 @@ paths = [
   'examples$'
 ]
 
+# Keep test inputs and expected results readable inline.
+[[linters.exclusions.rules]]
+path = '_test\.go$'
+linters = ['goconst']
+
 [formatters]
 enable = [
   'goimports'
