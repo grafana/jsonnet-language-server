@@ -35,8 +35,8 @@ github.com/grafana/tanka v0.32.1-0.20250521123240-fa219d35d24f h1:gP0r33Vy4+UwxS
 github.com/grafana/tanka v0.32.1-0.20250521123240-fa219d35d24f/go.mod h1:NbGUZbqhwXwxpDUhsY7sfTrtPCZwcWhst8Wluk4LVIA=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
-github.com/huandu/xstrings v1.5.0 h1:2ag3IFq9ZDANvthTwTiqSSZLjDc+BedvHPAp5tJy2TI=
-github.com/huandu/xstrings v1.5.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
+github.com/huandu/xstrings v1.6.2 h1:+X5X6N46b40cmDw7FFJFU6Eoq0yJS8lbYigT2EFau4c=
+github.com/huandu/xstrings v1.6.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2 h1:t0A10MAY8Z3eeBIBzlzrPpdjsag6Biuxq8iMCHmdGU8=
 github.com/jdbaldry/go-language-server-protocol v0.0.0-20211013214444-3022da0884b2/go.mod h1:Hp8QDOEcdn4aDZ+DFTda+smIB0b5MvII4Q0Jo0y2VkA=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
