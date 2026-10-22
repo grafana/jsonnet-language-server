@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	md "github.com/JohannesKaufmann/html-to-markdown"
+	md "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/google/go-jsonnet"
 )
 
