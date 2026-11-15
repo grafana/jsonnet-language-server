@@ -73,15 +73,17 @@ func (s *Server) findDefinition(root ast.Node, params *protocol.DefinitionParams
 
 		var objectRange processing.ObjectRange
 
-		if bind := processing.FindBindByIDViaStack(searchStack, deepestNode.Id); bind != nil {
+		bind, param := processing.FindDeclarationByIDViaStack(searchStack, deepestNode.Id)
+		switch {
+		case bind != nil:
 			objectRange = processing.LocalBindToRange(*bind)
-		} else if param := processing.FindParameterByIDViaStack(searchStack, deepestNode.Id, false); param != nil {
+		case param != nil:
 			objectRange = processing.ObjectRange{
 				Filename:       param.LocRange.FileName,
 				FullRange:      param.LocRange,
 				SelectionRange: param.LocRange,
 			}
-		} else {
+		default:
 			return nil, fmt.Errorf("no matching bind found for %s", deepestNode.Id)
 		}
 

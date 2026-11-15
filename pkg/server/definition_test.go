@@ -29,6 +29,47 @@ type definitionTestCase struct {
 
 var definitionTestCases = []definitionTestCase{
 	{
+		name:     "test inner local shadowing outer local",
+		filename: "testdata/shadow-local.jsonnet",
+		position: protocol.Position{Line: 2, Character: 0},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 6},
+				End:   protocol.Position{Line: 1, Character: 11},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 6},
+				End:   protocol.Position{Line: 1, Character: 7},
+			},
+		}},
+	},
+	{
+		name:     "test local shadowing function parameter",
+		filename: "testdata/shadow-parameter-by-local.jsonnet",
+		position: protocol.Position{Line: 2, Character: 2},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 8},
+				End:   protocol.Position{Line: 1, Character: 13},
+			},
+			targetSelectionRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 8},
+				End:   protocol.Position{Line: 1, Character: 9},
+			},
+		}},
+	},
+	{
+		name:     "test function parameter shadowing local variable",
+		filename: "testdata/shadow-function-parameter.jsonnet",
+		position: protocol.Position{Line: 2, Character: 2},
+		results: []definitionResult{{
+			targetRange: protocol.Range{
+				Start: protocol.Position{Line: 1, Character: 9},
+				End:   protocol.Position{Line: 1, Character: 10},
+			},
+		}},
+	},
+	{
 		name:     "test goto definition for var myvar",
 		filename: "./testdata/test_goto_definition.jsonnet",
 		position: protocol.Position{Line: 5, Character: 19},
