@@ -204,6 +204,10 @@ func (s *Server) getLintDiags(doc *cache.Document) (diags []protocol.Diagnostic)
 }
 
 func (s *Server) lintWithRecover(doc *cache.Document) (result string, err error) {
+	// Build one transitive import graph at a time when opening several documents.
+	s.lintMutex.Lock()
+	defer s.lintMutex.Unlock()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("error linting: %v", r)

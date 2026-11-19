@@ -51,6 +51,7 @@ type Server struct {
 	diagMutex   sync.RWMutex
 	diagQueue   map[protocol.DocumentURI]struct{}
 	diagRunning sync.Map
+	lintMutex   sync.Mutex
 }
 
 func (s *Server) getVM(path string) *jsonnet.VM {
