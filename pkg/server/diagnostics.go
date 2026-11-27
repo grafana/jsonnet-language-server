@@ -152,6 +152,7 @@ func (s *Server) diagnosticsLoop() {
 func (s *Server) getEvalDiags(doc *cache.Document) (diags []protocol.Diagnostic) {
 	if doc.Err == nil && s.configuration.EnableEvalDiagnostics {
 		vm := s.getVM(doc.Item.URI.SpanURI().Filename())
+		s.registerNativeStubs(vm)
 		doc.Val, doc.Err = vm.EvaluateAnonymousSnippet(doc.Item.URI.SpanURI().Filename(), doc.Item.Text)
 	}
 

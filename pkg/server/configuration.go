@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/ast"
 	"github.com/google/go-jsonnet/formatter"
+	tankaNative "github.com/grafana/tanka/pkg/jsonnet/native"
 	"github.com/jdbaldry/go-language-server-protocol/jsonrpc2"
 	"github.com/jdbaldry/go-language-server-protocol/lsp/protocol"
 	"github.com/mitchellh/mapstructure"
@@ -18,7 +22,12 @@ type Configuration struct {
 	JPaths                []string
 	ExtVars               map[string]string
 	ExtCode               map[string]string
-	FormattingOptions     formatter.Options
+	// NativeFunctions lists the native functions the host application registers
+	// at runtime, as a map of function name to parameter count. They are
+	// registered as stubs that return null so that evaluation diagnostics do
+	// not fail on std.native calls.
+	NativeFunctions   map[string]int
+	FormattingOptions formatter.Options
 
 	EnableEvalDiagnostics     bool
 	EnableLintDiagnostics     bool
@@ -104,6 +113,12 @@ func (s *Server) DidChangeConfiguration(_ context.Context, params *protocol.DidC
 				return fmt.Errorf("%w: ext_code parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
 			}
 			s.configuration.ExtCode = newCode
+		case "native_functions":
+			newFuncs, err := parseNativeFunctions(sv)
+			if err != nil {
+				return fmt.Errorf("%w: native_functions parsing failed: %v", jsonrpc2.ErrInvalidParams, err)
+			}
+			s.configuration.NativeFunctions = newFuncs
 		case "eval_binary":
 			if cmd, ok := sv.(string); ok {
 				s.configuration.EvalBinary = cmd
@@ -135,6 +150,82 @@ func (s *Server) parseExtVars(unparsed interface{}) (map[string]string, error) {
 		extVars[varKey] = vv
 	}
 	return extVars, nil
+}
+
+// ParseNativeFunction parses a command line native function spec of the form
+// "name" or "name:parameters", where parameters is the number of arguments the
+// function takes (zero when omitted).
+func ParseNativeFunction(spec string) (string, int, error) {
+	name, count, hasCount := strings.Cut(spec, ":")
+	if name == "" {
+		return "", 0, fmt.Errorf("invalid native function %q: missing name", spec)
+	}
+	if !hasCount {
+		return name, 0, nil
+	}
+	n, err := strconv.Atoi(count)
+	if err != nil || n < 0 {
+		return "", 0, fmt.Errorf("invalid native function %q: parameter count must be a non-negative integer", spec)
+	}
+	return name, n, nil
+}
+
+func parseNativeFunctions(unparsed interface{}) (map[string]int, error) {
+	newFuncs, ok := unparsed.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unsupported settings value for native_functions. expected json object. got: %T", unparsed)
+	}
+
+	funcs := make(map[string]int, len(newFuncs))
+	for name, value := range newFuncs {
+		var count int
+		switch v := value.(type) {
+		case int:
+			count = v
+		case float64:
+			if v != float64(int(v)) {
+				return nil, fmt.Errorf("unsupported settings value for native_functions.%s. expected integer. got: %v", name, v)
+			}
+			count = int(v)
+		default:
+			return nil, fmt.Errorf("unsupported settings value for native_functions.%s. expected integer. got: %T", name, value)
+		}
+		if count < 0 {
+			return nil, fmt.Errorf("unsupported settings value for native_functions.%s. expected a non-negative integer. got: %d", name, count)
+		}
+		funcs[name] = count
+	}
+	return funcs, nil
+}
+
+// registerNativeStubs registers the configured native functions on the VM.
+// Each stub takes the configured number of arguments and returns null, which is
+// enough for the language server to evaluate code that calls std.native.
+// Functions the VM already provides (the Tanka ones) are left untouched.
+func (s *Server) registerNativeStubs(vm *jsonnet.VM) {
+	for name, count := range s.configuration.NativeFunctions {
+		if s.configuration.ResolvePathsWithTanka && isTankaNativeFunc(name) {
+			continue
+		}
+		params := make(ast.Identifiers, count)
+		for i := range params {
+			params[i] = ast.Identifier("arg" + strconv.Itoa(i))
+		}
+		vm.NativeFunction(&jsonnet.NativeFunction{
+			Name:   name,
+			Params: params,
+			Func:   func([]interface{}) (interface{}, error) { return nil, nil },
+		})
+	}
+}
+
+func isTankaNativeFunc(name string) bool {
+	for _, f := range tankaNative.Funcs() {
+		if f.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) parseFormattingOpts(unparsed interface{}) (formatter.Options, error) {

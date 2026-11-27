@@ -40,6 +40,10 @@ Options:
   -t / --tanka       Create the jsonnet VM with Tanka (finds jpath automatically).
   -l / --log-level   Set the log level (default: info).
   --eval-diags       Try to evaluate files to find errors and warnings.
+  -n / --native-func <name[:params]>
+                     Declare a native function the host application provides
+                     at runtime, with its number of parameters (default: 0).
+                     It is stubbed out during evaluation diagnostics. Repeatable.
   --lint             Enable linting.
   -v / --version     Print version.
 
@@ -79,6 +83,15 @@ func main() {
 				log.Fatalf("Invalid log level: %s", err)
 			}
 			log.SetLevel(logLevel)
+		case "-n", "--native-func":
+			name, params, err := server.ParseNativeFunction(getArgValue(i))
+			if err != nil {
+				log.Fatal(err)
+			}
+			if config.NativeFunctions == nil {
+				config.NativeFunctions = map[string]int{}
+			}
+			config.NativeFunctions[name] = params
 		case "--lint":
 			config.EnableLintDiagnostics = true
 		case "--eval-diags":

@@ -155,3 +155,79 @@ func TestGetEvalDiags(t *testing.T) {
 		})
 	}
 }
+
+func TestGetEvalDiagsNativeFunctions(t *testing.T) {
+	testCases := []struct {
+		name          string
+		fileContent   string
+		nativeFuncs   map[string]int
+		tanka         bool
+		expectedDiags []string
+	}{
+		{
+			name:        "undeclared native function warns",
+			fileContent: "local nextID = std.native('nextID');\n{ id: nextID() }\n",
+			expectedDiags: []string{
+				"Unexpected type null, expected function",
+			},
+		},
+		{
+			name:        "declared native function without parameters",
+			fileContent: "local nextID = std.native('nextID');\n{ id: nextID() }\n",
+			nativeFuncs: map[string]int{"nextID": 0},
+		},
+		{
+			name:        "declared native function with parameters",
+			fileContent: "local hash = std.native('hash');\n{ sum: hash('a', 'b') }\n",
+			nativeFuncs: map[string]int{"hash": 2},
+		},
+		{
+			name:        "wrong number of arguments still warns",
+			fileContent: "local hash = std.native('hash');\n{ sum: hash('a') }\n",
+			nativeFuncs: map[string]int{"hash": 2},
+			expectedDiags: []string{
+				"Missing argument: arg1",
+			},
+		},
+		{
+			name:        "other native functions still warn",
+			fileContent: "local other = std.native('other');\n{ id: other() }\n",
+			nativeFuncs: map[string]int{"nextID": 0},
+			expectedDiags: []string{
+				"Unexpected type null, expected function",
+			},
+		},
+		{
+			name:        "tanka native functions keep their implementation",
+			fileContent: "{ a: std.native('parseJson')('{\"a\": 1}').a + 1 }\n",
+			nativeFuncs: map[string]int{"parseJson": 0},
+			tanka:       true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, fileURI := testServerWithFile(t, nil, tc.fileContent)
+			s.configuration.EnableEvalDiagnostics = true
+			s.configuration.ResolvePathsWithTanka = tc.tanka
+			s.configuration.NativeFunctions = tc.nativeFuncs
+
+			doc, err := s.cache.Get(fileURI)
+			if err != nil {
+				t.Fatalf("%s: %v", errorRetrievingDocument, err)
+			}
+
+			diags := s.getEvalDiags(doc)
+			if len(tc.expectedDiags) == 0 {
+				assert.Empty(t, diags)
+				return
+			}
+			if assert.Len(t, diags, len(tc.expectedDiags)) {
+				for i, expected := range tc.expectedDiags {
+					assert.Contains(t, diags[i].Message, expected)
+					assert.Equal(t, protocol.SeverityWarning, diags[i].Severity)
+				}
+			}
+		})
+	}
+}
