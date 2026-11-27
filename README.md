@@ -30,6 +30,13 @@ https://user-images.githubusercontent.com/29210090/145595059-e34c6d25-eff3-41df-
 
 Download the latest release binary from GitHub: https://github.com/grafana/jsonnet-language-server/releases
 
+## Native functions
+
+Jsonnet code can call native functions that the host application registers at runtime, such as `std.native('nextID')`. The language server does not have them, so evaluation diagnostics report a runtime error for every call. Declare them with their parameter count and the language server stubs them out, returning `null`, when it evaluates a file:
+
+* Command line: `--native-func nextID` or `--native-func hash:2`, repeatable.
+* Editor settings: `native_functions = { nextID = 0, hash = 2 }`.
+
 ## Contributing
 
 Contributions are more than welcome and I will try my best to be prompt

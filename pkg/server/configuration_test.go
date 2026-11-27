@@ -338,3 +338,89 @@ func TestConfiguration_Formatting(t *testing.T) {
 		})
 	}
 }
+
+func TestConfiguration_NativeFunctions(t *testing.T) {
+	testCases := []struct {
+		name        string
+		value       interface{}
+		expected    map[string]int
+		expectedErr string
+	}{
+		{
+			name:     "valid",
+			value:    map[string]interface{}{"nextID": float64(0), "hash": float64(2), "count": 1},
+			expected: map[string]int{"nextID": 0, "hash": 2, "count": 1},
+		},
+		{
+			name:     "empty",
+			value:    map[string]interface{}{},
+			expected: map[string]int{},
+		},
+		{
+			name:        "not an object",
+			value:       []interface{}{"nextID"},
+			expectedErr: "JSON RPC invalid params: native_functions parsing failed: unsupported settings value for native_functions. expected json object. got: []interface {}",
+		},
+		{
+			name:        "count is not a number",
+			value:       map[string]interface{}{"nextID": "0"},
+			expectedErr: "JSON RPC invalid params: native_functions parsing failed: unsupported settings value for native_functions.nextID. expected integer. got: string",
+		},
+		{
+			name:        "count is fractional",
+			value:       map[string]interface{}{"nextID": 1.5},
+			expectedErr: "JSON RPC invalid params: native_functions parsing failed: unsupported settings value for native_functions.nextID. expected integer. got: 1.5",
+		},
+		{
+			name:        "count is negative",
+			value:       map[string]interface{}{"nextID": float64(-1)},
+			expectedErr: "JSON RPC invalid params: native_functions parsing failed: unsupported settings value for native_functions.nextID. expected a non-negative integer. got: -1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := testServer(t, nil)
+			err := s.DidChangeConfiguration(context.TODO(), &protocol.DidChangeConfigurationParams{
+				Settings: map[string]interface{}{"native_functions": tc.value},
+			})
+			if tc.expectedErr != "" {
+				assert.EqualError(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, s.configuration.NativeFunctions)
+		})
+	}
+}
+
+func TestParseNativeFunction(t *testing.T) {
+	testCases := []struct {
+		spec           string
+		expectedName   string
+		expectedParams int
+		expectedErr    string
+	}{
+		{spec: "nextID", expectedName: "nextID"},
+		{spec: "nextID:0", expectedName: "nextID"},
+		{spec: "hash:3", expectedName: "hash", expectedParams: 3},
+		{spec: "", expectedErr: `invalid native function "": missing name`},
+		{spec: ":2", expectedErr: `invalid native function ":2": missing name`},
+		{spec: "hash:two", expectedErr: `invalid native function "hash:two": parameter count must be a non-negative integer`},
+		{spec: "hash:-1", expectedErr: `invalid native function "hash:-1": parameter count must be a non-negative integer`},
+		{spec: "hash:", expectedErr: `invalid native function "hash:": parameter count must be a non-negative integer`},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.spec, func(t *testing.T) {
+			name, params, err := ParseNativeFunction(tc.spec)
+			if tc.expectedErr != "" {
+				assert.EqualError(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedName, name)
+			assert.Equal(t, tc.expectedParams, params)
+		})
+	}
+}
